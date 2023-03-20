@@ -35,9 +35,12 @@ class Ibo
   uint32_t ibo_ = 0;
 
 public:
-  Ibo(uint32_t ibo);
+  uint32_t valuetype_ = 0;
+  Ibo(uint32_t ibo, uint32_t valuetype);
   ~Ibo();
-  static std::shared_ptr<Ibo> Create(uint32_t size, const void* data);
+  static std::shared_ptr<Ibo> Create(uint32_t size,
+                                     const void* data,
+                                     uint32_t valuetype);
   void Bind();
   void Unbind();
 };
@@ -52,6 +55,7 @@ class Vao
 {
   uint32_t vao_ = 0;
   std::vector<VertexLayout> layouts_;
+  std::vector<VertexSlot> slots_;
   std::shared_ptr<Ibo> ibo_;
 
 public:
@@ -65,8 +69,8 @@ public:
                                      const std::shared_ptr<Ibo>& ibo = {});
   void Bind();
   void Unbind();
-  void Draw(uint32_t mode, uint32_t count, uint32_t offset);
-  void DrawInstance(uint32_t primcount, uint32_t count, uint32_t offset);
+  void Draw(uint32_t mode, uint32_t count, uint32_t offset = 0);
+  void DrawInstance(uint32_t primcount, uint32_t count, uint32_t offset = 0);
 };
 
 }

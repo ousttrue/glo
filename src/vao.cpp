@@ -64,17 +64,18 @@ Vbo::Upload(uint32_t size, const void* data)
 //
 // Ibo
 //
-Ibo::Ibo(uint32_t ibo)
+Ibo::Ibo(uint32_t ibo, uint32_t valuetype)
   : ibo_(ibo)
+  , valuetype_(valuetype)
 {
 }
 Ibo::~Ibo() {}
 std::shared_ptr<Ibo>
-Ibo::Create(uint32_t size, const void* data)
+Ibo::Create(uint32_t size, const void* data, uint32_t valuetype)
 {
   GLuint ibo;
   glGenBuffers(1, &ibo);
-  auto ptr = std::shared_ptr<Ibo>(new Ibo(ibo));
+  auto ptr = std::shared_ptr<Ibo>(new Ibo(ibo, valuetype));
   ptr->Bind();
   if (data) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
@@ -104,6 +105,7 @@ Vao::Vao(uint32_t vao,
          const std::shared_ptr<Ibo>& ibo)
   : vao_(vao)
   , layouts_(layouts.begin(), layouts.end())
+  , slots_(slots.begin(), slots.end())
   , ibo_(ibo)
 {
   assert(layouts.size() == slots.size());
@@ -162,7 +164,7 @@ Vao::Draw(uint32_t mode, uint32_t count, uint32_t offset)
   if (ibo_) {
     glDrawElements(mode,
                    count,
-                   GL_UNSIGNED_INT,
+                   ibo_->valuetype_,
                    reinterpret_cast<void*>(static_cast<uint64_t>(offset)));
   } else {
     glDrawArrays(mode, offset, count);
@@ -177,7 +179,7 @@ Vao::DrawInstance(uint32_t primcount, uint32_t count, uint32_t offset)
     glDrawElementsInstanced(
       GL_TRIANGLES,
       count,
-      GL_UNSIGNED_INT,
+      ibo_->valuetype_,
       reinterpret_cast<void*>(static_cast<uint64_t>(offset)),
       primcount);
   } else {
