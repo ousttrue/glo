@@ -44,7 +44,7 @@ struct Vertex
   XYZ position;
   XY barycentric;
 };
-static_assert(sizeof(Vertex) == sizeof(float) * 5, "Vertex");
+static_assert(sizeof(Vertex) == sizeof(float) * 5, "sizeof Vertex");
 
 struct Mesh
 {
@@ -88,7 +88,7 @@ struct LineVertex
   XYZ position;
   RGBA color;
 };
-static_assert(sizeof(LineVertex) == 28);
+static_assert(sizeof(LineVertex) == 28, "sizeof LineVertex");
 
 void
 PushGrid(std::vector<LineVertex>& lines,

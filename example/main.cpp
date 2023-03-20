@@ -2,17 +2,29 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glo/shader.h>
+#include <glo/vao.h>
 #include <iostream>
 #include <stdio.h>
 #include <string_view>
 
-static const struct
+struct float2
 {
   float x, y;
-  float r, g, b;
-} vertices[3] = { { -0.6f, -0.4f, 1.f, 0.f, 0.f },
-                  { 0.6f, -0.4f, 0.f, 1.f, 0.f },
-                  { 0.f, 0.6f, 0.f, 0.f, 1.f } };
+};
+struct float3
+{
+  float x, y, z;
+};
+struct Vertex
+{
+  float2 positon;
+  float3 rgb;
+};
+static const struct Vertex vertices[3] = {
+  { { -0.6f, -0.4f }, { 1.f, 0.f, 0.f } },
+  { { 0.6f, -0.4f }, { 0.f, 1.f, 0.f } },
+  { { 0.f, 0.6f }, { 0.f, 0.f, 1.f } }
+};
 
 static const char* vertex_shader_text = R"(#version 110
 uniform mat4 MVP;
@@ -82,51 +94,62 @@ main(void)
   std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   glfwSwapInterval(1);
 
-  // NOTE: OpenGL error checks have been omitted for brevity
-
-  GLuint vertex_buffer;
-  glGenBuffers(1, &vertex_buffer);
-  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
   auto program = glo::ShaderProgram::Create(
     printError, vertex_shader_text, fragment_shader_text);
-
   auto mvp_location = *program->UniformLocation("MVP");
   auto vpos_location = *program->AttributeLocation("vPos");
   auto vcol_location = *program->AttributeLocation("vCol");
 
-  glEnableVertexAttribArray(vpos_location);
-  glVertexAttribPointer(
-    vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
-  glEnableVertexAttribArray(vcol_location);
-  glVertexAttribPointer(vcol_location,
-                        3,
-                        GL_FLOAT,
-                        GL_FALSE,
-                        sizeof(vertices[0]),
-                        (void*)(sizeof(float) * 2));
+  auto vbo = glo::Vbo::Create(sizeof(vertices), vertices);
+  glo::VertexLayout layouts[] = {
+    {
+      .id = { "vCol", vcol_location },
+      .type = glo::ValueType::Float,
+      .count = 3,
+      .offset = offsetof(Vertex, rgb),
+      .stride = sizeof(Vertex),
+    },
+    {
+      .id = { "vPos", vpos_location },
+      .type = glo::ValueType::Float,
+      .count = 2,
+      .offset = offsetof(Vertex, positon),
+      .stride = sizeof(Vertex),
+    },
+  };
+  glo::VertexSlot slots[] = {
+    {
+      .location = vcol_location,
+      .vbo = vbo,
+    },
+    {
+      .location = vpos_location,
+      .vbo = vbo,
+    },
+  };
+  auto vao = glo::Vao::Create(layouts, slots);
 
   while (!glfwWindowShouldClose(window)) {
+    // update
+    glfwPollEvents();
     float mvp[16] = {
       1, 0, 0, 0, //
       0, 1, 0, 0, //
       0, 0, 1, 0, //
       0, 0, 0, 1, //
     };
-
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // draw
     program->Bind();
     program->SetUniformMatrix(printError, mvp_location, mvp);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    vao->Draw(GL_TRIANGLES, 3, 0);
 
+    // present
     glfwSwapBuffers(window);
-    glfwPollEvents();
   }
 
   glfwDestroyWindow(window);
