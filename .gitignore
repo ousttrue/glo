@@ -1,0 +1,6 @@
+/prefix/
+/builddir/
+/subprojects/*
+!/subprojects/*.wrap
+!/subprojects/packagefiles
+
