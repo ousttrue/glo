@@ -1,8 +1,10 @@
 #include <gl/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glo/shader.h>
 #include <iostream>
 #include <stdio.h>
+#include <string_view>
 
 static const struct
 {
@@ -45,12 +47,15 @@ key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+static void
+printError(std::string_view msg)
+{
+  std::cout << msg << std::endl;
+}
+
 int
 main(void)
 {
-  GLFWwindow* window;
-  GLuint vertex_buffer, vertex_shader, fragment_shader, program;
-  GLint mvp_location, vpos_location, vcol_location;
 
   glfwSetErrorCallback(error_callback);
 
@@ -61,7 +66,7 @@ main(void)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
-  window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+  auto window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
   if (!window) {
     glfwTerminate();
     return 2;
@@ -79,26 +84,17 @@ main(void)
 
   // NOTE: OpenGL error checks have been omitted for brevity
 
+  GLuint vertex_buffer;
   glGenBuffers(1, &vertex_buffer);
   glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-  glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-  glCompileShader(vertex_shader);
+  auto program = glo::ShaderProgram::Create(
+    printError, vertex_shader_text, fragment_shader_text);
 
-  fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-  glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-  glCompileShader(fragment_shader);
-
-  program = glCreateProgram();
-  glAttachShader(program, vertex_shader);
-  glAttachShader(program, fragment_shader);
-  glLinkProgram(program);
-
-  mvp_location = glGetUniformLocation(program, "MVP");
-  vpos_location = glGetAttribLocation(program, "vPos");
-  vcol_location = glGetAttribLocation(program, "vCol");
+  auto mvp_location = *program->UniformLocation("MVP");
+  auto vpos_location = *program->AttributeLocation("vPos");
+  auto vcol_location = *program->AttributeLocation("vCol");
 
   glEnableVertexAttribArray(vpos_location);
   glVertexAttribPointer(
@@ -125,8 +121,8 @@ main(void)
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    glUseProgram(program);
-    glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
+    program->Bind();
+    program->SetUniformMatrix(printError, mvp_location, mvp);
     glDrawArrays(GL_TRIANGLES, 0, 3);
 
     glfwSwapBuffers(window);

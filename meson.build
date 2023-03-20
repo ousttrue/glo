@@ -1,4 +1,6 @@
-project('glo', 'cpp')
+project('glo', 'cpp', default_options: ['cpp_std=c++20'])
 
-# subdir('src')
+glew_dep = dependency('glew')
+
+subdir('src')
 subdir('example')
