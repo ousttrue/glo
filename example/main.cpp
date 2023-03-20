@@ -1,12 +1,8 @@
-// #include <glad/gl.h>
 #include <gl/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
-// #include "linmath.h"
-
+#include <iostream>
 #include <stdio.h>
-#include <stdlib.h>
 
 static const struct
 {
@@ -16,25 +12,25 @@ static const struct
                   { 0.6f, -0.4f, 0.f, 1.f, 0.f },
                   { 0.f, 0.6f, 0.f, 0.f, 1.f } };
 
-static const char* vertex_shader_text =
-  "#version 110\n"
-  "uniform mat4 MVP;\n"
-  "attribute vec3 vCol;\n"
-  "attribute vec2 vPos;\n"
-  "varying vec3 color;\n"
-  "void main()\n"
-  "{\n"
-  "    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
-  "    color = vCol;\n"
-  "}\n";
+static const char* vertex_shader_text = R"(#version 110
+uniform mat4 MVP;
+attribute vec3 vCol;
+attribute vec2 vPos;
+varying vec3 color;
+void main()
+{
+    gl_Position = MVP * vec4(vPos, 0.0, 1.0);
+    color = vCol;
+};
+)";
 
-static const char* fragment_shader_text =
-  "#version 110\n"
-  "varying vec3 color;\n"
-  "void main()\n"
-  "{\n"
-  "    gl_FragColor = vec4(color, 1.0);\n"
-  "}\n";
+static const char* fragment_shader_text = R"(#version 110
+varying vec3 color;
+void main()
+{
+    gl_FragColor = vec4(color, 1.0);
+};
+)";
 
 static void
 error_callback(int error, const char* description)
@@ -58,8 +54,9 @@ main(void)
 
   glfwSetErrorCallback(error_callback);
 
-  if (!glfwInit())
-    exit(EXIT_FAILURE);
+  if (!glfwInit()) {
+    return 1;
+  }
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
@@ -67,15 +64,17 @@ main(void)
   window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
   if (!window) {
     glfwTerminate();
-    exit(EXIT_FAILURE);
+    return 2;
   }
 
   glfwSetKeyCallback(window, key_callback);
 
   glfwMakeContextCurrent(window);
   if (glewInit() != GLEW_OK) {
-    exit(EXIT_FAILURE);
+    return 3;
   }
+  std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
+  std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   glfwSwapInterval(1);
 
   // NOTE: OpenGL error checks have been omitted for brevity
@@ -113,9 +112,6 @@ main(void)
                         (void*)(sizeof(float) * 2));
 
   while (!glfwWindowShouldClose(window)) {
-    float ratio;
-    int width, height;
-    // mat4x4 m, p, mvp;
     float mvp[16] = {
       1, 0, 0, 0, //
       0, 1, 0, 0, //
@@ -123,16 +119,11 @@ main(void)
       0, 0, 0, 1, //
     };
 
+    int width, height;
     glfwGetFramebufferSize(window, &width, &height);
-    ratio = width / (float)height;
 
     glViewport(0, 0, width, height);
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // mat4x4_identity(m);
-    // mat4x4_rotate_Z(m, m, (float)glfwGetTime());
-    // mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-    // mat4x4_mul(mvp, p, m);
 
     glUseProgram(program);
     glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*)mvp);
@@ -145,5 +136,5 @@ main(void)
   glfwDestroyWindow(window);
 
   glfwTerminate();
-  exit(EXIT_SUCCESS);
+  return 0;
 }
