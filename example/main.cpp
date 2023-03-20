@@ -26,11 +26,11 @@ static const struct Vertex vertices[3] = {
   { { 0.f, 0.6f }, { 0.f, 0.f, 1.f } }
 };
 
-static const char* vertex_shader_text = R"(#version 110
+static const char* vertex_shader_text = R"(#version 400
 uniform mat4 MVP;
-attribute vec3 vCol;
-attribute vec2 vPos;
-varying vec3 color;
+in vec3 vCol;
+in vec2 vPos;
+out vec3 color;
 void main()
 {
     gl_Position = MVP * vec4(vPos, 0.0, 1.0);
@@ -38,11 +38,12 @@ void main()
 };
 )";
 
-static const char* fragment_shader_text = R"(#version 110
-varying vec3 color;
+static const char* fragment_shader_text = R"(#version 400
+in vec3 color;
+out vec4 FragColor;
 void main()
 {
-    gl_FragColor = vec4(color, 1.0);
+    FragColor = vec4(color, 1.0);
 };
 )";
 
