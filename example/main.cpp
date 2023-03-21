@@ -2,10 +2,19 @@
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <glo/shader.h>
+#include <glo/texture.h>
 #include <glo/vao.h>
 #include <iostream>
 #include <stdio.h>
 #include <string_view>
+
+struct rgba
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
+};
 
 struct float2
 {
@@ -18,32 +27,42 @@ struct float3
 struct Vertex
 {
   float2 positon;
-  float3 rgb;
+  float2 uv;
 };
-static const struct Vertex vertices[3] = {
-  { { -0.6f, -0.4f }, { 1.f, 0.f, 0.f } },
-  { { 0.6f, -0.4f }, { 0.f, 1.f, 0.f } },
-  { { 0.f, 0.6f }, { 0.f, 0.f, 1.f } }
+auto s = 0.5f;
+/// CCW
+/// 3   2
+/// +---+
+/// |   |
+/// +---+
+/// 0   1
+static const struct Vertex vertices[] = {
+  { { -s, -s }, { 0.f, 1.f } },
+  { { s, -s }, { 1.f, 1.f } },
+  { { s, s }, { 1.f, 0.f } },
+  { { -s, s }, { 0.f, 0.f } },
 };
 
 static const char* vertex_shader_text = R"(#version 400
 uniform mat4 MVP;
-in vec3 vCol;
 in vec2 vPos;
-out vec3 color;
+in vec2 vUv;
+out vec2 uv;
 void main()
 {
     gl_Position = MVP * vec4(vPos, 0.0, 1.0);
-    color = vCol;
+    uv = vUv;
 };
 )";
 
 static const char* fragment_shader_text = R"(#version 400
-in vec3 color;
+in vec2 uv;
 out vec4 FragColor;
+uniform sampler2D colorTexture;
+
 void main()
 {
-    FragColor = vec4(color, 1.0);
+    FragColor = texture(colorTexture, uv);
 };
 )";
 
@@ -99,17 +118,14 @@ main(void)
     *glo::ShaderProgram::Create(vertex_shader_text, fragment_shader_text);
   auto mvp_location = *program->UniformLocation("MVP");
   auto vpos_location = *program->AttributeLocation("vPos");
-  auto vcol_location = *program->AttributeLocation("vCol");
+  auto vuv_location = *program->AttributeLocation("vUv");
 
+  static uint8_t indices[] = {
+    0, 1, 2, 2, 3, 0,
+  };
+  auto ibo = glo::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
   auto vbo = glo::Vbo::Create(sizeof(vertices), vertices);
   glo::VertexLayout layouts[] = {
-    {
-      .id = { "vCol", vcol_location },
-      .type = glo::ValueType::Float,
-      .count = 3,
-      .offset = offsetof(Vertex, rgb),
-      .stride = sizeof(Vertex),
-    },
     {
       .id = { "vPos", vpos_location },
       .type = glo::ValueType::Float,
@@ -117,18 +133,34 @@ main(void)
       .offset = offsetof(Vertex, positon),
       .stride = sizeof(Vertex),
     },
+    {
+      .id = { "vUv", vuv_location },
+      .type = glo::ValueType::Float,
+      .count = 2,
+      .offset = offsetof(Vertex, uv),
+      .stride = sizeof(Vertex),
+    },
   };
   glo::VertexSlot slots[] = {
-    {
-      .location = vcol_location,
-      .vbo = vbo,
-    },
     {
       .location = vpos_location,
       .vbo = vbo,
     },
+    {
+      .location = vuv_location,
+      .vbo = vbo,
+    },
   };
-  auto vao = glo::Vao::Create(layouts, slots);
+  auto vao = glo::Vao::Create(layouts, slots, ibo);
+
+  static rgba pixels[4] = {
+    { 255, 0, 0, 255 },
+    { 0, 255, 0, 255 },
+    { 0, 0, 255, 255 },
+    { 255, 255, 255, 255 },
+  };
+
+  auto texture = glo::Texture::Create(2, 2, &pixels[0].r);
 
   while (!glfwWindowShouldClose(window)) {
     // update
@@ -147,7 +179,8 @@ main(void)
     // draw
     program->Bind();
     program->SetUniformMatrix(mvp_location, mvp);
-    vao->Draw(GL_TRIANGLES, 3, 0);
+    texture->Bind(0);
+    vao->Draw(GL_TRIANGLES, 6, 0);
 
     // present
     glfwSwapBuffers(window);
