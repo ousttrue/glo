@@ -80,13 +80,33 @@ class ShaderProgram
 {
   uint32_t program_ = 0;
 
-  ShaderProgram(uint32_t program);
+  ShaderProgram(uint32_t program)
+    : program_(program)
+  {
+  }
 
 public:
-  ~ShaderProgram();
+  ~ShaderProgram() { glDeleteProgram(program_); }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
-    std::span<std::string_view> vs,
-    std::span<std::string_view> fs);
+    std::span<std::string_view> vs_srcs,
+    std::span<std::string_view> fs_srcs)
+  {
+    auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
+    if (!vs) {
+      return std::unexpected{ vs.error() };
+    }
+    auto fs = compile(GL_FRAGMENT_SHADER, fs_srcs);
+    if (!fs) {
+      return std::unexpected{ fs.error() };
+    }
+
+    auto program = link(*vs, *fs);
+    if (!program) {
+      return std::unexpected{ program.error() };
+    }
+
+    return std::shared_ptr<ShaderProgram>(new ShaderProgram(*program));
+  }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
     std::string_view vs,
     std::string_view fs)
@@ -95,13 +115,32 @@ public:
     std::string_view fss[] = { fs };
     return Create(vss, fss);
   }
-  void Bind();
-  void Unbind();
-  std::expected<uint32_t, std::string> AttributeLocation(const char* name);
-  std::expected<uint32_t, std::string> UniformLocation(const char* name);
+  void Bind() { glUseProgram(program_); }
+  void Unbind() { glUseProgram(0); }
+
+  std::expected<uint32_t, std::string> AttributeLocation(const char* name)
+  {
+    auto location = glGetAttribLocation(program_, name);
+    if (location < 0) {
+      return std::unexpected{ "glGetAttribLocation" };
+    }
+    return static_cast<uint32_t>(location);
+  }
+  std::expected<uint32_t, std::string> UniformLocation(const char* name)
+  {
+    auto location = glGetUniformLocation(program_, name);
+    if (location < 0) {
+      return std::unexpected{ "glGetUniformLocation" };
+    }
+    return static_cast<uint32_t>(location);
+  }
 
   // location
-  void _SetUniformMatrix(uint32_t location, const float m[16]);
+  void _SetUniformMatrix(uint32_t location, const float m[16])
+  {
+    glUniformMatrix4fv(location, 1, GL_FALSE, m);
+  }
+
   template<Mat4 T>
   void SetUniformMatrix(uint32_t location, const T& t)
   {
@@ -110,7 +149,16 @@ public:
 
   // name
   std::expected<void, std::string> _SetUniformMatrix(const char* name,
-                                                     const float m[16]);
+                                                     const float m[16])
+  {
+    auto location = glGetUniformLocation(program_, name);
+    if (location < 0) {
+      return std::unexpected{ "fail to glGetUniformLocation" };
+    }
+    glUniformMatrix4fv(location, 1, GL_FALSE, m);
+    return {};
+  }
+
   template<Mat4 T>
   std::expected<void, std::string> SetUniformMatrix(const char* name,
                                                     const T& t)
@@ -118,79 +166,5 @@ public:
     return _SetUniformMatrix(name, (float*)&t);
   }
 };
-ShaderProgram::ShaderProgram(uint32_t program)
-  : program_(program)
-{
-}
-
-ShaderProgram::~ShaderProgram() {}
-
-std::expected<std::shared_ptr<ShaderProgram>, std::string>
-ShaderProgram::Create(std::span<std::string_view> vs_srcs,
-                      std::span<std::string_view> fs_srcs)
-{
-  auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
-  if (!vs) {
-    return std::unexpected{ vs.error() };
-  }
-  auto fs = compile(GL_FRAGMENT_SHADER, fs_srcs);
-  if (!fs) {
-    return std::unexpected{ fs.error() };
-  }
-
-  auto program = link(*vs, *fs);
-  if (!program) {
-    return std::unexpected{ program.error() };
-  }
-
-  return std::shared_ptr<ShaderProgram>(new ShaderProgram(*program));
-}
-
-void
-ShaderProgram::Bind()
-{
-  glUseProgram(program_);
-}
-void
-ShaderProgram::Unbind()
-{
-  glUseProgram(0);
-}
-
-std::expected<uint32_t, std::string>
-ShaderProgram::AttributeLocation(const char* name)
-{
-  auto location = glGetAttribLocation(program_, name);
-  if (location < 0) {
-    return std::unexpected{ "glGetAttribLocation" };
-  }
-  return static_cast<uint32_t>(location);
-}
-
-std::expected<uint32_t, std::string>
-ShaderProgram::UniformLocation(const char* name)
-{
-  auto location = glGetUniformLocation(program_, name);
-  if (location < 0) {
-    return std::unexpected{ "glGetUniformLocation" };
-  }
-  return static_cast<uint32_t>(location);
-}
-
-void
-ShaderProgram::_SetUniformMatrix(uint32_t location, const float m[16])
-{
-  glUniformMatrix4fv(location, 1, GL_FALSE, m);
-}
-
-std::expected<void, std::string>
-ShaderProgram::_SetUniformMatrix(const char* name, const float m[16])
-{
-  auto location = glGetUniformLocation(program_, name);
-  if (location < 0) {
-    return std::unexpected{ "fail to glGetUniformLocation" };
-  }
-  glUniformMatrix4fv(location, 1, GL_FALSE, m);
-}
 
 }
