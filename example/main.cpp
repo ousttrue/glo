@@ -95,8 +95,8 @@ main(void)
   std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   glfwSwapInterval(1);
 
-  auto program = glo::ShaderProgram::Create(
-    printError, vertex_shader_text, fragment_shader_text);
+  auto program =
+    *glo::ShaderProgram::Create(vertex_shader_text, fragment_shader_text);
   auto mvp_location = *program->UniformLocation("MVP");
   auto vpos_location = *program->AttributeLocation("vPos");
   auto vcol_location = *program->AttributeLocation("vCol");
@@ -146,7 +146,7 @@ main(void)
 
     // draw
     program->Bind();
-    program->SetUniformMatrix(printError, mvp_location, mvp);
+    program->SetUniformMatrix(mvp_location, mvp);
     vao->Draw(GL_TRIANGLES, 3, 0);
 
     // present

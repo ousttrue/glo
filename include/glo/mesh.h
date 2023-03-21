@@ -1,4 +1,6 @@
 #pragma once
+#include <expected>
+#include <format>
 #include <string>
 #include <vector>
 
@@ -9,6 +11,17 @@ enum class ValueType
 {
   Float,
 };
+inline std::expected<uint32_t, std::string>
+GLType(ValueType type)
+{
+  switch (type) {
+    case ValueType::Float:
+      return GL_FLOAT;
+
+    default:
+      return std::unexpected{ std::format("unknown GLType: {}", (int)type) };
+  }
+}
 
 struct VertexId
 {
