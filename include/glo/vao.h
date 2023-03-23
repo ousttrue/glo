@@ -90,14 +90,13 @@ struct VertexSlot
   std::shared_ptr<Vbo> vbo;
 };
 
-class Vao
+struct Vao
 {
   uint32_t vao_ = 0;
   std::vector<VertexLayout> layouts_;
   std::vector<VertexSlot> slots_;
   std::shared_ptr<Ibo> ibo_;
 
-public:
   Vao(uint32_t vao,
       std::span<VertexLayout> layouts,
       std::span<VertexSlot> slots,
@@ -147,20 +146,21 @@ public:
   }
   void Bind() { glBindVertexArray(vao_); }
   void Unbind() { glBindVertexArray(0); }
-  void Draw(uint32_t mode, uint32_t count, uint32_t offset = 0)
+  void Draw(uint32_t mode, uint32_t count, uint32_t byteoffset = 0)
   {
     Bind();
     if (ibo_) {
-      glDrawElements(mode,
-                     count,
-                     ibo_->valuetype_,
-                     reinterpret_cast<void*>(static_cast<uint64_t>(offset)));
+      glDrawElements(
+        mode,
+        count,
+        ibo_->valuetype_,
+        reinterpret_cast<void*>(static_cast<uint64_t>(byteoffset)));
     } else {
-      glDrawArrays(mode, offset, count);
+      glDrawArrays(mode, byteoffset, count);
     }
     Unbind();
   }
-  void DrawInstance(uint32_t primcount, uint32_t count, uint32_t offset = 0)
+  void DrawInstance(uint32_t primcount, uint32_t count, uint32_t byteoffset = 0)
   {
     Bind();
     if (ibo_) {
@@ -168,7 +168,7 @@ public:
         GL_TRIANGLES,
         count,
         ibo_->valuetype_,
-        reinterpret_cast<void*>(static_cast<uint64_t>(offset)),
+        reinterpret_cast<void*>(static_cast<uint64_t>(byteoffset)),
         primcount);
     } else {
       throw std::runtime_error("not implemented");
