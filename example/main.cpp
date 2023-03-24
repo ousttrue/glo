@@ -1,6 +1,7 @@
 #include <gl/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
+#include <glo/fbo.h>
 #include <glo/shader.h>
 #include <glo/texture.h>
 #include <glo/vao.h>
@@ -162,6 +163,8 @@ main(void)
 
   auto texture = glo::Texture::Create(2, 2, &pixels[0].r);
 
+  std::shared_ptr<glo::Fbo> fbo;
+
   while (!glfwWindowShouldClose(window)) {
     // update
     glfwPollEvents();
@@ -172,15 +175,34 @@ main(void)
       0, 0, 0, 1, //
     };
     int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
-    glClear(GL_COLOR_BUFFER_BIT);
 
-    // draw
-    program->Bind();
-    program->SetUniformMatrix(mvp_location, mvp);
-    texture->Bind(0);
-    vao->Draw(GL_TRIANGLES, 6, 0);
+    // draw fbo
+    if (!fbo) {
+      fbo = glo::Fbo::Create(512, 512);
+    }
+    {
+      fbo->Bind();
+      glViewport(0, 0, 512, 512);
+      glClearColor(0, 0.2f, 0, 0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      program->Bind();
+      program->SetUniformMatrix(mvp_location, mvp);
+      texture->Bind(0);
+      vao->Draw(GL_TRIANGLES, 6, 0);
+      fbo->Unbind();
+    }
+
+    // draw backbuffer
+    {
+      glfwGetFramebufferSize(window, &width, &height);
+      glViewport(0, 0, width, height);
+      glClearColor(0, 0, 0, 0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      program->Bind();
+      program->SetUniformMatrix(mvp_location, mvp);
+      fbo->texture->Bind(0);
+      vao->Draw(GL_TRIANGLES, 6, 0);
+    }
 
     // present
     glfwSwapBuffers(window);

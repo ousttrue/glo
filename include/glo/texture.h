@@ -1,7 +1,9 @@
 #pragma once
 #include <memory>
+#include <stdint.h>
+
 namespace glo {
-class Texture
+struct Texture
 {
   uint32_t texture_;
   int width_ = 0;
@@ -14,7 +16,7 @@ class Texture
 public:
   static std::shared_ptr<Texture> Create(int width,
                                          int height,
-                                         const uint8_t* pixels)
+                                         const uint8_t* pixels = nullptr)
   {
     uint32_t texture;
     glGenTextures(1, &texture);
