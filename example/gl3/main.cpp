@@ -121,17 +121,17 @@ main(void)
   };
   auto ibo = glo::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
   auto vbo = glo::Vbo::Create(sizeof(vertices), vertices);
-  glo::VertexLayout layouts[] = {
+  grapho::VertexLayout layouts[] = {
     {
       .id = { "vPos", vpos_location },
-      .type = glo::ValueType::Float,
+      .type = grapho::ValueType::Float,
       .count = 2,
       .offset = offsetof(Vertex, positon),
       .stride = sizeof(Vertex),
     },
     {
       .id = { "vUv", vuv_location },
-      .type = glo::ValueType::Float,
+      .type = grapho::ValueType::Float,
       .count = 2,
       .offset = offsetof(Vertex, uv),
       .stride = sizeof(Vertex),

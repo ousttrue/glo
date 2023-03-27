@@ -1,5 +1,5 @@
 #pragma once
-#include "mesh.h"
+#include "../mesh.h"
 #include <assert.h>
 #include <memory>
 #include <span>
@@ -7,6 +7,18 @@
 #include <vector>
 
 namespace grapho::gl3 {
+
+inline std::expected<uint32_t, std::string>
+GLType(ValueType type)
+{
+  switch (type) {
+    case ValueType::Float:
+      return GL_FLOAT;
+
+    default:
+      return std::unexpected{ std::format("unknown GLType: {}", (int)type) };
+  }
+}
 
 template<typename T>
 concept ArrayType = std::is_array<T>::value == true;

@@ -4,24 +4,13 @@
 #include <string>
 #include <vector>
 
-namespace grapho::gl3 {
+namespace grapho {
 const int CUBE_INDEX_COUNT = 36;
 
 enum class ValueType
 {
   Float,
 };
-inline std::expected<uint32_t, std::string>
-GLType(ValueType type)
-{
-  switch (type) {
-    case ValueType::Float:
-      return GL_FLOAT;
-
-    default:
-      return std::unexpected{ std::format("unknown GLType: {}", (int)type) };
-  }
-}
 
 struct VertexId
 {
