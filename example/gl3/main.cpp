@@ -1,10 +1,10 @@
 #include <gl/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-#include <glo/fbo.h>
-#include <glo/shader.h>
-#include <glo/texture.h>
-#include <glo/vao.h>
+#include <grapho/gl3/fbo.h>
+#include <grapho/gl3/shader.h>
+#include <grapho/gl3/texture.h>
+#include <grapho/gl3/vao.h>
 #include <iostream>
 #include <stdio.h>
 #include <string_view>
@@ -80,15 +80,10 @@ key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
-static void
-printError(std::string_view msg)
-{
-  std::cout << msg << std::endl;
-}
-
 int
 main(void)
 {
+  namespace glo = grapho::gl3;
 
   glfwSetErrorCallback(error_callback);
 

@@ -1,7 +1,7 @@
 #pragma once
 #include "texture.h"
 
-namespace glo {
+namespace grapho::gl3 {
 
 struct Fbo
 {

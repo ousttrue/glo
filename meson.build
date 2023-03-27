@@ -1,9 +1,10 @@
-project('glo', 'cpp', default_options: ['cpp_std=c++latest'])
+project('grapho', 'cpp', default_options: ['cpp_std=c++latest'])
 
-glo_inc = include_directories('include')
-glo_dep = declare_dependency(
-    include_directories: glo_inc,
+grapho_inc = include_directories('include')
+grapho_dep = declare_dependency(
+    include_directories: grapho_inc,
 )
 
 glew_dep = dependency('glew')
-subdir('example')
+glfw_dep = dependency('glfw3', default_options: ['install=true'])
+subdir('example/gl3')

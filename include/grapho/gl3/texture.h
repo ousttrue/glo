@@ -2,7 +2,7 @@
 #include <memory>
 #include <stdint.h>
 
-namespace glo {
+namespace grapho::gl3 {
 struct Texture
 {
   uint32_t texture_;

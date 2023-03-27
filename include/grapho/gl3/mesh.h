@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace glo {
+namespace grapho::gl3 {
 const int CUBE_INDEX_COUNT = 36;
 
 enum class ValueType

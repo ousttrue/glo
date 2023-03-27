@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <string_view>
 
-namespace glo {
+namespace grapho::gl3 {
 
 inline std::expected<GLuint, std::string>
 compile(GLenum shaderType, std::span<std::string_view> srcs)

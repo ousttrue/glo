@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace glo {
+namespace grapho::gl3 {
 
 template<typename T>
 concept ArrayType = std::is_array<T>::value == true;
