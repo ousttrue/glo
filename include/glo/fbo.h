@@ -46,6 +46,22 @@ public:
   }
   void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, fbo_); }
   void Unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+  void Clear(const float color[4], float depth = 1.0f)
+  {
+    Bind();
+    glViewport(0, 0, texture->width_, texture->height_);
+    glScissor(0, 0, texture->width_, texture->height_);
+    glClearColor(
+      color[0] * color[3], color[1] * color[3], color[2] * color[3], color[3]);
+    if (depth_) {
+      glClearDepth(depth);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    } else {
+      glClear(GL_COLOR_BUFFER_BIT);
+    }
+    glDepthFunc(GL_LESS);
+  }
 };
 
 }
