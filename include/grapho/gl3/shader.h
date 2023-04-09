@@ -5,6 +5,7 @@
 #include <optional>
 #include <span>
 #include <stdint.h>
+#include <string>
 #include <string_view>
 
 namespace grapho::gl3 {

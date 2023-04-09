@@ -16,7 +16,7 @@ GLType(ValueType type)
       return GL_FLOAT;
 
     default:
-      return std::unexpected{ std::format("unknown GLType: {}", (int)type) };
+      return std::unexpected{ "unknown GLType" };
   }
 }
 
@@ -136,7 +136,7 @@ struct Vao
         layout.stride,
         reinterpret_cast<void*>(static_cast<uint64_t>(layout.offset)));
       if (layout.divisor) {
-        auto a = glVertexAttribDivisor;
+        // auto a = glVertexAttribDivisor;
         glVertexAttribDivisor(slot.location, layout.divisor);
       }
     }
