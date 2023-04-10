@@ -3,7 +3,11 @@
 GraphicsApi Object.
 Header only OpenGL3 / DX11 mini wrapper.
 
-using `c++23` std::expected for error handling.
+using `c++2b` std::expected for error handling.
+
+- msvc17
+- clang-16
+- gcc-12
 
 # namespace
 

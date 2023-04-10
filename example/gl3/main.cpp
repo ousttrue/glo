@@ -1,4 +1,4 @@
-#include <gl/glew.h>
+#include <GL/glew.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <grapho/gl3/fbo.h>
