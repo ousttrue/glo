@@ -5,6 +5,7 @@
 #include <span>
 #include <stdint.h>
 #include <vector>
+#include <stdexcept>
 
 namespace grapho::gl3 {
 
