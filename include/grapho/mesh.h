@@ -38,6 +38,23 @@ struct XYZ
   float x;
   float y;
   float z;
+
+  XYZ operator+(const XYZ& rhs) const
+  {
+    return {
+      x + rhs.x,
+      y + rhs.y,
+      z + rhs.z,
+    };
+  }
+  XYZ& operator+=(const XYZ& rhs)
+  {
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
+    return *this;
+  }
+  XYZ operator*(float s) const { return { x * s, y * s, z * s }; }
 };
 
 struct Vertex
