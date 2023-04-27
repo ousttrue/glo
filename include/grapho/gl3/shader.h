@@ -166,6 +166,28 @@ public:
   {
     return _SetUniformMatrix(name, (float*)&t);
   }
+
+  std::expected<void, std::string> SetUniformValue(const char* name,
+                                                   const float value)
+  {
+    auto location = glGetUniformLocation(program_, name);
+    if (location < 0) {
+      return std::unexpected{ "fail to glGetUniformLocation" };
+    }
+    glUniform1f(location, value);
+    return {};
+  }
+
+  std::expected<void, std::string> SetUniformValue4(const char* name,
+                                                    const float value[4])
+  {
+    auto location = glGetUniformLocation(program_, name);
+    if (location < 0) {
+      return std::unexpected{ "fail to glGetUniformLocation" };
+    }
+    glUniform4f(location, value[0], value[1], value[2], value[3]);
+    return {};
+  }
 };
 
 }

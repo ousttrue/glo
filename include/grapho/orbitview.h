@@ -7,8 +7,6 @@ namespace grapho {
 class OrbitView
 {
   float fovY_ = DirectX::XMConvertToRadians(30.0f);
-  int width_ = 1;
-  int height_ = 1;
   float nearZ_ = 0.01f;
   float farZ_ = 1000.0f;
 
@@ -17,6 +15,8 @@ class OrbitView
   float shift_[3] = { 0, -0.8f, -5 };
 
 public:
+  int width_ = 1;
+  int height_ = 1;
   OrbitView() {}
 
   void SetSize(int w, int h)
