@@ -38,22 +38,5 @@ CompileShader(std::string_view src, const char* entry, const char* target)
   return vs_blob_ptr;
 }
 
-inline DXGI_FORMAT
-DxgiFormat(const grapho::VertexLayout& layout)
-{
-  switch (layout.type) {
-    case grapho::ValueType::Float:
-      switch (layout.count) {
-        case 2:
-          return DXGI_FORMAT_R32G32_FLOAT;
-        case 3:
-          return DXGI_FORMAT_R32G32B32_FLOAT;
-        case 4:
-          return DXGI_FORMAT_R32G32B32A32_FLOAT;
-      }
-  }
-  throw std::invalid_argument("not implemented");
-}
-
 }
 } // namespace cuber

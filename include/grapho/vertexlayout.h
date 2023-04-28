@@ -14,6 +14,7 @@ struct VertexId
 {
   std::string semantic_name;
   uint32_t semantic_index;
+  uint32_t slot;
 };
 
 struct VertexLayout

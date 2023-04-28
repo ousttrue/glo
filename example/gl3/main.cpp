@@ -43,6 +43,16 @@ static const struct Vertex vertices[] = {
   { { s, s }, { 1.f, 0.f } },
   { { -s, s }, { 0.f, 0.f } },
 };
+static uint8_t indices[] = {
+  0, 1, 2, //
+  2, 3, 0, //
+};
+static rgba pixels[4] = {
+  { 255, 0, 0, 255 },
+  { 0, 255, 0, 255 },
+  { 0, 0, 255, 255 },
+  { 255, 255, 255, 255 },
+};
 
 static const char* vertex_shader_text = R"(#version 400
 uniform mat4 MVP;
@@ -110,17 +120,15 @@ main(void)
   std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   glfwSwapInterval(1);
 
-  auto program =
-    *glo::ShaderProgram::Create(vertex_shader_text, fragment_shader_text);
+  auto program = *grapho::gl3::ShaderProgram::Create(vertex_shader_text,
+                                                     fragment_shader_text);
   auto mvp_location = *program->UniformLocation("MVP");
   auto vpos_location = *program->AttributeLocation("vPos");
   auto vuv_location = *program->AttributeLocation("vUv");
 
-  static uint8_t indices[] = {
-    0, 1, 2, 2, 3, 0,
-  };
-  auto ibo = glo::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
-  auto vbo = glo::Vbo::Create(sizeof(vertices), vertices);
+  auto ibo =
+    grapho::gl3::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
+  auto vbo = grapho::gl3::Vbo::Create(sizeof(vertices), vertices);
   grapho::VertexLayout layouts[] = {
     {
       .id = { "vPos", vpos_location },
@@ -137,7 +145,7 @@ main(void)
       .stride = sizeof(Vertex),
     },
   };
-  glo::VertexSlot slots[] = {
+  grapho::gl3::VertexSlot slots[] = {
     {
       .location = vpos_location,
       .vbo = vbo,
@@ -147,17 +155,11 @@ main(void)
       .vbo = vbo,
     },
   };
-  auto vao = glo::Vao::Create(layouts, slots, ibo);
+  auto vao = grapho::gl3::Vao::Create(layouts, slots, ibo);
 
-  static rgba pixels[4] = {
-    { 255, 0, 0, 255 },
-    { 0, 255, 0, 255 },
-    { 0, 0, 255, 255 },
-    { 255, 255, 255, 255 },
-  };
-  auto texture = glo::Texture::Create(2, 2, &pixels[0].r);
+  auto texture = grapho::gl3::Texture::Create(2, 2, &pixels[0].r);
 
-  std::shared_ptr<glo::Fbo> fbo;
+  std::shared_ptr<grapho::gl3::Fbo> fbo;
 
   while (!glfwWindowShouldClose(window)) {
     // update
@@ -172,7 +174,7 @@ main(void)
 
     // draw fbo
     if (!fbo) {
-      fbo = glo::Fbo::Create(512, 512);
+      fbo = grapho::gl3::Fbo::Create(512, 512);
     }
     {
       fbo->Bind();

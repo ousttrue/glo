@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <grapho/dx11/device.h>
+#include <grapho/dx11/drawable.h>
 #include <grapho/dx11/shader.h>
 #include <iostream>
 #include <stdint.h>
@@ -46,6 +47,12 @@ static const struct Vertex vertices[] = {
 static const uint32_t indices[] = {
   0, 1, 2, //
   2, 3, 0, //
+};
+static rgba pixels[4] = {
+  { 255, 0, 0, 255 },
+  { 0, 255, 0, 255 },
+  { 0, 0, 255, 255 },
+  { 255, 255, 255, 255 },
 };
 
 static const char* shader_text = R"(
@@ -177,34 +184,6 @@ WinMain(HINSTANCE hInstance,
                                  ps.put());
   assert(SUCCEEDED(hr));
 
-  D3D11_INPUT_ELEMENT_DESC inputElementDesc[]{
-    {
-      .SemanticName = "POSITION",
-      .SemanticIndex = 0,
-      .Format = DXGI_FORMAT_R32G32_FLOAT,
-      .InputSlot = 0,
-      .AlignedByteOffset = 0,
-      .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-      .InstanceDataStepRate = 0,
-    },
-    {
-      .SemanticName = "TEXCOORD",
-      .SemanticIndex = 0,
-      .Format = DXGI_FORMAT_R32G32_FLOAT,
-      .InputSlot = 0,
-      .AlignedByteOffset = 0,
-      .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
-      .InstanceDataStepRate = 0,
-    },
-  };
-  winrt::com_ptr<ID3D11InputLayout> input_layout;
-  hr = device->CreateInputLayout(inputElementDesc,
-                                 std::size(inputElementDesc),
-                                 (*vs_compiled)->GetBufferPointer(),
-                                 (*vs_compiled)->GetBufferSize(),
-                                 input_layout.put());
-  assert(SUCCEEDED(hr));
-
   winrt::com_ptr<ID3D11Buffer> vertex_buffer;
   {
     D3D11_BUFFER_DESC vertex_buff_desc = {
@@ -233,6 +212,31 @@ WinMain(HINSTANCE hInstance,
     assert(SUCCEEDED(hr));
   }
 
+  grapho::VertexLayout layouts[] = {
+    {
+      .id = { "POSITION", 0, 0 },
+      .type = grapho::ValueType::Float,
+      .count = 2,
+      .offset = offsetof(Vertex, positon),
+      .stride = sizeof(Vertex),
+    },
+    {
+      .id = { "TEXCOORD", 0, 0 },
+      .type = grapho::ValueType::Float,
+      .count = 2,
+      .offset = offsetof(Vertex, uv),
+      .stride = sizeof(Vertex),
+    },
+  };
+  grapho::dx11::VertexSlot slots[] = {
+    {
+      .vertex_buffer = vertex_buffer,
+      .stride = sizeof(Vertex),
+    },
+  };
+  auto drawable = grapho::dx11::Drawable::Create(
+    device, *vs_compiled, layouts, slots, index_buffer);
+
   winrt::com_ptr<ID3D11RasterizerState> rs;
   {
     D3D11_RASTERIZER_DESC rs_desc = {
@@ -260,12 +264,6 @@ WinMain(HINSTANCE hInstance,
       .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
       .SampleDesc{ .Count = 1 },
       .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-    };
-    static rgba pixels[4] = {
-      { 255, 0, 0, 255 },
-      { 0, 255, 0, 255 },
-      { 0, 0, 255, 255 },
-      { 255, 255, 255, 255 },
     };
     D3D11_SUBRESOURCE_DATA initData{
       .pSysMem = pixels,
@@ -337,19 +335,10 @@ WinMain(HINSTANCE hInstance,
     context->RSSetViewports(1, &viewport);
 
     {
-      context->RSSetState(rs.get());
       context->VSSetShader(vs.get(), NULL, 0);
       context->PSSetShader(ps.get(), NULL, 0);
-      context->IASetInputLayout(input_layout.get());
-      ID3D11Buffer* vb[] = {
-        vertex_buffer.get(),
-      };
-      uint32_t strides[] = {
-        sizeof(Vertex),
-      };
-      uint32_t offsets[] = {
-        0,
-      };
+
+      context->RSSetState(rs.get());
       ID3D11ShaderResourceView* srvs[] = {
         srv.get(),
       };
@@ -358,10 +347,7 @@ WinMain(HINSTANCE hInstance,
         sampler.get(),
       };
       context->PSSetSamplers(0, std::size(samplers), samplers);
-      context->IASetVertexBuffers(0, std::size(vb), vb, strides, offsets);
-      context->IASetIndexBuffer(index_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
-      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-      context->DrawIndexed(std::size(indices), 0, 0);
+      drawable->Draw(context, std::size(indices));
     }
 
     swapchain->Present(1, 0);
