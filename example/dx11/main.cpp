@@ -159,31 +159,12 @@ WinMain(HINSTANCE hInstance,
     return 4;
   }
 
-  auto vs_compiled =
-    grapho::dx11::CompileShader(shader_text, "vs_main", "vs_5_0");
-  if (!vs_compiled) {
-    std::cout << vs_compiled.error() << std::endl;
+  auto [shader, vs_compiled, error] = grapho::dx11::Shader::Create(
+    device, shader_text, "vs_main", "vs_5_0", shader_text, "ps_main", "ps_5_0");
+  if (!shader) {
+    std::cout << error << std::endl;
     return 5;
   }
-  winrt::com_ptr<ID3D11VertexShader> vs;
-  auto hr = device->CreateVertexShader((*vs_compiled)->GetBufferPointer(),
-                                       (*vs_compiled)->GetBufferSize(),
-                                       NULL,
-                                       vs.put());
-  assert(SUCCEEDED(hr));
-
-  auto ps_compiled =
-    grapho::dx11::CompileShader(shader_text, "ps_main", "ps_5_0");
-  if (!ps_compiled) {
-    std::cout << ps_compiled.error() << std::endl;
-    return 6;
-  }
-  winrt::com_ptr<ID3D11PixelShader> ps;
-  hr = device->CreatePixelShader((*ps_compiled)->GetBufferPointer(),
-                                 (*ps_compiled)->GetBufferSize(),
-                                 NULL,
-                                 ps.put());
-  assert(SUCCEEDED(hr));
 
   winrt::com_ptr<ID3D11Buffer> vertex_buffer;
   {
@@ -195,7 +176,8 @@ WinMain(HINSTANCE hInstance,
     D3D11_SUBRESOURCE_DATA sr_data = {
       .pSysMem = vertices,
     };
-    hr = device->CreateBuffer(&vertex_buff_desc, &sr_data, vertex_buffer.put());
+    auto hr =
+      device->CreateBuffer(&vertex_buff_desc, &sr_data, vertex_buffer.put());
     assert(SUCCEEDED(hr));
   }
 
@@ -209,7 +191,8 @@ WinMain(HINSTANCE hInstance,
     D3D11_SUBRESOURCE_DATA sr_data = {
       .pSysMem = indices,
     };
-    hr = device->CreateBuffer(&index_buff_desc, &sr_data, index_buffer.put());
+    auto hr =
+      device->CreateBuffer(&index_buff_desc, &sr_data, index_buffer.put());
     assert(SUCCEEDED(hr));
   }
 
@@ -236,7 +219,7 @@ WinMain(HINSTANCE hInstance,
     },
   };
   auto drawable = grapho::dx11::Drawable::Create(
-    device, *vs_compiled, layouts, slots, index_buffer);
+    device, vs_compiled, layouts, slots, index_buffer);
 
   winrt::com_ptr<ID3D11RasterizerState> rs;
   {
@@ -247,7 +230,7 @@ WinMain(HINSTANCE hInstance,
       .ScissorEnable = false,
       .MultisampleEnable = false,
     };
-    hr = device->CreateRasterizerState(&rs_desc, rs.put());
+    auto hr = device->CreateRasterizerState(&rs_desc, rs.put());
     if (FAILED(hr)) {
       return 7;
     }
@@ -279,7 +262,8 @@ WinMain(HINSTANCE hInstance,
   float clear_color[4]{ 0.2f, 0.2f, 0.2f, 0 };
   while (processMessage()) {
     winrt::com_ptr<ID3D11RenderTargetView> rtv;
-    hr = device->CreateRenderTargetView(pBackBuffer.get(), NULL, rtv.put());
+    auto hr =
+      device->CreateRenderTargetView(pBackBuffer.get(), NULL, rtv.put());
     assert(SUCCEEDED(hr));
     context->ClearRenderTargetView(rtv.get(), clear_color);
 
@@ -291,16 +275,10 @@ WinMain(HINSTANCE hInstance,
     D3D11_VIEWPORT viewport = { 0.0f, 0.0f, WIDTH, HEIGHT, 0.0f, 1.0f };
     context->RSSetViewports(1, &viewport);
 
-    {
-      context->VSSetShader(vs.get(), NULL, 0);
-      context->PSSetShader(ps.get(), NULL, 0);
-
-      context->RSSetState(rs.get());
-
-      texture->Bind(context);
-
-      drawable->Draw(context, std::size(indices));
-    }
+    shader->Bind(context);
+    context->RSSetState(rs.get());
+    texture->Bind(context);
+    drawable->Draw(context, std::size(indices));
 
     swapchain->Present(1, 0);
   }

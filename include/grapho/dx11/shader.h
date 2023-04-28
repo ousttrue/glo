@@ -38,5 +38,60 @@ CompileShader(std::string_view src, const char* entry, const char* target)
   return vs_blob_ptr;
 }
 
+struct Shader
+{
+  winrt::com_ptr<ID3D11VertexShader> VS;
+  winrt::com_ptr<ID3D11PixelShader> PS;
+
+  static std::
+    tuple<std::shared_ptr<Shader>, winrt::com_ptr<ID3DBlob>, std::string>
+    Create(const winrt::com_ptr<ID3D11Device>& device,
+           std::string_view vs_src,
+           const char* vs_entry,
+           const char* vs_version,
+           std::string_view ps_src,
+           const char* ps_entry,
+           const char* ps_version)
+  {
+    auto ptr = std::make_shared<Shader>();
+
+    auto vs_compiled =
+      grapho::dx11::CompileShader(vs_src, vs_entry, vs_version);
+    if (!vs_compiled) {
+      // std::cout << vs_compiled.error() << std::endl;
+      return { {}, {}, vs_compiled.error() };
+    }
+    auto hr = device->CreateVertexShader((*vs_compiled)->GetBufferPointer(),
+                                         (*vs_compiled)->GetBufferSize(),
+                                         NULL,
+                                         ptr->VS.put());
+    if (FAILED(hr)) {
+      return { {}, {}, "CreateVertexShader" };
+    }
+
+    auto ps_compiled =
+      grapho::dx11::CompileShader(ps_src, ps_entry, ps_version);
+    if (!ps_compiled) {
+      // std::cout << ps_compiled.error() << std::endl;
+      return { {}, {}, ps_compiled.error() };
+    }
+    hr = device->CreatePixelShader((*ps_compiled)->GetBufferPointer(),
+                                   (*ps_compiled)->GetBufferSize(),
+                                   NULL,
+                                   ptr->PS.put());
+    if (FAILED(hr)) {
+      return { {}, {}, "CreatePixelShader" };
+    }
+
+    return { ptr, *vs_compiled, {} };
+  }
+
+  void Bind(const winrt::com_ptr<ID3D11DeviceContext>& context)
+  {
+    context->VSSetShader(VS.get(), NULL, 0);
+    context->PSSetShader(PS.get(), NULL, 0);
+  }
+};
+
 }
 } // namespace cuber
