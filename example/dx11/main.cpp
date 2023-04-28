@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <grapho/dx11/device.h>
 
 const auto CLASS_NAME = "dx11class";
 const auto WINDOW_NAME = "dx11window";
@@ -71,6 +72,16 @@ WinMain(HINSTANCE hInstance,
   }
   ShowWindow(hWnd, SW_SHOW);
 
+  auto device = grapho::dx11::CreateDevice();
+  if (!device) {
+    return 3;
+  }
+
+  auto swapchain = grapho::dx11::CreateSwapchain(device, hWnd);
+  if (!swapchain) {
+    return 4;
+  }
+
   auto processMessage = []() {
     MSG msg = {};
     while (true) {
@@ -88,6 +99,7 @@ WinMain(HINSTANCE hInstance,
   };
 
   while (processMessage()) {
+    swapchain->Present(1, 0);
   }
 
   return 0;
