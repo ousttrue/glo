@@ -233,17 +233,71 @@ WinMain(HINSTANCE hInstance,
     assert(SUCCEEDED(hr));
   }
 
-  D3D11_RASTERIZER_DESC desc = {
-    .FillMode = D3D11_FILL_SOLID,
-    .CullMode = D3D11_CULL_BACK,
-    .FrontCounterClockwise = true,
-    .ScissorEnable = false,
-    .MultisampleEnable = false,
-  };
   winrt::com_ptr<ID3D11RasterizerState> rs;
-  hr = device->CreateRasterizerState(&desc, rs.put());
-  if (FAILED(hr)) {
-    return 7;
+  {
+    D3D11_RASTERIZER_DESC rs_desc = {
+      .FillMode = D3D11_FILL_SOLID,
+      .CullMode = D3D11_CULL_BACK,
+      .FrontCounterClockwise = true,
+      .ScissorEnable = false,
+      .MultisampleEnable = false,
+    };
+    hr = device->CreateRasterizerState(&rs_desc, rs.put());
+    if (FAILED(hr)) {
+      return 7;
+    }
+  }
+
+  winrt::com_ptr<ID3D11Texture2D> texture;
+  winrt::com_ptr<ID3D11ShaderResourceView> srv;
+  winrt::com_ptr<ID3D11SamplerState> sampler;
+  {
+    D3D11_TEXTURE2D_DESC desc = {
+      .Width = 2,
+      .Height = 2,
+      .MipLevels = 1,
+      .ArraySize = 1,
+      .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
+      .SampleDesc{ .Count = 1 },
+      .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    };
+    static rgba pixels[4] = {
+      { 255, 0, 0, 255 },
+      { 0, 255, 0, 255 },
+      { 0, 0, 255, 255 },
+      { 255, 255, 255, 255 },
+    };
+    D3D11_SUBRESOURCE_DATA initData{
+      .pSysMem = pixels,
+      .SysMemPitch = 8,
+      .SysMemSlicePitch = 16,
+    };
+    hr = device->CreateTexture2D(&desc, &initData, texture.put());
+    if (FAILED(hr)) {
+      return 8;
+    }
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc = {
+      .Format = desc.Format,
+      .ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D,
+      .Texture2D{
+        .MostDetailedMip = 0,
+        .MipLevels = desc.MipLevels,
+      },
+    };
+    hr = device->CreateShaderResourceView(texture.get(), &viewDesc, srv.put());
+    if (FAILED(hr)) {
+      return 9;
+    }
+    D3D11_SAMPLER_DESC sampler_desc = {
+      .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
+      .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
+      .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
+      .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+    };
+    auto hr = device->CreateSamplerState(&sampler_desc, sampler.put());
+    if (FAILED(hr)) {
+      return 10;
+    }
   }
 
   auto processMessage = []() {
@@ -296,6 +350,14 @@ WinMain(HINSTANCE hInstance,
       uint32_t offsets[] = {
         0,
       };
+      ID3D11ShaderResourceView* srvs[] = {
+        srv.get(),
+      };
+      context->PSSetShaderResources(0, std::size(srvs), srvs);
+      ID3D11SamplerState* samplers[] = {
+        sampler.get(),
+      };
+      context->PSSetSamplers(0, std::size(samplers), samplers);
       context->IASetVertexBuffers(0, std::size(vb), vb, strides, offsets);
       context->IASetIndexBuffer(index_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
       context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
