@@ -155,7 +155,6 @@ main(void)
     { 0, 0, 255, 255 },
     { 255, 255, 255, 255 },
   };
-
   auto texture = glo::Texture::Create(2, 2, &pixels[0].r);
 
   std::shared_ptr<glo::Fbo> fbo;

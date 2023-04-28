@@ -1,10 +1,69 @@
 #include <Windows.h>
 #include <grapho/dx11/device.h>
+#include <stdint.h>
 
 const auto CLASS_NAME = "dx11class";
 const auto WINDOW_NAME = "dx11window";
 const auto WIDTH = 640;
 const auto HEIGHT = 480;
+
+struct rgba
+{
+  uint8_t r;
+  uint8_t g;
+  uint8_t b;
+  uint8_t a;
+};
+
+struct float2
+{
+  float x, y;
+};
+struct float3
+{
+  float x, y, z;
+};
+struct Vertex
+{
+  float2 positon;
+  float2 uv;
+};
+auto s = 0.5f;
+/// CCW
+/// 3   2
+/// +---+
+/// |   |
+/// +---+
+/// 0   1
+static const struct Vertex vertices[] = {
+  { { -s, -s }, { 0.f, 1.f } },
+  { { s, -s }, { 1.f, 1.f } },
+  { { s, s }, { 1.f, 0.f } },
+  { { -s, s }, { 0.f, 0.f } },
+};
+
+static const char* vertex_shader_text = R"(#version 400
+uniform mat4 MVP;
+in vec2 vPos;
+in vec2 vUv;
+out vec2 uv;
+void main()
+{
+    gl_Position = MVP * vec4(vPos, 0.0, 1.0);
+    uv = vUv;
+};
+)";
+
+static const char* fragment_shader_text = R"(#version 400
+in vec2 uv;
+out vec4 FragColor;
+uniform sampler2D colorTexture;
+
+void main()
+{
+    FragColor = texture(colorTexture, uv);
+};
+)";
 
 static LRESULT CALLBACK
 WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
