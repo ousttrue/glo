@@ -1,5 +1,7 @@
 #include <Windows.h>
 #include <grapho/dx11/device.h>
+#include <grapho/dx11/shader.h>
+#include <iostream>
 #include <stdint.h>
 
 const auto CLASS_NAME = "dx11class";
@@ -41,28 +43,36 @@ static const struct Vertex vertices[] = {
   { { s, s }, { 1.f, 0.f } },
   { { -s, s }, { 0.f, 0.f } },
 };
-
-static const char* vertex_shader_text = R"(#version 400
-uniform mat4 MVP;
-in vec2 vPos;
-in vec2 vUv;
-out vec2 uv;
-void main()
-{
-    gl_Position = MVP * vec4(vPos, 0.0, 1.0);
-    uv = vUv;
+static const uint32_t indices[] = {
+  0, 1, 2, //
+  2, 3, 0, //
 };
-)";
 
-static const char* fragment_shader_text = R"(#version 400
-in vec2 uv;
-out vec4 FragColor;
-uniform sampler2D colorTexture;
-
-void main()
-{
-    FragColor = texture(colorTexture, uv);
+static const char* shader_text = R"(
+#pragma pack_matrix(row_major)
+struct vs_in {
+    float2 pos: POSITION;
+    float2 uv: TEXCOORD;
 };
+struct vs_out {
+    float4 position_clip: SV_POSITION;
+    float2 uv: TEXCOORD;
+};
+
+vs_out vs_main(vs_in IN) {
+  vs_out OUT = (vs_out)0; // zero the memory first
+  OUT.position_clip = float4(IN.pos.xy, 0, 1);
+  OUT.uv = IN.uv;
+  return OUT;
+}
+
+Texture2D colorTexture;
+SamplerState colorSampler;
+
+float4 ps_main(vs_out IN) : SV_TARGET {
+  float4 texel = colorTexture.Sample(colorSampler, IN.uv);
+  return texel;
+}
 )";
 
 static LRESULT CALLBACK
@@ -141,6 +151,101 @@ WinMain(HINSTANCE hInstance,
     return 4;
   }
 
+  auto vs_compiled =
+    grapho::dx11::CompileShader(shader_text, "vs_main", "vs_5_0");
+  if (!vs_compiled) {
+    std::cout << vs_compiled.error() << std::endl;
+    return 5;
+  }
+  winrt::com_ptr<ID3D11VertexShader> vs;
+  auto hr = device->CreateVertexShader((*vs_compiled)->GetBufferPointer(),
+                                       (*vs_compiled)->GetBufferSize(),
+                                       NULL,
+                                       vs.put());
+  assert(SUCCEEDED(hr));
+
+  auto ps_compiled =
+    grapho::dx11::CompileShader(shader_text, "ps_main", "ps_5_0");
+  if (!ps_compiled) {
+    std::cout << ps_compiled.error() << std::endl;
+    return 6;
+  }
+  winrt::com_ptr<ID3D11PixelShader> ps;
+  hr = device->CreatePixelShader((*ps_compiled)->GetBufferPointer(),
+                                 (*ps_compiled)->GetBufferSize(),
+                                 NULL,
+                                 ps.put());
+  assert(SUCCEEDED(hr));
+
+  D3D11_INPUT_ELEMENT_DESC inputElementDesc[]{
+    {
+      .SemanticName = "POSITION",
+      .SemanticIndex = 0,
+      .Format = DXGI_FORMAT_R32G32_FLOAT,
+      .InputSlot = 0,
+      .AlignedByteOffset = 0,
+      .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+      .InstanceDataStepRate = 0,
+    },
+    {
+      .SemanticName = "TEXCOORD",
+      .SemanticIndex = 0,
+      .Format = DXGI_FORMAT_R32G32_FLOAT,
+      .InputSlot = 0,
+      .AlignedByteOffset = 0,
+      .InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA,
+      .InstanceDataStepRate = 0,
+    },
+  };
+  winrt::com_ptr<ID3D11InputLayout> input_layout;
+  hr = device->CreateInputLayout(inputElementDesc,
+                                 std::size(inputElementDesc),
+                                 (*vs_compiled)->GetBufferPointer(),
+                                 (*vs_compiled)->GetBufferSize(),
+                                 input_layout.put());
+  assert(SUCCEEDED(hr));
+
+  winrt::com_ptr<ID3D11Buffer> vertex_buffer;
+  {
+    D3D11_BUFFER_DESC vertex_buff_desc = {
+      .ByteWidth = static_cast<uint32_t>(sizeof(vertices)),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_VERTEX_BUFFER,
+    };
+    D3D11_SUBRESOURCE_DATA sr_data = {
+      .pSysMem = vertices,
+    };
+    hr = device->CreateBuffer(&vertex_buff_desc, &sr_data, vertex_buffer.put());
+    assert(SUCCEEDED(hr));
+  }
+
+  winrt::com_ptr<ID3D11Buffer> index_buffer;
+  {
+    D3D11_BUFFER_DESC index_buff_desc = {
+      .ByteWidth = static_cast<uint32_t>(sizeof(indices)),
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = D3D11_BIND_INDEX_BUFFER,
+    };
+    D3D11_SUBRESOURCE_DATA sr_data = {
+      .pSysMem = indices,
+    };
+    hr = device->CreateBuffer(&index_buff_desc, &sr_data, index_buffer.put());
+    assert(SUCCEEDED(hr));
+  }
+
+  D3D11_RASTERIZER_DESC desc = {
+    .FillMode = D3D11_FILL_SOLID,
+    .CullMode = D3D11_CULL_BACK,
+    .FrontCounterClockwise = true,
+    .ScissorEnable = false,
+    .MultisampleEnable = false,
+  };
+  winrt::com_ptr<ID3D11RasterizerState> rs;
+  hr = device->CreateRasterizerState(&desc, rs.put());
+  if (FAILED(hr)) {
+    return 7;
+  }
+
   auto processMessage = []() {
     MSG msg = {};
     while (true) {
@@ -157,7 +262,46 @@ WinMain(HINSTANCE hInstance,
     return true;
   };
 
+  winrt::com_ptr<ID3D11Texture2D> pBackBuffer;
+  swapchain->GetBuffer(0, IID_PPV_ARGS(pBackBuffer.put()));
+
+  winrt::com_ptr<ID3D11DeviceContext> context;
+  device->GetImmediateContext(context.put());
+  float clear_color[4]{ 0.2f, 0.2f, 0.2f, 0 };
   while (processMessage()) {
+    winrt::com_ptr<ID3D11RenderTargetView> rtv;
+    hr = device->CreateRenderTargetView(pBackBuffer.get(), NULL, rtv.put());
+    assert(SUCCEEDED(hr));
+    context->ClearRenderTargetView(rtv.get(), clear_color);
+
+    // pipeline
+    ID3D11RenderTargetView* rtv_list[] = {
+      rtv.get(),
+    };
+    context->OMSetRenderTargets(1, rtv_list, nullptr);
+    D3D11_VIEWPORT viewport = { 0.0f, 0.0f, WIDTH, HEIGHT, 0.0f, 1.0f };
+    context->RSSetViewports(1, &viewport);
+
+    {
+      context->RSSetState(rs.get());
+      context->VSSetShader(vs.get(), NULL, 0);
+      context->PSSetShader(ps.get(), NULL, 0);
+      context->IASetInputLayout(input_layout.get());
+      ID3D11Buffer* vb[] = {
+        vertex_buffer.get(),
+      };
+      uint32_t strides[] = {
+        sizeof(Vertex),
+      };
+      uint32_t offsets[] = {
+        0,
+      };
+      context->IASetVertexBuffers(0, std::size(vb), vb, strides, offsets);
+      context->IASetIndexBuffer(index_buffer.get(), DXGI_FORMAT_R32_UINT, 0);
+      context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+      context->DrawIndexed(std::size(indices), 0, 0);
+    }
+
     swapchain->Present(1, 0);
   }
 

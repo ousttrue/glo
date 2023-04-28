@@ -1,13 +1,15 @@
 #pragma once
-#include <cuber/mesh.h>
+#include "../vertexlayout.h"
 #include <d3dcompiler.h>
 #include <dxgi.h>
+#include <expected>
 #include <string_view>
 #include <winrt/base.h>
 
-namespace cuber::dx11 {
+namespace grapho {
+namespace dx11 {
 
-inline winrt::com_ptr<ID3DBlob>
+inline std::expected<winrt::com_ptr<ID3DBlob>, std::string>
 CompileShader(std::string_view src, const char* entry, const char* target)
 {
   UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -29,9 +31,9 @@ CompileShader(std::string_view src, const char* entry, const char* target)
                        error_blob.put());
   if (FAILED(hr)) {
     if (error_blob) {
-      OutputDebugStringA((char*)error_blob->GetBufferPointer());
+      return std::unexpected{ (const char*)error_blob->GetBufferPointer() };
     }
-    return {};
+    return std::unexpected{ "D3DCompile" };
   }
   return vs_blob_ptr;
 }
@@ -53,4 +55,5 @@ DxgiFormat(const grapho::VertexLayout& layout)
   throw std::invalid_argument("not implemented");
 }
 
+}
 } // namespace cuber
