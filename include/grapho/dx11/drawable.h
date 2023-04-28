@@ -44,7 +44,6 @@ struct Drawable
     std::span<const VertexSlot> slots,
     const winrt::com_ptr<ID3D11Buffer>& index_buffer = {})
   {
-    assert(layouts.size() == slots.size());
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDesc;
     for (size_t i = 0; i < layouts.size(); ++i) {
       auto& layout = layouts[i];
