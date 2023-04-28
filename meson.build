@@ -15,4 +15,5 @@ if get_option('example')
         default_options: ['default_library=static'],
     )
     subdir('example/gl3')
+    subdir('example/dx11')
 endif

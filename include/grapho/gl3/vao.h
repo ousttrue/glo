@@ -1,5 +1,5 @@
 #pragma once
-#include "../mesh.h"
+#include "../vertexlayout.h"
 #include <assert.h>
 #include <memory>
 #include <span>
