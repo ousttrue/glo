@@ -163,8 +163,8 @@ main(void)
     {
       .Id = { 
         .AttributeLocation=*vpos_location, 
-        .SemanticName="vPos", 
         .Slot=0,
+        .SemanticName="vPos", 
       },
       .Type = grapho::ValueType::Float,
       .Count = 2,
@@ -174,8 +174,8 @@ main(void)
       {
       .Id = { 
         .AttributeLocation=*vuv_location,
-        .SemanticName="vUv", 
         .Slot=0,
+        .SemanticName="vUv", 
       },
       .Type = grapho::ValueType::Float,
       .Count = 2,

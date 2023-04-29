@@ -13,9 +13,9 @@ enum class ValueType
 struct VertexId
 {
   uint32_t AttributeLocation;
+  uint32_t Slot;
   std::string SemanticName;
   uint32_t SemanticIndex;
-  uint32_t Slot;
 };
 
 struct VertexLayout

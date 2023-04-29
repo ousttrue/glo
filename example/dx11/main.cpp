@@ -196,9 +196,9 @@ WinMain(HINSTANCE hInstance,
   grapho::VertexLayout layouts[] = {
     {
       .Id = { 
+        .Slot = 0, 
         .SemanticName = "POSITION", 
         .SemanticIndex = 0, 
-        .Slot = 0, 
       },
       .Type = grapho::ValueType::Float,
       .Count = 2,
@@ -207,9 +207,9 @@ WinMain(HINSTANCE hInstance,
     },
     {
       .Id = { 
+        .Slot=0,
         .SemanticName="TEXCOORD", 
         .SemanticIndex=0, 
-        .Slot=0,
       },
       .Type = grapho::ValueType::Float,
       .Count = 2,
