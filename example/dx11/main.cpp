@@ -56,9 +56,17 @@ static rgba pixels[4] = {
   { 0, 0, 255, 255 },
   { 255, 255, 255, 255 },
 };
+struct MatrixData
+{
+  float mvp[16];
+};
 
 static const char* shader_text = R"(
 #pragma pack_matrix(row_major)
+cbuffer c0
+{
+    float4x4 mvp;
+};
 struct vs_in {
     float2 pos: POSITION;
     float2 uv: TEXCOORD;
@@ -70,7 +78,7 @@ struct vs_out {
 
 vs_out vs_main(vs_in IN) {
   vs_out OUT = (vs_out)0; // zero the memory first
-  OUT.position_clip = float4(IN.pos.xy, 0, 1);
+  OUT.position_clip = mul(mvp, float4(IN.pos.xy, 0, 1));
   OUT.uv = IN.uv;
   return OUT;
 }
@@ -107,7 +115,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_PAINT: {
       PAINTSTRUCT ps;
-      HDC hdc = BeginPaint(hWnd, &ps);
+      /*HDC hdc =*/BeginPaint(hWnd, &ps);
       EndPaint(hWnd, &ps);
       return 0;
     }
@@ -167,16 +175,22 @@ WinMain(HINSTANCE hInstance,
     return 5;
   }
 
+  auto constant_buffer =
+    grapho::dx11::CreateConstantBuffer(device, sizeof(MatrixData), nullptr);
+  if (!constant_buffer) {
+    return 6;
+  }
+
   auto index_buffer =
     grapho::dx11::CreateIndexBuffer(device, sizeof(indices), indices);
   if (!index_buffer) {
-    return 6;
+    return 7;
   }
 
   auto vertex_buffer =
     grapho::dx11::CreateVertexBuffer(device, sizeof(vertices), vertices);
   if (!vertex_buffer) {
-    return 7;
+    return 8;
   }
 
   grapho::VertexLayout layouts[] = {
@@ -245,6 +259,15 @@ WinMain(HINSTANCE hInstance,
     return true;
   };
 
+  MatrixData data
+  {
+    .mvp = {
+      1, 0, 0, 0, //
+      0, 1, 0, 0, //
+      0, 0, 1, 0, //
+      0, 0, 0, 1, //
+    }, };
+
   winrt::com_ptr<ID3D11Texture2D> pBackBuffer;
   swapchain->GetBuffer(0, IID_PPV_ARGS(pBackBuffer.put()));
 
@@ -252,6 +275,10 @@ WinMain(HINSTANCE hInstance,
   device->GetImmediateContext(context.put());
   float clear_color[4]{ 0.2f, 0.2f, 0.2f, 0 };
   while (processMessage()) {
+
+    // update
+    context->UpdateSubresource(constant_buffer.get(), 0, NULL, &data, 0, 0);
+    // rtv
     winrt::com_ptr<ID3D11RenderTargetView> rtv;
     auto hr =
       device->CreateRenderTargetView(pBackBuffer.get(), NULL, rtv.put());
@@ -267,10 +294,15 @@ WinMain(HINSTANCE hInstance,
     context->RSSetViewports(1, &viewport);
 
     shader->Bind(context);
+    ID3D11Buffer* constants[]{
+      constant_buffer.get(),
+    };
+    context->VSSetConstantBuffers(0, std::size(constants), constants);
     context->RSSetState(rs.get());
     texture->Bind(context);
     drawable->Draw(context, std::size(indices));
 
+    // flush
     swapchain->Present(1, 0);
   }
 
