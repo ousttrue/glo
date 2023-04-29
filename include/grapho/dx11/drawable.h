@@ -74,10 +74,8 @@ struct Drawable
     return ptr;
   }
 
-  void Draw(const winrt::com_ptr<ID3D11DeviceContext>& context,
-            uint32_t indexCount)
+  void Prepare(const winrt::com_ptr<ID3D11DeviceContext>& context)
   {
-    context->IASetInputLayout(InputLayout.get());
     std::vector<ID3D11Buffer*> buffers;
     std::vector<uint32_t> strides;
     std::vector<uint32_t> offsets;
@@ -89,8 +87,23 @@ struct Drawable
     context->IASetVertexBuffers(
       0, Slots.size(), buffers.data(), strides.data(), offsets.data());
     context->IASetIndexBuffer(IndexBuffer.get(), DXGI_FORMAT_R32_UINT, 0);
+    context->IASetInputLayout(InputLayout.get());
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  }
+
+  void Draw(const winrt::com_ptr<ID3D11DeviceContext>& context,
+            uint32_t indexCount)
+  {
+    Prepare(context);
     context->DrawIndexed(indexCount, 0, 0);
+  }
+
+  void DrawInstance(const winrt::com_ptr<ID3D11DeviceContext>& context,
+                    uint32_t indexCount,
+                    uint32_t instanceCount)
+  {
+    Prepare(context);
+    context->DrawIndexedInstanced(indexCount, instanceCount * 2, 0, 0, 0);
   }
 };
 

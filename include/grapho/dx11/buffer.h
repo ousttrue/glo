@@ -35,6 +35,13 @@ CreateIndexBuffer(const winrt::com_ptr<ID3D11Device>& device,
 {
   return CreateBuffer(device, D3D11_BIND_INDEX_BUFFER, size, data);
 }
+template<typename T>
+inline winrt::com_ptr<ID3D11Buffer>
+CreateIndexBuffer(const winrt::com_ptr<ID3D11Device>& device,
+                  const std::vector<T>& indices)
+{
+  return CreateIndexBuffer(device, sizeof(T) * indices.size(), indices.data());
+}
 
 inline winrt::com_ptr<ID3D11Buffer>
 CreateVertexBuffer(const winrt::com_ptr<ID3D11Device>& device,
@@ -42,6 +49,14 @@ CreateVertexBuffer(const winrt::com_ptr<ID3D11Device>& device,
                    const void* data)
 {
   return CreateBuffer(device, D3D11_BIND_VERTEX_BUFFER, size, data);
+}
+template<typename T>
+inline winrt::com_ptr<ID3D11Buffer>
+CreateVertexBuffer(const winrt::com_ptr<ID3D11Device>& device,
+                   const std::vector<T>& vertices)
+{
+  return CreateVertexBuffer(
+    device, sizeof(T) * vertices.size(), vertices.data());
 }
 
 inline winrt::com_ptr<ID3D11Buffer>
