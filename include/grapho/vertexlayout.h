@@ -13,7 +13,11 @@ enum class ValueType
 struct VertexId
 {
   std::string SemanticName;
-  uint32_t SemanticIndex;
+  union
+  {
+    uint32_t SemanticIndex;
+    uint32_t AttributeLocation;
+  };
   uint32_t Slot;
 };
 

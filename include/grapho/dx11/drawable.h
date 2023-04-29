@@ -27,8 +27,8 @@ DxgiFormat(const grapho::VertexLayout& layout)
 
 struct VertexSlot
 {
-  winrt::com_ptr<ID3D11Buffer> vertex_buffer;
-  uint32_t stride;
+  winrt::com_ptr<ID3D11Buffer> VertexBuffer;
+  uint32_t Stride;
 };
 
 struct Drawable
@@ -82,8 +82,8 @@ struct Drawable
     std::vector<uint32_t> strides;
     std::vector<uint32_t> offsets;
     for (auto slot : Slots) {
-      buffers.push_back(slot.vertex_buffer.get());
-      strides.push_back(slot.stride);
+      buffers.push_back(slot.VertexBuffer.get());
+      strides.push_back(slot.Stride);
       offsets.push_back(0);
     }
     context->IASetVertexBuffers(

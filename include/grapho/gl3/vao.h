@@ -99,8 +99,7 @@ public:
 
 struct VertexSlot
 {
-  uint32_t location;
-  std::shared_ptr<Vbo> vbo;
+  std::shared_ptr<Vbo> Vbo;
 };
 
 struct Vao
@@ -119,18 +118,16 @@ struct Vao
     , slots_(slots.begin(), slots.end())
     , ibo_(ibo)
   {
-    assert(layouts.size() == slots.size());
     Bind();
     if (ibo_) {
       ibo_->Bind();
     }
     for (int i = 0; i < layouts.size(); ++i) {
       auto& layout = layouts[i];
-      auto& slot = slots[i];
-      glEnableVertexAttribArray(slot.location);
-      slot.vbo->Bind();
+      glEnableVertexAttribArray(layout.Id.AttributeLocation);
+      slots[layout.Id.Slot].Vbo->Bind();
       glVertexAttribPointer(
-        slot.location,
+        layout.Id.AttributeLocation,
         layout.Count,
         *GLType(layout.Type),
         GL_FALSE,
@@ -138,7 +135,7 @@ struct Vao
         reinterpret_cast<void*>(static_cast<uint64_t>(layout.Offset)));
       if (layout.Divisor) {
         // auto a = glVertexAttribDivisor;
-        glVertexAttribDivisor(slot.location, layout.Divisor);
+        glVertexAttribDivisor(layout.Id.AttributeLocation, layout.Divisor);
       }
     }
     Unbind();

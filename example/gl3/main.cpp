@@ -145,30 +145,33 @@ main(void)
   auto ibo =
     grapho::gl3::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
   auto vbo = grapho::gl3::Vbo::Create(sizeof(vertices), vertices);
+  grapho::gl3::VertexSlot slots[] = {
+    {
+      .Vbo = vbo,
+    },
+  };
   grapho::VertexLayout layouts[] = {
     {
-      .Id = { "vPos", *vpos_location },
+      .Id = { 
+        .SemanticName="vPos", 
+        .AttributeLocation=*vpos_location, 
+        .Slot=0,
+      },
       .Type = grapho::ValueType::Float,
       .Count = 2,
       .Offset = offsetof(Vertex, positon),
       .Stride = sizeof(Vertex),
     },
-    {
-      .Id = { "vUv", *vuv_location },
+      {
+      .Id = { 
+        .SemanticName="vUv", 
+        .AttributeLocation=*vuv_location,
+        .Slot=0,
+      },
       .Type = grapho::ValueType::Float,
       .Count = 2,
       .Offset = offsetof(Vertex, uv),
       .Stride = sizeof(Vertex),
-    },
-  };
-  grapho::gl3::VertexSlot slots[] = {
-    {
-      .location = *vpos_location,
-      .vbo = vbo,
-    },
-    {
-      .location = *vuv_location,
-      .vbo = vbo,
     },
   };
   auto vao = grapho::gl3::Vao::Create(layouts, slots, ibo);

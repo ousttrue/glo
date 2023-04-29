@@ -107,7 +107,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_PAINT: {
       PAINTSTRUCT ps;
-      /*HDC hdc =*/BeginPaint(hWnd, &ps);
+      HDC hdc = BeginPaint(hWnd, &ps);
       EndPaint(hWnd, &ps);
       return 0;
     }
@@ -181,14 +181,22 @@ WinMain(HINSTANCE hInstance,
 
   grapho::VertexLayout layouts[] = {
     {
-      .Id = { "POSITION", 0, 0 },
+      .Id = { 
+        .SemanticName = "POSITION", 
+        .SemanticIndex = 0, 
+        .Slot = 0, 
+      },
       .Type = grapho::ValueType::Float,
       .Count = 2,
       .Offset = offsetof(Vertex, positon),
       .Stride = sizeof(Vertex),
     },
     {
-      .Id = { "TEXCOORD", 0, 0 },
+      .Id = { 
+        .SemanticName="TEXCOORD", 
+        .SemanticIndex=0, 
+        .Slot=0,
+      },
       .Type = grapho::ValueType::Float,
       .Count = 2,
       .Offset = offsetof(Vertex, uv),
@@ -197,8 +205,8 @@ WinMain(HINSTANCE hInstance,
   };
   grapho::dx11::VertexSlot slots[] = {
     {
-      .vertex_buffer = vertex_buffer,
-      .stride = sizeof(Vertex),
+      .VertexBuffer = vertex_buffer,
+      .Stride = sizeof(Vertex),
     },
   };
   auto drawable = grapho::dx11::Drawable::Create(
