@@ -4,6 +4,7 @@
 #include <grapho/gl3/fbo.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/texture.h>
+#include <grapho/gl3/ubo.h>
 #include <grapho/gl3/vao.h>
 #include <iostream>
 #include <stdio.h>
@@ -57,15 +58,21 @@ static rgba pixels[4] = {
   { 0, 0, 255, 255 },
   { 255, 255, 255, 255 },
 };
+struct MatrixData
+{
+  float mvp[16];
+};
 
 static const char* vertex_shader_text = R"(#version 400
-uniform mat4 MVP;
+layout (std140) uniform Scene { 
+	mat4 mvp; 
+} Mat;
 in vec2 vPos;
 in vec2 vUv;
 out vec2 uv;
 void main()
 {
-    gl_Position = MVP * vec4(vPos, 0.0, 1.0);
+    gl_Position = Mat.mvp * vec4(vPos, 0.0, 1.0);
     uv = vUv;
 };
 )";
@@ -126,11 +133,6 @@ main(void)
     return 4;
   }
 
-  auto mvp_location = (*program)->UniformLocation("MVP");
-  if (!mvp_location) {
-    std::cerr << mvp_location.error() << std::endl;
-    return 5;
-  }
   auto vpos_location = (*program)->AttributeLocation("vPos");
   if (!vpos_location) {
     std::cerr << vpos_location.error() << std::endl;
@@ -140,6 +142,13 @@ main(void)
   if (!vuv_location) {
     std::cerr << vuv_location.error() << std::endl;
     return 7;
+  }
+
+  auto ubo = grapho::gl3::Ubo::Create(sizeof(MatrixData), nullptr);
+  auto block_index = (*program)->UboBlockIndex("Scene");
+  if (!block_index) {
+    std::cerr << block_index.error();
+    return 8;
   }
 
   auto ibo =
@@ -180,28 +189,38 @@ main(void)
 
   std::shared_ptr<grapho::gl3::Fbo> fbo;
 
-  while (!glfwWindowShouldClose(window)) {
-    // update
-    glfwPollEvents();
-    float mvp[16] = {
+  MatrixData data
+  {
+    .mvp = {
       1, 0, 0, 0, //
       0, 1, 0, 0, //
       0, 0, 1, 0, //
       0, 0, 0, 1, //
-    };
+    }, };
+  const uint32_t ubo_binding_point = 1;
+  while (!glfwWindowShouldClose(window)) {
+    // update
+    glfwPollEvents();
     int width, height;
 
     // draw fbo
     if (!fbo) {
       fbo = grapho::gl3::Fbo::Create(512, 512);
     }
+
+    // (*program)->SetUniformMatrix(*mvp_location, mvp);
+    // (*program)->SetUniformMatrix(*mvp_location, mvp);
+    ubo->Upload(data);
+    (*program)->UboBind(*block_index, ubo_binding_point);
+    ubo->SetBindingPoint(ubo_binding_point);
+
     {
       fbo->Bind();
       glViewport(0, 0, 512, 512);
       glClearColor(0, 0.2f, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
       (*program)->Bind();
-      (*program)->SetUniformMatrix(*mvp_location, mvp);
+
       texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
       fbo->Unbind();
@@ -214,7 +233,6 @@ main(void)
       glClearColor(0, 0, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
       (*program)->Bind();
-      (*program)->SetUniformMatrix(*mvp_location, mvp);
       fbo->texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
     }

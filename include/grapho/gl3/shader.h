@@ -188,6 +188,20 @@ public:
     glUniform4f(location, value[0], value[1], value[2], value[3]);
     return {};
   }
+
+  std::expected<uint32_t, std::string> UboBlockIndex(const char* name)
+  {
+    auto blockIndex = glGetUniformBlockIndex(program_, name);
+    if (blockIndex < 0) {
+      return std::unexpected{ "fail to glGetUniformBlockIndex" };
+    }
+    return blockIndex;
+  }
+
+  void UboBind(uint32_t blockIndex, uint32_t binding_point)
+  {
+    glUniformBlockBinding(program_, blockIndex, binding_point);
+  }
 };
 
 }
