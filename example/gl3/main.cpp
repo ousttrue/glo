@@ -162,8 +162,8 @@ main(void)
   grapho::VertexLayout layouts[] = {
     {
       .Id = { 
-        .SemanticName="vPos", 
         .AttributeLocation=*vpos_location, 
+        .SemanticName="vPos", 
         .Slot=0,
       },
       .Type = grapho::ValueType::Float,
@@ -173,8 +173,8 @@ main(void)
     },
       {
       .Id = { 
-        .SemanticName="vUv", 
         .AttributeLocation=*vuv_location,
+        .SemanticName="vUv", 
         .Slot=0,
       },
       .Type = grapho::ValueType::Float,
