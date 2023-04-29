@@ -8,6 +8,13 @@ namespace grapho {
 enum class ValueType
 {
   Float,
+  Double,
+  Int8,
+  Int16,
+  Int32,
+  UInt8,
+  UInt16,
+  UInt32,
 };
 
 struct VertexId

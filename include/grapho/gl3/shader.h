@@ -94,11 +94,11 @@ public:
   {
     auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
     if (!vs) {
-      return std::unexpected{ vs.error() };
+      return std::unexpected{ std::string("vs: ") + vs.error() };
     }
     auto fs = compile(GL_FRAGMENT_SHADER, fs_srcs);
     if (!fs) {
-      return std::unexpected{ fs.error() };
+      return std::unexpected{ std::string("fs: ") + fs.error() };
     }
 
     auto program = link(*vs, *fs);

@@ -67,17 +67,17 @@ struct Texture
     return ptr;
   }
 
-  void Bind(const winrt::com_ptr<ID3D11DeviceContext>& context)
+  void Bind(const winrt::com_ptr<ID3D11DeviceContext>& context, uint32_t slot)
   {
     ID3D11ShaderResourceView* srvs[] = {
       Srv.get(),
     };
-    context->PSSetShaderResources(0, std::size(srvs), srvs);
+    context->PSSetShaderResources(slot, std::size(srvs), srvs);
 
     ID3D11SamplerState* samplers[] = {
       Sampler.get(),
     };
-    context->PSSetSamplers(0, std::size(samplers), samplers);
+    context->PSSetSamplers(slot, std::size(samplers), samplers);
   }
 };
 

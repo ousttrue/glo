@@ -16,6 +16,12 @@ GLType(ValueType type)
     case ValueType::Float:
       return GL_FLOAT;
 
+    case ValueType::Double:
+      return GL_DOUBLE;
+
+    case ValueType::UInt8:
+      return GL_UNSIGNED_BYTE;
+
     default:
       return std::unexpected{ "unknown GLType" };
   }
