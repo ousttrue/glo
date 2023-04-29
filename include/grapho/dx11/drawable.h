@@ -11,9 +11,9 @@ namespace dx11 {
 inline DXGI_FORMAT
 DxgiFormat(const grapho::VertexLayout& layout)
 {
-  switch (layout.type) {
+  switch (layout.Type) {
     case grapho::ValueType::Float:
-      switch (layout.count) {
+      switch (layout.Count) {
         case 2:
           return DXGI_FORMAT_R32G32_FLOAT;
         case 3:
@@ -48,14 +48,14 @@ struct Drawable
     for (size_t i = 0; i < layouts.size(); ++i) {
       auto& layout = layouts[i];
       inputElementDesc.push_back({
-        .SemanticName = layout.id.semantic_name.c_str(),
-        .SemanticIndex = layout.id.semantic_index,
+        .SemanticName = layout.Id.SemanticName.c_str(),
+        .SemanticIndex = layout.Id.SemanticIndex,
         .Format = DxgiFormat(layout),
-        .InputSlot = layout.id.slot,
-        .AlignedByteOffset = layout.offset,
-        .InputSlotClass = layout.divisor ? D3D11_INPUT_PER_INSTANCE_DATA
+        .InputSlot = layout.Id.Slot,
+        .AlignedByteOffset = layout.Offset,
+        .InputSlotClass = layout.Divisor ? D3D11_INPUT_PER_INSTANCE_DATA
                                          : D3D11_INPUT_PER_VERTEX_DATA,
-        .InstanceDataStepRate = layout.divisor,
+        .InstanceDataStepRate = layout.Divisor,
       });
     }
     auto ptr = std::make_shared<Drawable>();

@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include <string_view>
 
+const auto WINDOW_NAME = "gl3window";
+const auto WIDTH = 640;
+const auto HEIGHT = 480;
+
 struct rgba
 {
   uint8_t r;
@@ -93,25 +97,18 @@ key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 int
 main(void)
 {
-  namespace glo = grapho::gl3;
-
   glfwSetErrorCallback(error_callback);
-
   if (!glfwInit()) {
     return 1;
   }
 
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
-  auto window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+  auto window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_NAME, NULL, NULL);
   if (!window) {
     glfwTerminate();
     return 2;
   }
-
-  glfwSetKeyCallback(window, key_callback);
-
   glfwMakeContextCurrent(window);
   if (glewInit() != GLEW_OK) {
     return 3;
@@ -120,38 +117,57 @@ main(void)
   std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
   glfwSwapInterval(1);
 
-  auto program = *grapho::gl3::ShaderProgram::Create(vertex_shader_text,
-                                                     fragment_shader_text);
-  auto mvp_location = *program->UniformLocation("MVP");
-  auto vpos_location = *program->AttributeLocation("vPos");
-  auto vuv_location = *program->AttributeLocation("vUv");
+  glfwSetKeyCallback(window, key_callback);
+
+  auto program = grapho::gl3::ShaderProgram::Create(vertex_shader_text,
+                                                    fragment_shader_text);
+  if (!program) {
+    std::cerr << program.error() << std::endl;
+    return 4;
+  }
+
+  auto mvp_location = (*program)->UniformLocation("MVP");
+  if (!mvp_location) {
+    std::cerr << mvp_location.error() << std::endl;
+    return 5;
+  }
+  auto vpos_location = (*program)->AttributeLocation("vPos");
+  if (!vpos_location) {
+    std::cerr << vpos_location.error() << std::endl;
+    return 6;
+  }
+  auto vuv_location = (*program)->AttributeLocation("vUv");
+  if (!vuv_location) {
+    std::cerr << vuv_location.error() << std::endl;
+    return 7;
+  }
 
   auto ibo =
     grapho::gl3::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
   auto vbo = grapho::gl3::Vbo::Create(sizeof(vertices), vertices);
   grapho::VertexLayout layouts[] = {
     {
-      .id = { "vPos", vpos_location },
-      .type = grapho::ValueType::Float,
-      .count = 2,
-      .offset = offsetof(Vertex, positon),
-      .stride = sizeof(Vertex),
+      .Id = { "vPos", *vpos_location },
+      .Type = grapho::ValueType::Float,
+      .Count = 2,
+      .Offset = offsetof(Vertex, positon),
+      .Stride = sizeof(Vertex),
     },
     {
-      .id = { "vUv", vuv_location },
-      .type = grapho::ValueType::Float,
-      .count = 2,
-      .offset = offsetof(Vertex, uv),
-      .stride = sizeof(Vertex),
+      .Id = { "vUv", *vuv_location },
+      .Type = grapho::ValueType::Float,
+      .Count = 2,
+      .Offset = offsetof(Vertex, uv),
+      .Stride = sizeof(Vertex),
     },
   };
   grapho::gl3::VertexSlot slots[] = {
     {
-      .location = vpos_location,
+      .location = *vpos_location,
       .vbo = vbo,
     },
     {
-      .location = vuv_location,
+      .location = *vuv_location,
       .vbo = vbo,
     },
   };
@@ -181,8 +197,8 @@ main(void)
       glViewport(0, 0, 512, 512);
       glClearColor(0, 0.2f, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
-      program->Bind();
-      program->SetUniformMatrix(mvp_location, mvp);
+      (*program)->Bind();
+      (*program)->SetUniformMatrix(*mvp_location, mvp);
       texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
       fbo->Unbind();
@@ -194,8 +210,8 @@ main(void)
       glViewport(0, 0, width, height);
       glClearColor(0, 0, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
-      program->Bind();
-      program->SetUniformMatrix(mvp_location, mvp);
+      (*program)->Bind();
+      (*program)->SetUniformMatrix(*mvp_location, mvp);
       fbo->texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
     }

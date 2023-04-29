@@ -3,9 +3,9 @@
 #include <assert.h>
 #include <memory>
 #include <span>
+#include <stdexcept>
 #include <stdint.h>
 #include <vector>
-#include <stdexcept>
 
 namespace grapho::gl3 {
 
@@ -131,14 +131,14 @@ struct Vao
       slot.vbo->Bind();
       glVertexAttribPointer(
         slot.location,
-        layout.count,
-        *GLType(layout.type),
+        layout.Count,
+        *GLType(layout.Type),
         GL_FALSE,
-        layout.stride,
-        reinterpret_cast<void*>(static_cast<uint64_t>(layout.offset)));
-      if (layout.divisor) {
+        layout.Stride,
+        reinterpret_cast<void*>(static_cast<uint64_t>(layout.Offset)));
+      if (layout.Divisor) {
         // auto a = glVertexAttribDivisor;
-        glVertexAttribDivisor(slot.location, layout.divisor);
+        glVertexAttribDivisor(slot.location, layout.Divisor);
       }
     }
     Unbind();

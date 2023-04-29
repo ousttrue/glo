@@ -1,4 +1,5 @@
 #include <Windows.h>
+#include <grapho/dx11/buffer.h>
 #include <grapho/dx11/device.h>
 #include <grapho/dx11/drawable.h>
 #include <grapho/dx11/shader.h>
@@ -106,7 +107,7 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     case WM_PAINT: {
       PAINTSTRUCT ps;
-      HDC hdc = BeginPaint(hWnd, &ps);
+      /*HDC hdc =*/BeginPaint(hWnd, &ps);
       EndPaint(hWnd, &ps);
       return 0;
     }
@@ -166,50 +167,32 @@ WinMain(HINSTANCE hInstance,
     return 5;
   }
 
-  winrt::com_ptr<ID3D11Buffer> vertex_buffer;
-  {
-    D3D11_BUFFER_DESC vertex_buff_desc = {
-      .ByteWidth = static_cast<uint32_t>(sizeof(vertices)),
-      .Usage = D3D11_USAGE_DEFAULT,
-      .BindFlags = D3D11_BIND_VERTEX_BUFFER,
-    };
-    D3D11_SUBRESOURCE_DATA sr_data = {
-      .pSysMem = vertices,
-    };
-    auto hr =
-      device->CreateBuffer(&vertex_buff_desc, &sr_data, vertex_buffer.put());
-    assert(SUCCEEDED(hr));
+  auto index_buffer =
+    grapho::dx11::CreateIndexBuffer(device, sizeof(indices), indices);
+  if (!index_buffer) {
+    return 6;
   }
 
-  winrt::com_ptr<ID3D11Buffer> index_buffer;
-  {
-    D3D11_BUFFER_DESC index_buff_desc = {
-      .ByteWidth = static_cast<uint32_t>(sizeof(indices)),
-      .Usage = D3D11_USAGE_DEFAULT,
-      .BindFlags = D3D11_BIND_INDEX_BUFFER,
-    };
-    D3D11_SUBRESOURCE_DATA sr_data = {
-      .pSysMem = indices,
-    };
-    auto hr =
-      device->CreateBuffer(&index_buff_desc, &sr_data, index_buffer.put());
-    assert(SUCCEEDED(hr));
+  auto vertex_buffer =
+    grapho::dx11::CreateVertexBuffer(device, sizeof(vertices), vertices);
+  if (!vertex_buffer) {
+    return 7;
   }
 
   grapho::VertexLayout layouts[] = {
     {
-      .id = { "POSITION", 0, 0 },
-      .type = grapho::ValueType::Float,
-      .count = 2,
-      .offset = offsetof(Vertex, positon),
-      .stride = sizeof(Vertex),
+      .Id = { "POSITION", 0, 0 },
+      .Type = grapho::ValueType::Float,
+      .Count = 2,
+      .Offset = offsetof(Vertex, positon),
+      .Stride = sizeof(Vertex),
     },
     {
-      .id = { "TEXCOORD", 0, 0 },
-      .type = grapho::ValueType::Float,
-      .count = 2,
-      .offset = offsetof(Vertex, uv),
-      .stride = sizeof(Vertex),
+      .Id = { "TEXCOORD", 0, 0 },
+      .Type = grapho::ValueType::Float,
+      .Count = 2,
+      .Offset = offsetof(Vertex, uv),
+      .Stride = sizeof(Vertex),
     },
   };
   grapho::dx11::VertexSlot slots[] = {
