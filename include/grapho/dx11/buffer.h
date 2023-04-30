@@ -66,6 +66,12 @@ CreateConstantBuffer(const winrt::com_ptr<ID3D11Device>& device,
 {
   return CreateBuffer(device, D3D11_BIND_CONSTANT_BUFFER, size, data);
 }
+template<typename T>
+inline winrt::com_ptr<ID3D11Buffer>
+CreateConstantBuffer(const winrt::com_ptr<ID3D11Device>& device, const T& t)
+{
+  return CreateBuffer(device, D3D11_BIND_CONSTANT_BUFFER, sizeof(T), &t);
+}
 
 }
 }

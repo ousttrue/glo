@@ -55,9 +55,9 @@ struct Texture
 
     D3D11_SAMPLER_DESC sampler_desc = {
       .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-      .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
-      .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-      .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+      .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+      .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+      .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
     };
     hr = device->CreateSamplerState(&sampler_desc, ptr->Sampler.put());
     if (FAILED(hr)) {
