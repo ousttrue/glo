@@ -17,8 +17,21 @@ struct Texture
     const winrt::com_ptr<ID3D11Device>& device,
     uint32_t width,
     uint32_t height,
-    const uint8_t* pixels = nullptr)
+    const uint8_t* pixels = nullptr,
+    bool shared = false)
   {
+    UINT miscFlags = 0;
+    if (shared) {
+      miscFlags |= D3D11_RESOURCE_MISC_SHARED;
+    }
+    UINT bindFlags = D3D11_BIND_SHADER_RESOURCE;
+    if (shared) {
+      bindFlags |= D3D11_BIND_RENDER_TARGET;
+    }
+    UINT cpuAccessFlags = 0;
+    if (shared) {
+      cpuAccessFlags |= D3D11_CPU_ACCESS_WRITE;
+    }
     D3D11_TEXTURE2D_DESC desc = {
       .Width = width,
       .Height = height,
@@ -26,7 +39,10 @@ struct Texture
       .ArraySize = 1,
       .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
       .SampleDesc{ .Count = 1 },
-      .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+      .Usage = D3D11_USAGE_DEFAULT,
+      .BindFlags = bindFlags,
+      // .CPUAccessFlags = cpuAccessFlags,
+      .MiscFlags = miscFlags,
     };
     D3D11_SUBRESOURCE_DATA initData{
       .pSysMem = pixels,
