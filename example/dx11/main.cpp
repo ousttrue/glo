@@ -299,7 +299,7 @@ WinMain(HINSTANCE hInstance,
     };
     context->VSSetConstantBuffers(0, std::size(constants), constants);
     context->RSSetState(rs.get());
-    texture->Bind(context);
+    texture->Bind(context, 0);
     drawable->Draw(context, std::size(indices));
 
     // flush

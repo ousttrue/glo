@@ -14,6 +14,8 @@ if get_option('example')
         'glfw3',
         default_options: ['default_library=static'],
     )
+    logl_dep = dependency('logl')
     subdir('example/gl3')
     subdir('example/dx11')
+    subdir('example/pbr')
 endif

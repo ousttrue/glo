@@ -1,0 +1,9 @@
+[wrap-git]
+url = https://github.com/JoeyDeVries/LearnOpenGL.git
+
+revision = master
+depth = 1
+patch_directory = logl
+
+[provide]
+logl = logl_dep
