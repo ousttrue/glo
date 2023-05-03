@@ -4,6 +4,10 @@
 
 class Renderer
 {
+  // timing
+  float deltaTime = 0.0f;
+  float lastFrame = 0.0f;
+
   Shader pbrShader;
   Shader backgroundShader;
   unsigned int envCubemap;
@@ -58,5 +62,5 @@ class Renderer
 public:
   Renderer();
   ~Renderer();
-  void Render(int w, int h);
+  void Render(float crrentFrame, int w, int h);
 };

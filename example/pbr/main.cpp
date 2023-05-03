@@ -1,9 +1,32 @@
+#include "camera.h"
 #include "renderer.h"
 
 #include "ibl_specular_textured.h"
+#include <GLFW/glfw3.h>
 #include <iostream>
 
-#include <learnopengl/camera.h>
+// settings
+const auto SCR_WIDTH = 1280;
+const auto SCR_HEIGHT = 720;
+
+// process all input: query GLFW whether relevant keys are pressed/released this
+// frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void
+processInput(GLFWwindow* window)
+{
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, true);
+
+  // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(FORWARD, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(BACKWARD, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(LEFT, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(RIGHT, deltaTime);
+}
 
 int
 main()
@@ -30,7 +53,6 @@ main()
     glfwTerminate();
     return -1;
   }
-  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
@@ -58,7 +80,8 @@ main()
     // -----
     processInput(window);
 
-    renderer.Render(scrWidth, scrHeight);
+    float currentFrame = static_cast<float>(glfwGetTime());
+    renderer.Render(currentFrame, scrWidth, scrHeight);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved
     // etc.)

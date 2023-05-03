@@ -1,6 +1,8 @@
 #include "renderer.h"
 
+#include "camera.h"
 #include "ibl_specular_textured.h"
+#include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/filesystem.h>
 #include <stb_image.h>
 
@@ -382,29 +384,17 @@ Renderer::Renderer()
   renderQuad();
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  // initialize static shader uniforms before rendering
-  // --------------------------------------------------
-  glm::mat4 projection = glm::perspective(glm::radians(cameraZoom()),
-                                          (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                                          0.1f,
-                                          100.0f);
-
-  pbrShader.use();
-  pbrShader.setMat4("projection", projection);
-  backgroundShader.use();
-  backgroundShader.setMat4("projection", projection);
 }
+
 Renderer::~Renderer() {}
 
 void
-Renderer::Render(int scrWidth, int scrHeight)
+Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
 {
   glViewport(0, 0, scrWidth, scrHeight);
 
   // per-frame time logic
   // --------------------
-  float currentFrame = static_cast<float>(glfwGetTime());
   deltaTime = currentFrame - lastFrame;
   lastFrame = currentFrame;
 
@@ -421,6 +411,14 @@ Renderer::Render(int scrWidth, int scrHeight)
   auto view = cameraViewMatrix();
   pbrShader.setMat4("view", view);
   pbrShader.setVec3("camPos", cameraPosition());
+
+  // initialize static shader uniforms before rendering
+  // --------------------------------------------------
+  glm::mat4 projection = glm::perspective(glm::radians(cameraZoom()),
+                                          (float)scrWidth / (float)scrHeight,
+                                          0.1f,
+                                          100.0f);
+  pbrShader.setMat4("projection", projection);
 
   // bind pre-computed IBL data
   glActiveTexture(GL_TEXTURE0);
@@ -532,7 +530,7 @@ Renderer::Render(int scrWidth, int scrHeight)
        i < sizeof(lightPositions) / sizeof(lightPositions[0]);
        ++i) {
     glm::vec3 newPos =
-      lightPositions[i] + glm::vec3(sin(glfwGetTime() * 5.0) * 5.0, 0.0, 0.0);
+      lightPositions[i] + glm::vec3(sin(currentFrame * 5.0) * 5.0, 0.0, 0.0);
     newPos = lightPositions[i];
     pbrShader.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
     pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
@@ -548,6 +546,7 @@ Renderer::Render(int scrWidth, int scrHeight)
 
   // render skybox (render as last to prevent overdraw)
   backgroundShader.use();
+  backgroundShader.setMat4("projection", projection);
 
   backgroundShader.setMat4("view", view);
   glActiveTexture(GL_TEXTURE0);
