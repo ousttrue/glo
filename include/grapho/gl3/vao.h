@@ -60,6 +60,11 @@ public:
   {
     return Create(sizeof(array), array);
   }
+  template<typename T>
+  static std::shared_ptr<Vbo> Create(const std::vector<T>& values)
+  {
+    return Create(sizeof(T) * values.size(), values.data());
+  }
 
   void Bind() { glBindBuffer(GL_ARRAY_BUFFER, vbo_); }
   void Unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
@@ -99,25 +104,35 @@ public:
     ptr->Unbind();
     return ptr;
   }
+  template<typename T>
+  static std::shared_ptr<Ibo> Create(const std::vector<T>& values)
+  {
+    switch (sizeof(T)) {
+      case 1:
+        return Create(values.size(), values.data(), GL_UNSIGNED_BYTE);
+
+      case 2:
+        return Create(values.size() * 2, values.data(), GL_UNSIGNED_SHORT);
+
+      case 4:
+        return Create(values.size() * 4, values.data(), GL_UNSIGNED_INT);
+    }
+    return {};
+  }
   void Bind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_); }
   void Unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
-};
-
-struct VertexSlot
-{
-  std::shared_ptr<Vbo> Vbo;
 };
 
 struct Vao
 {
   uint32_t vao_ = 0;
   std::vector<VertexLayout> layouts_;
-  std::vector<VertexSlot> slots_;
+  std::vector<std::shared_ptr<Vbo>> slots_;
   std::shared_ptr<Ibo> ibo_;
 
   Vao(uint32_t vao,
       std::span<VertexLayout> layouts,
-      std::span<VertexSlot> slots,
+      std::span<std::shared_ptr<Vbo>> slots,
       const std::shared_ptr<Ibo>& ibo)
     : vao_(vao)
     , layouts_(layouts.begin(), layouts.end())
@@ -131,7 +146,7 @@ struct Vao
     for (int i = 0; i < layouts.size(); ++i) {
       auto& layout = layouts[i];
       glEnableVertexAttribArray(layout.Id.AttributeLocation);
-      slots[layout.Id.Slot].Vbo->Bind();
+      slots[layout.Id.Slot]->Bind();
       glVertexAttribPointer(
         layout.Id.AttributeLocation,
         layout.Count,
@@ -152,7 +167,7 @@ struct Vao
   }
   ~Vao() { glDeleteVertexArrays(1, &vao_); }
   static std::shared_ptr<Vao> Create(std::span<VertexLayout> layouts,
-                                     std::span<VertexSlot> slots,
+                                     std::span<std::shared_ptr<Vbo>> slots,
                                      const std::shared_ptr<Ibo>& ibo = {})
   {
     GLuint vao;
@@ -162,7 +177,7 @@ struct Vao
   }
   void Bind() { glBindVertexArray(vao_); }
   void Unbind() { glBindVertexArray(0); }
-  void Draw(uint32_t mode, uint32_t count, uint32_t byteoffset = 0)
+  void Draw(uint32_t mode, uint32_t count, uint32_t offsetBytes = 0)
   {
     Bind();
     if (ibo_) {
@@ -170,13 +185,15 @@ struct Vao
         mode,
         count,
         ibo_->valuetype_,
-        reinterpret_cast<void*>(static_cast<uint64_t>(byteoffset)));
+        reinterpret_cast<void*>(static_cast<uint64_t>(offsetBytes)));
     } else {
-      glDrawArrays(mode, byteoffset, count);
+      glDrawArrays(mode, offsetBytes, count);
     }
     Unbind();
   }
-  void DrawInstance(uint32_t primcount, uint32_t count, uint32_t byteoffset = 0)
+  void DrawInstance(uint32_t primcount,
+                    uint32_t count,
+                    uint32_t offsetBytes = 0)
   {
     Bind();
     if (ibo_) {
@@ -184,7 +201,7 @@ struct Vao
         GL_TRIANGLES,
         count,
         ibo_->valuetype_,
-        reinterpret_cast<void*>(static_cast<uint64_t>(byteoffset)),
+        reinterpret_cast<void*>(static_cast<uint64_t>(offsetBytes)),
         primcount);
     } else {
       throw std::runtime_error("not implemented");

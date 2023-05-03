@@ -2,6 +2,7 @@
 #include <DirectXMath.h>
 #include <GL/glew.h>
 #include <grapho/gl3/shader.h>
+#include <grapho/gl3/vao.h>
 #include <learnopengl/shader.h>
 #include <memory>
 
@@ -14,6 +15,8 @@ class Renderer
 
   std::shared_ptr<grapho::gl3::ShaderProgram> PbrShader;
   std::shared_ptr<grapho::gl3::ShaderProgram> BackgroundShader;
+  std::shared_ptr<grapho::gl3::Vao> Sphere;
+  uint32_t SphereDrawCount = 0;
 
   unsigned int envCubemap;
   unsigned int irradianceMap;

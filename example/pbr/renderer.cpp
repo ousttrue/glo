@@ -1,7 +1,7 @@
 #include "renderer.h"
-#include "pbrmaterial.h"
-
 #include "ibl_specular_textured.h"
+#include "mesh.h"
+#include "pbrmaterial.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/filesystem.h>
 #include <stb_image.h>
@@ -71,6 +71,19 @@ Renderer::Renderer()
       throw std::runtime_error(backgroundShader.error());
     }
     BackgroundShader = *backgroundShader;
+  }
+
+  {
+    auto sphere = Mesh::Sphere();
+
+    auto vbo = grapho::gl3::Vbo::Create(sphere->Vertices);
+    std::shared_ptr<grapho::gl3::Vbo> slots[]{
+      vbo,
+    };
+    auto ibo = grapho::gl3::Ibo::Create(sphere->Indices);
+
+    Sphere = grapho::gl3::Vao::Create(sphere->Layouts, slots, ibo);
+    SphereDrawCount = sphere->Indices.size();
   }
 
   // configure global opengl state
@@ -497,7 +510,7 @@ Renderer::Render(float currentFrame,
   PbrShader->Uniform("model")->SetMat4(model);
   PbrShader->Uniform("normalMatrix")
     ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-  renderSphere();
+  Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
 
   // gold
   glActiveTexture(GL_TEXTURE3);
@@ -516,7 +529,7 @@ Renderer::Render(float currentFrame,
   PbrShader->Uniform("model")->SetMat4(model);
   PbrShader->Uniform("normalMatrix")
     ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-  renderSphere();
+  Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
 
   // grass
   glActiveTexture(GL_TEXTURE3);
@@ -535,7 +548,7 @@ Renderer::Render(float currentFrame,
   PbrShader->Uniform("model")->SetMat4(model);
   PbrShader->Uniform("normalMatrix")
     ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-  renderSphere();
+  Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
 
   // plastic
   glActiveTexture(GL_TEXTURE3);
@@ -554,7 +567,7 @@ Renderer::Render(float currentFrame,
   PbrShader->Uniform("model")->SetMat4(model);
   PbrShader->Uniform("normalMatrix")
     ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-  renderSphere();
+  Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
 
   // wall
   glActiveTexture(GL_TEXTURE3);
@@ -573,7 +586,7 @@ Renderer::Render(float currentFrame,
   PbrShader->Uniform("model")->SetMat4(model);
   PbrShader->Uniform("normalMatrix")
     ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-  renderSphere();
+  Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
 
   // render light source (simply re-render sphere at light positions)
   // this looks a bit off as we use the same shader, but it'll make their
@@ -595,7 +608,7 @@ Renderer::Render(float currentFrame,
     PbrShader->Uniform("model")->SetMat4(model);
     PbrShader->Uniform("normalMatrix")
       ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-    renderSphere();
+    Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
   }
 
   // render skybox (render as last to prevent overdraw)

@@ -5,6 +5,7 @@ executable(
         'ibl_specular_textured.cpp',
         'renderer.cpp',
         'pbrmaterial.cpp',
+        'mesh.cpp',
     ],
     install: true,
     dependencies: [

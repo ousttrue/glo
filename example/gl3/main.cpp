@@ -154,10 +154,8 @@ main(void)
   auto ibo =
     grapho::gl3::Ibo::Create(sizeof(indices), indices, GL_UNSIGNED_BYTE);
   auto vbo = grapho::gl3::Vbo::Create(sizeof(vertices), vertices);
-  grapho::gl3::VertexSlot slots[] = {
-    {
-      .Vbo = vbo,
-    },
+  std::shared_ptr<grapho::gl3::Vbo> slots[] = {
+    vbo,
   };
   grapho::VertexLayout layouts[] = {
     {
