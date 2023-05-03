@@ -3,6 +3,7 @@
 #include "drawable.h"
 #include "env.h"
 #include "pbrmaterial.h"
+#include "skybox.h"
 #include <GLFW/glfw3.h>
 #include <grapho/orbitview.h>
 #include <iostream>
@@ -196,6 +197,7 @@ main()
   Scene scene;
   scene.Load();
   Lights lights{};
+  Skybox skybox(Env.envCubemap);
 
   while (!glfwWindowShouldClose(window)) {
     //
@@ -222,7 +224,7 @@ main()
       for (auto& drawable : scene.Drawables) {
         drawable->Draw(projection, view, g_camera.Position, lights);
       }
-      Env.DrawSkybox(projection, view);
+      skybox.Draw(projection, view);
     }
 
     glfwSwapBuffers(window);

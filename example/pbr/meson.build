@@ -7,6 +7,7 @@ executable(
         'image.cpp',
         'env.cpp',
         'drawable.cpp',
+        'skybox.cpp',
     ],
     install: true,
     dependencies: [
