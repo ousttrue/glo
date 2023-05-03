@@ -1,12 +1,13 @@
-#include "renderer.h"
+#include <GL/glew.h>
 
+#include "renderer.h"
 #include <GLFW/glfw3.h>
 #include <grapho/orbitview.h>
 #include <iostream>
 
 // settings
-const auto SCR_WIDTH = 1280;
-const auto SCR_HEIGHT = 720;
+const auto SCR_WIDTH = 1600;
+const auto SCR_HEIGHT = 1200;
 
 grapho::OrbitView g_camera;
 
@@ -102,59 +103,44 @@ main()
   // --------------------
   GLFWwindow* window =
     glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-  glfwMakeContextCurrent(window);
   if (window == NULL) {
     std::cout << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
-    return -1;
+    return 1;
   }
+
+  glfwMakeContextCurrent(window);
+  if (glewInit() != GLEW_OK) {
+    std::cout << "Failed to initialize GLAD" << std::endl;
+    return 2;
+  }
+
   glfwSetMouseButtonCallback(window, mouse_button_callback);
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
-  // tell GLFW to capture our mouse
-  // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
-  // glad: load all OpenGL function pointers
-  // ---------------------------------------
-  if (glewInit() != GLEW_OK) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
-    return -1;
-  }
-
   Renderer renderer;
-
-  DirectX::XMFLOAT4X4 projection;
-  DirectX::XMFLOAT4X4 view;
-
-  // render loop
-  // -----------
   while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
+    processInput(window);
+
     // then before rendering, configure the viewport to the original
     // framebuffer's screen dimensions
     int scrWidth, scrHeight;
     glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
 
     g_camera.SetSize(scrWidth, scrHeight);
+
+    DirectX::XMFLOAT4X4 projection;
+    DirectX::XMFLOAT4X4 view;
     g_camera.Update(&projection._11, &view._11);
 
-    // input
-    // -----
-    processInput(window);
+    renderer.Render(scrWidth, scrHeight, projection, view, g_camera.Position);
 
-    float currentFrame = static_cast<float>(glfwGetTime());
-    renderer.Render(
-      currentFrame, scrWidth, scrHeight, projection, view, g_camera.Position);
-
-    // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved
-    // etc.)
-    // -------------------------------------------------------------------------------
     glfwSwapBuffers(window);
-    glfwPollEvents();
   }
 
-  // glfw: terminate, clearing all previously allocated GLFW resources.
-  // ------------------------------------------------------------------
   glfwTerminate();
+
   return 0;
 }
