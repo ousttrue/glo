@@ -1,18 +1,20 @@
-#include "camera.h"
 #include "renderer.h"
 
 #include "ibl_specular_textured.h"
 #include <GLFW/glfw3.h>
+#include <grapho/orbitview.h>
 #include <iostream>
 
 // settings
 const auto SCR_WIDTH = 1280;
 const auto SCR_HEIGHT = 720;
 
+grapho::OrbitView g_camera;
+
 // process all input: query GLFW whether relevant keys are pressed/released this
 // frame and react accordingly
 // ---------------------------------------------------------------------------------------------------------
-void
+static void
 processInput(GLFWwindow* window)
 {
   if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -28,9 +30,63 @@ processInput(GLFWwindow* window)
   //   camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
+bool g_mouseRight = false;
+bool g_mouseMiddle = false;
+static void
+mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+  switch (button) {
+    case GLFW_MOUSE_BUTTON_RIGHT:
+      if (action == GLFW_PRESS) {
+        g_mouseRight = true;
+      } else if (action == GLFW_RELEASE) {
+        g_mouseRight = false;
+      }
+      break;
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+      if (action == GLFW_PRESS) {
+        g_mouseMiddle = true;
+      } else if (action == GLFW_RELEASE) {
+        g_mouseMiddle = false;
+      }
+      break;
+  }
+}
+
+static void
+mouse_cursor_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+  static float lastX = 800.0f / 2.0;
+  static float lastY = 600.0 / 2.0;
+  static bool firstMouse = true;
+  float xpos = static_cast<float>(xposIn);
+  float ypos = static_cast<float>(yposIn);
+  if (firstMouse) {
+    firstMouse = false;
+  } else {
+    auto xoffset = static_cast<int>(xpos - lastX);
+    auto yoffset = static_cast<int>(ypos - lastY);
+    if (g_mouseRight) {
+      g_camera.YawPitch(xoffset, yoffset);
+    } else if (g_mouseMiddle) {
+      g_camera.Shift(xoffset, yoffset);
+    }
+  }
+  lastX = xpos;
+  lastY = ypos;
+}
+
+static void
+scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  g_camera.Dolly(static_cast<int>(yoffset));
+}
+
 int
 main()
 {
+  g_camera.shift_[2] = -10;
+
   // glfw: initialize and configure
   // ------------------------------
   glfwInit();
@@ -53,11 +109,12 @@ main()
     glfwTerminate();
     return -1;
   }
-  glfwSetCursorPosCallback(window, mouse_callback);
+  glfwSetMouseButtonCallback(window, mouse_button_callback);
+  glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
   // tell GLFW to capture our mouse
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  // glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // glad: load all OpenGL function pointers
   // ---------------------------------------
@@ -68,6 +125,9 @@ main()
 
   Renderer renderer;
 
+  DirectX::XMFLOAT4X4 projection;
+  DirectX::XMFLOAT4X4 view;
+
   // render loop
   // -----------
   while (!glfwWindowShouldClose(window)) {
@@ -76,12 +136,16 @@ main()
     int scrWidth, scrHeight;
     glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
 
+    g_camera.SetSize(scrWidth, scrHeight);
+    g_camera.Update(&projection._11, &view._11);
+
     // input
     // -----
     processInput(window);
 
     float currentFrame = static_cast<float>(glfwGetTime());
-    renderer.Render(currentFrame, scrWidth, scrHeight);
+    renderer.Render(
+      currentFrame, scrWidth, scrHeight, projection, view, g_camera.Position);
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved
     // etc.)

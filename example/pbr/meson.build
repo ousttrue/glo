@@ -4,8 +4,9 @@ executable(
         'main.cpp',
         'ibl_specular_textured.cpp',
         'renderer.cpp',
-        'camera.cpp',
+        'pbrmaterial.cpp',
     ],
+    install: true,
     dependencies: [
         glfw_dep,
         glew_dep,

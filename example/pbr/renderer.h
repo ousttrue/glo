@@ -1,4 +1,5 @@
 #pragma once
+#include <DirectXMath.h>
 #include <GL/glew.h>
 #include <grapho/gl3/shader.h>
 #include <learnopengl/shader.h>
@@ -62,5 +63,10 @@ class Renderer
 public:
   Renderer();
   ~Renderer();
-  void Render(float crrentFrame, int w, int h);
+  void Render(float crrentFrame,
+              int w,
+              int h,
+              const DirectX::XMFLOAT4X4& projectin,
+              const DirectX::XMFLOAT4X4& view,
+              const DirectX::XMFLOAT3& cameraPos);
 };

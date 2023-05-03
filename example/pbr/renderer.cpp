@@ -1,7 +1,6 @@
 #include "renderer.h"
 #include "pbrmaterial.h"
 
-#include "camera.h"
 #include "ibl_specular_textured.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/filesystem.h>
@@ -445,7 +444,12 @@ Renderer::Renderer()
 Renderer::~Renderer() {}
 
 void
-Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
+Renderer::Render(float currentFrame,
+                 int scrWidth,
+                 int scrHeight,
+                 const DirectX::XMFLOAT4X4& projection,
+                 const DirectX::XMFLOAT4X4& view,
+                 const DirectX::XMFLOAT3& cameraPos)
 {
   glViewport(0, 0, scrWidth, scrHeight);
 
@@ -464,17 +468,17 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
   // ------------------------------------------------------------------------------------------
   PbrShader->Use();
   glm::mat4 model = glm::mat4(1.0f);
-  auto view = cameraViewMatrix();
+  // auto view = cameraViewMatrix();
   PbrShader->Uniform("view")->SetMat4(view);
-  auto cameraPos = cameraPosition();
+  // auto cameraPos = cameraPosition();
   PbrShader->Uniform("camPos")->SetFloat3(cameraPos);
 
   // initialize static shader uniforms before rendering
   // --------------------------------------------------
-  glm::mat4 projection = glm::perspective(glm::radians(cameraZoom()),
-                                          (float)scrWidth / (float)scrHeight,
-                                          0.1f,
-                                          100.0f);
+  // glm::mat4 projection = glm::perspective(glm::radians(cameraZoom()),
+  //                                         (float)scrWidth / (float)scrHeight,
+  //                                         0.1f,
+  //                                         100.0f);
   PbrShader->Uniform("projection")->SetMat4(projection);
 
   // bind pre-computed IBL data

@@ -26,5 +26,21 @@
             "environment": [],
             "console": "integratedTerminal"
         },
+        {
+            "name": "pbr",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/prefix/bin/pbr.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/subprojects/logl/src/6.pbr/2.2.2.ibl_specular_textured",
+            "environment": [
+                {
+                    "name": "LOGL_ROOT_PATH",
+                    "value": "${workspaceFolder}/subprojects/logl",
+                }
+            ],
+            "console": "integratedTerminal"
+        },
     ]
 }

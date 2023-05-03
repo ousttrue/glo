@@ -17,6 +17,8 @@ struct OrbitView
   float Pitch = {};
   float shift_[3] = { 0, -0.8f, -5 };
 
+  DirectX::XMFLOAT3 Position = {};
+
   OrbitView() {}
 
   void SetSize(int w, int h)
@@ -50,7 +52,7 @@ struct OrbitView
     }
   }
 
-  void Update(const float projection[16], const float view[16]) const
+  void Update(const float projection[16], const float view[16])
   {
     float aspectRatio = (float)Width / (float)Height;
     DirectX::XMStoreFloat4x4(
@@ -60,7 +62,14 @@ struct OrbitView
     auto yaw = DirectX::XMMatrixRotationY(Yaw);
     auto pitch = DirectX::XMMatrixRotationX(Pitch);
     auto shift = DirectX::XMMatrixTranslation(shift_[0], shift_[1], shift_[2]);
-    DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4*)view, yaw * pitch * shift);
+    auto v = yaw * pitch * shift;
+    DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4*)view, v);
+
+    // Pos
+    DirectX::XMVECTOR det;
+    auto inv = DirectX::XMMatrixInverse(&det, v);
+    DirectX::XMStoreFloat3(
+      &Position, DirectX::XMVector3Transform(DirectX::XMVectorZero(), inv));
   }
 
   void Fit(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max)
