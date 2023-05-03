@@ -26,30 +26,10 @@ class Renderer
   unsigned int brdfLUTTexture;
 
   std::shared_ptr<PbrMaterial> Iron;
-
-  unsigned int goldAlbedoMap;
-  unsigned int goldNormalMap;
-  unsigned int goldMetallicMap;
-  unsigned int goldRoughnessMap;
-  unsigned int goldAOMap;
-
-  unsigned int grassAlbedoMap;
-  unsigned int grassNormalMap;
-  unsigned int grassMetallicMap;
-  unsigned int grassRoughnessMap;
-  unsigned int grassAOMap;
-
-  unsigned int plasticAlbedoMap;
-  unsigned int plasticNormalMap;
-  unsigned int plasticMetallicMap;
-  unsigned int plasticRoughnessMap;
-  unsigned int plasticAOMap;
-
-  unsigned int wallAlbedoMap;
-  unsigned int wallNormalMap;
-  unsigned int wallMetallicMap;
-  unsigned int wallRoughnessMap;
-  unsigned int wallAOMap;
+  std::shared_ptr<PbrMaterial> Gold;
+  std::shared_ptr<PbrMaterial> Grass;
+  std::shared_ptr<PbrMaterial> Plastic;
+  std::shared_ptr<PbrMaterial> Wall;
 
   // lights
   // ------
