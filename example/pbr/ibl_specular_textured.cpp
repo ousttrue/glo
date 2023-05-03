@@ -2,9 +2,6 @@
 
 #include "ibl_specular_textured.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <learnopengl/camera.h>
 
 #include <iostream>

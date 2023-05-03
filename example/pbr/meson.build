@@ -6,6 +6,7 @@ executable(
         'renderer.cpp',
         'pbrmaterial.cpp',
         'mesh.cpp',
+        'image.cpp',
     ],
     install: true,
     dependencies: [
