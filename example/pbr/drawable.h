@@ -3,16 +3,27 @@
 #include <memory>
 #include <span>
 
-struct Light
+struct Lights
 {
-  DirectX::XMFLOAT3 Position;
-  DirectX::XMFLOAT3 Color;
+  DirectX::XMFLOAT4 Positions[4] = {
+    { -10.0f, 10.0f, 10.0f, 0 },
+    { 10.0f, 10.0f, 10.0f, 0 },
+    { -10.0f, -10.0f, 10.0f, 0 },
+    { 10.0f, -10.0f, 10.0f, 0 },
+  };
+  DirectX::XMFLOAT4 Colors[4] = {
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+  };
 };
 
 namespace grapho {
 namespace gl3 {
 class ShaderProgram;
 struct Vao;
+struct Ubo;
 }
 }
 
@@ -23,6 +34,7 @@ struct Drawable
   uint32_t MeshDrawCount = 0;
   std::shared_ptr<grapho::gl3::ShaderProgram> Shader;
   std::shared_ptr<PbrMaterial> Material;
+  std::shared_ptr<grapho::gl3::Ubo> LightsUbo;
   DirectX::XMFLOAT3 Position = {};
 
   Drawable();
@@ -30,5 +42,5 @@ struct Drawable
   void Draw(const DirectX::XMFLOAT4X4& projection,
             const DirectX::XMFLOAT4X4& view,
             const DirectX::XMFLOAT3& cameraPos,
-            std::span<const std::shared_ptr<Light>> lights);
+            const Lights& lights);
 };

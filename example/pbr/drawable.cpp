@@ -5,6 +5,7 @@
 #include "pbrmaterial.h"
 #include <Gl/glew.h>
 #include <grapho/gl3/shader.h>
+#include <grapho/gl3/ubo.h>
 #include <grapho/gl3/vao.h>
 
 static DirectX::XMFLOAT3X3
@@ -48,32 +49,39 @@ Drawable::Drawable()
     Mesh = grapho::gl3::Vao::Create(sphere->Layouts, slots, ibo);
     MeshDrawCount = sphere->Indices.size();
   }
+
+  LightsUbo = grapho::gl3::Ubo::Create(sizeof(Lights), nullptr);
 }
 
 void
 Drawable::Draw(const DirectX::XMFLOAT4X4& projection,
                const DirectX::XMFLOAT4X4& view,
                const DirectX::XMFLOAT3& cameraPos,
-               std::span<const std::shared_ptr<Light>> lights)
+               const Lights& lights)
 {
-  for (unsigned int i = 0; i < lights.size(); ++i) {
-    // glm::vec3 newPos =
-    //   lightPositions[i] + glm::vec3(sin(currentFrame * 5.0) * 5.0, 0.0,
-    //   0.0);
-    auto newPos = lights[i]->Position;
-    Shader->Uniform("lightPositions[" + std::to_string(i) + "]")
-      ->SetFloat3(newPos);
-    Shader->Uniform("lightColors[" + std::to_string(i) + "]")
-      ->SetFloat3(lights[i]->Color);
+  // for (unsigned int i = 0; i < lights.size(); ++i) {
+  //   // glm::vec3 newPos =
+  //   //   lightPositions[i] + glm::vec3(sin(currentFrame * 5.0) * 5.0, 0.0,
+  //   //   0.0);
+  //   auto newPos = lights[i]->Position;
+  //   Shader->Uniform("lightPositions[" + std::to_string(i) + "]")
+  //     ->SetFloat3(newPos);
+  //   Shader->Uniform("lightColors[" + std::to_string(i) + "]")
+  //     ->SetFloat3(lights[i]->Color);
+  //
+  //   // model = glm::mat4(1.0f);
+  //   // model = glm::translate(model, newPos);
+  //   // model = glm::scale(model, glm::vec3(0.5f));
+  //   // PbrShader->Uniform("model")->SetMat4(model);
+  //   // PbrShader->Uniform("normalMatrix")
+  //   //   ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
+  //   // Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
+  // }
 
-    // model = glm::mat4(1.0f);
-    // model = glm::translate(model, newPos);
-    // model = glm::scale(model, glm::vec3(0.5f));
-    // PbrShader->Uniform("model")->SetMat4(model);
-    // PbrShader->Uniform("normalMatrix")
-    //   ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
-    // Sphere->Draw(GL_TRIANGLE_STRIP, SphereDrawCount);
-  }
+  const uint32_t UBO_LIGHTS_BINDING = 0;
+
+  LightsUbo->Upload(lights);
+  LightsUbo->SetBindingPoint(UBO_LIGHTS_BINDING);
 
   Shader->Use();
   // auto view = cameraViewMatrix();
@@ -82,6 +90,9 @@ Drawable::Draw(const DirectX::XMFLOAT4X4& projection,
   Shader->Uniform("camPos")->SetFloat3(cameraPos);
   // initialize static shader uniforms before rendering
   Shader->Uniform("projection")->SetMat4(projection);
+
+  auto uboBlock = Shader->UboBlockIndex("lights");
+  Shader->UboBind(*uboBlock, UBO_LIGHTS_BINDING);
 
   DirectX::XMFLOAT4X4 model;
   DirectX::XMStoreFloat4x4(

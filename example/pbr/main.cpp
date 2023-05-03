@@ -89,7 +89,6 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 struct Scene
 {
   std::vector<std::shared_ptr<Drawable>> Drawables;
-  std::vector<std::shared_ptr<Light>> Lights;
 
   void Load()
   {
@@ -142,31 +141,6 @@ struct Scene
       FileSystem::getPath("resources/textures/pbr/wall/ao.png"));
     wall->Position = { 3.0, 0.0, 2.0 };
     Drawables.push_back(wall);
-
-    {
-      auto light = std::make_shared<Light>();
-      light->Position = { -10.0f, 10.0f, 10.0f };
-      light->Color = { 300.0f, 300.0f, 300.0f };
-      Lights.push_back(light);
-    }
-    {
-      auto light = std::make_shared<Light>();
-      light->Position = { 10.0f, 10.0f, 10.0f };
-      light->Color = { 300.0f, 300.0f, 300.0f };
-      Lights.push_back(light);
-    }
-    {
-      auto light = std::make_shared<Light>();
-      light->Position = { -10.0f, -10.0f, 10.0f };
-      light->Color = { 300.0f, 300.0f, 300.0f };
-      Lights.push_back(light);
-    }
-    {
-      auto light = std::make_shared<Light>();
-      light->Position = { 10.0f, -10.0f, 10.0f };
-      light->Color = { 300.0f, 300.0f, 300.0f };
-      Lights.push_back(light);
-    }
   }
 };
 
@@ -221,6 +195,7 @@ main()
   Environment Env;
   Scene scene;
   scene.Load();
+  Lights lights{};
 
   while (!glfwWindowShouldClose(window)) {
     //
@@ -245,7 +220,7 @@ main()
     {
       Env.Bind();
       for (auto& drawable : scene.Drawables) {
-        drawable->Draw(projection, view, g_camera.Position, scene.Lights);
+        drawable->Draw(projection, view, g_camera.Position, lights);
       }
       Env.DrawSkybox(projection, view);
     }
