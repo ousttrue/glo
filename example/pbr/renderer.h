@@ -17,6 +17,8 @@ class Renderer
   std::shared_ptr<grapho::gl3::ShaderProgram> BackgroundShader;
   std::shared_ptr<grapho::gl3::Vao> Sphere;
   uint32_t SphereDrawCount = 0;
+  std::shared_ptr<grapho::gl3::Vao> Cube;
+  uint32_t CubeDrawCount = 0;
 
   unsigned int envCubemap;
   unsigned int irradianceMap;

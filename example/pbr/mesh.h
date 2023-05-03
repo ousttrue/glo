@@ -48,4 +48,6 @@ struct Mesh
   std::vector<Vertex> Vertices;
   std::vector<unsigned int> Indices;
   static std::shared_ptr<Mesh> Sphere();
+  static std::shared_ptr<Mesh> Cube();
 };
+

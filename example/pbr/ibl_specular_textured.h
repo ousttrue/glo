@@ -7,8 +7,6 @@
 #include <vector>
 
 void
-renderCube();
-void
 renderQuad();
 
 unsigned int

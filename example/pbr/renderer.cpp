@@ -86,6 +86,14 @@ Renderer::Renderer()
     SphereDrawCount = sphere->Indices.size();
   }
 
+  {
+    auto cube = Mesh::Cube();
+    auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
+    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
+    Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+    CubeDrawCount = cube->Vertices.size();
+  }
+
   // configure global opengl state
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
@@ -297,7 +305,7 @@ Renderer::Renderer()
                            0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderCube();
+    Cube->Draw(GL_TRIANGLES, CubeDrawCount);
   }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -356,7 +364,7 @@ Renderer::Renderer()
                            0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    renderCube();
+    Cube->Draw(GL_TRIANGLES, CubeDrawCount);
   }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -420,7 +428,7 @@ Renderer::Renderer()
                              mip);
 
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      renderCube();
+      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
   }
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -620,7 +628,7 @@ Renderer::Render(float currentFrame,
   // glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance
   // map glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display
   // prefilter map
-  renderCube();
+  Cube->Draw(GL_TRIANGLES, CubeDrawCount);
 
   // render BRDF map to screen
   // brdfShader.Use();
