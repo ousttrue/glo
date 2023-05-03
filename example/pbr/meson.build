@@ -2,11 +2,11 @@ executable(
     'pbr',
     [
         'main.cpp',
-        'renderer.cpp',
         'pbrmaterial.cpp',
         'mesh.cpp',
         'image.cpp',
         'env.cpp',
+        'drawable.cpp',
     ],
     install: true,
     dependencies: [

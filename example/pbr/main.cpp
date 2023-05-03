@@ -1,9 +1,13 @@
 #include <GL/glew.h>
 
-#include "renderer.h"
+#include "drawable.h"
+#include "env.h"
+#include "pbrmaterial.h"
 #include <GLFW/glfw3.h>
 #include <grapho/orbitview.h>
 #include <iostream>
+#include <learnopengl/filesystem.h>
+#include <vector>
 
 // settings
 const auto SCR_WIDTH = 1600;
@@ -82,6 +86,90 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
   g_camera.Dolly(static_cast<int>(yoffset));
 }
 
+struct Scene
+{
+  std::vector<std::shared_ptr<Drawable>> Drawables;
+  std::vector<std::shared_ptr<Light>> Lights;
+
+  void Load()
+  {
+    auto iron = std::make_shared<Drawable>();
+    iron->Material = PbrMaterial::Create(
+      FileSystem::getPath("resources/textures/pbr/rusted_iron/albedo.png"),
+      FileSystem::getPath("resources/textures/pbr/rusted_iron/normal.png"),
+      FileSystem::getPath("resources/textures/pbr/rusted_iron/metallic.png"),
+      FileSystem::getPath("resources/textures/pbr/rusted_iron/roughness.png"),
+      FileSystem::getPath("resources/textures/pbr/rusted_iron/ao.png"));
+    iron->Position = { -5.0, 0.0, 2.0 };
+    Drawables.push_back(iron);
+
+    auto gold = std::make_shared<Drawable>();
+    gold->Material = PbrMaterial::Create(
+      FileSystem::getPath("resources/textures/pbr/gold/albedo.png"),
+      FileSystem::getPath("resources/textures/pbr/gold/normal.png"),
+      FileSystem::getPath("resources/textures/pbr/gold/metallic.png"),
+      FileSystem::getPath("resources/textures/pbr/gold/roughness.png"),
+      FileSystem::getPath("resources/textures/pbr/gold/ao.png"));
+    gold->Position = { -3.0, 0.0, 2.0 };
+    Drawables.push_back(gold);
+
+    auto grass = std::make_shared<Drawable>();
+    grass->Material = PbrMaterial::Create(
+      FileSystem::getPath("resources/textures/pbr/grass/albedo.png"),
+      FileSystem::getPath("resources/textures/pbr/grass/normal.png"),
+      FileSystem::getPath("resources/textures/pbr/grass/metallic.png"),
+      FileSystem::getPath("resources/textures/pbr/grass/roughness.png"),
+      FileSystem::getPath("resources/textures/pbr/grass/ao.png"));
+    grass->Position = { -1.0, 0.0, 2.0 };
+    Drawables.push_back(grass);
+
+    auto plastic = std::make_shared<Drawable>();
+    plastic->Material = PbrMaterial::Create(
+      FileSystem::getPath("resources/textures/pbr/plastic/albedo.png"),
+      FileSystem::getPath("resources/textures/pbr/plastic/normal.png"),
+      FileSystem::getPath("resources/textures/pbr/plastic/metallic.png"),
+      FileSystem::getPath("resources/textures/pbr/plastic/roughness.png"),
+      FileSystem::getPath("resources/textures/pbr/plastic/ao.png"));
+    plastic->Position = { 1.0, 0.0, 2.0 };
+    Drawables.push_back(plastic);
+
+    auto wall = std::make_shared<Drawable>();
+    wall->Material = PbrMaterial::Create(
+      FileSystem::getPath("resources/textures/pbr/wall/albedo.png"),
+      FileSystem::getPath("resources/textures/pbr/wall/normal.png"),
+      FileSystem::getPath("resources/textures/pbr/wall/metallic.png"),
+      FileSystem::getPath("resources/textures/pbr/wall/roughness.png"),
+      FileSystem::getPath("resources/textures/pbr/wall/ao.png"));
+    wall->Position = { 3.0, 0.0, 2.0 };
+    Drawables.push_back(wall);
+
+    {
+      auto light = std::make_shared<Light>();
+      light->Position = { -10.0f, 10.0f, 10.0f };
+      light->Color = { 300.0f, 300.0f, 300.0f };
+      Lights.push_back(light);
+    }
+    {
+      auto light = std::make_shared<Light>();
+      light->Position = { 10.0f, 10.0f, 10.0f };
+      light->Color = { 300.0f, 300.0f, 300.0f };
+      Lights.push_back(light);
+    }
+    {
+      auto light = std::make_shared<Light>();
+      light->Position = { -10.0f, -10.0f, 10.0f };
+      light->Color = { 300.0f, 300.0f, 300.0f };
+      Lights.push_back(light);
+    }
+    {
+      auto light = std::make_shared<Light>();
+      light->Position = { 10.0f, -10.0f, 10.0f };
+      light->Color = { 300.0f, 300.0f, 300.0f };
+      Lights.push_back(light);
+    }
+  }
+};
+
 int
 main()
 {
@@ -94,7 +182,6 @@ main()
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
   glfwWindowHint(GLFW_SAMPLES, 4);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 #ifdef __APPLE__
   glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
@@ -119,23 +206,49 @@ main()
   glfwSetCursorPosCallback(window, mouse_cursor_callback);
   glfwSetScrollCallback(window, scroll_callback);
 
-  Renderer renderer;
+  // configure global opengl state
+  // -----------------------------
+  glEnable(GL_DEPTH_TEST);
+  // set depth function to less than AND equal for skybox depth trick.
+  glDepthFunc(GL_LEQUAL);
+  // enable seamless cubemap sampling for lower mip levels in the pre-filter
+  // map.
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+  //
+  // scene
+  //
+  Environment Env;
+  Scene scene;
+  scene.Load();
+
   while (!glfwWindowShouldClose(window)) {
+    //
+    // update
+    //
     glfwPollEvents();
     processInput(window);
-
-    // then before rendering, configure the viewport to the original
-    // framebuffer's screen dimensions
     int scrWidth, scrHeight;
     glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
-
     g_camera.SetSize(scrWidth, scrHeight);
-
     DirectX::XMFLOAT4X4 projection;
     DirectX::XMFLOAT4X4 view;
     g_camera.Update(&projection._11, &view._11);
 
-    renderer.Render(scrWidth, scrHeight, projection, view, g_camera.Position);
+    //
+    // render
+    //
+    glViewport(0, 0, scrWidth, scrHeight);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    {
+      Env.Bind();
+      for (auto& drawable : scene.Drawables) {
+        drawable->Draw(projection, view, g_camera.Position, scene.Lights);
+      }
+      Env.DrawSkybox(projection, view);
+    }
 
     glfwSwapBuffers(window);
   }
