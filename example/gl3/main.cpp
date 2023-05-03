@@ -63,7 +63,7 @@ struct MatrixData
   float mvp[16];
 };
 
-static const char* vertex_shader_text = R"(#version 400
+static const auto vertex_shader_text = u8R"(#version 400
 layout (std140) uniform Scene { 
 	mat4 mvp; 
 } Mat;
@@ -77,7 +77,7 @@ void main()
 };
 )";
 
-static const char* fragment_shader_text = R"(#version 400
+static const auto fragment_shader_text = u8R"(#version 400
 in vec2 uv;
 out vec4 FragColor;
 uniform sampler2D colorTexture;
@@ -133,12 +133,12 @@ main(void)
     return 4;
   }
 
-  auto vpos_location = (*program)->AttributeLocation("vPos");
+  auto vpos_location = (*program)->Attribute("vPos");
   if (!vpos_location) {
     std::cerr << vpos_location.error() << std::endl;
     return 6;
   }
-  auto vuv_location = (*program)->AttributeLocation("vUv");
+  auto vuv_location = (*program)->Attribute("vUv");
   if (!vuv_location) {
     std::cerr << vuv_location.error() << std::endl;
     return 7;

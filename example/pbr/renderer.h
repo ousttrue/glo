@@ -1,5 +1,6 @@
 #pragma once
 #include <GL/glew.h>
+#include <grapho/gl3/shader.h>
 #include <learnopengl/shader.h>
 #include <memory>
 
@@ -10,14 +11,16 @@ class Renderer
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
 
-  Shader pbrShader;
+  // Shader pbrShader;
+  std::shared_ptr<grapho::gl3::ShaderProgram> PbrShader;
+
   Shader backgroundShader;
   unsigned int envCubemap;
   unsigned int irradianceMap;
   unsigned int prefilterMap;
   unsigned int brdfLUTTexture;
 
-  std::shared_ptr<PbrMaterial> m_iron;
+  std::shared_ptr<PbrMaterial> Iron;
 
   unsigned int goldAlbedoMap;
   unsigned int goldNormalMap;

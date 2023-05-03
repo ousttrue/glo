@@ -6,5 +6,10 @@ executable(
         'renderer.cpp',
         'camera.cpp',
     ],
-    dependencies: [glfw_dep, glew_dep, logl_dep],
+    dependencies: [
+        glfw_dep,
+        glew_dep,
+        logl_dep,
+        grapho_dep,
+    ],
 )

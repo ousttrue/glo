@@ -6,6 +6,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/filesystem.h>
 #include <stb_image.h>
+#include <stdexcept>
 
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
@@ -55,9 +56,15 @@ loadTexture(std::string_view path)
 }
 
 Renderer::Renderer()
-  : pbrShader("2.2.2.pbr.vs", "2.2.2.pbr.fs")
-  , backgroundShader("2.2.2.background.vs", "2.2.2.background.fs")
+  : backgroundShader("2.2.2.background.vs", "2.2.2.background.fs")
 {
+  auto pbrShader =
+    grapho::gl3::ShaderProgram::CreateFromPath("2.2.2.pbr.vs", "2.2.2.pbr.fs");
+  if (!pbrShader) {
+    throw std::runtime_error(pbrShader.error());
+  }
+  PbrShader = *pbrShader;
+
   // configure global opengl state
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
@@ -77,15 +84,15 @@ Renderer::Renderer()
   Shader prefilterShader("2.2.2.cubemap.vs", "2.2.2.prefilter.fs");
   Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
 
-  pbrShader.use();
-  pbrShader.setInt("irradianceMap", 0);
-  pbrShader.setInt("prefilterMap", 1);
-  pbrShader.setInt("brdfLUT", 2);
-  pbrShader.setInt("albedoMap", 3);
-  pbrShader.setInt("normalMap", 4);
-  pbrShader.setInt("metallicMap", 5);
-  pbrShader.setInt("roughnessMap", 6);
-  pbrShader.setInt("aoMap", 7);
+  PbrShader->Bind();
+  PbrShader->Uniform("irradianceMap")->SetInt(0);
+  PbrShader->Uniform("prefilterMap")->SetInt(1);
+  PbrShader->Uniform("brdfLUT")->SetInt(2);
+  PbrShader->Uniform("albedoMap")->SetInt(3);
+  PbrShader->Uniform("normalMap")->SetInt(4);
+  PbrShader->Uniform("metallicMap")->SetInt(5);
+  PbrShader->Uniform("roughnessMap")->SetInt(6);
+  PbrShader->Uniform("aoMap")->SetInt(7);
 
   backgroundShader.use();
   backgroundShader.setInt("environmentMap", 0);
@@ -93,7 +100,7 @@ Renderer::Renderer()
   // load PBR material textures
   // --------------------------
   // rusted iron
-  m_iron = PbrMaterial::Create(
+  Iron = PbrMaterial::Create(
     FileSystem::getPath("resources/textures/pbr/rusted_iron/albedo.png"),
     FileSystem::getPath("resources/textures/pbr/rusted_iron/normal.png"),
     FileSystem::getPath("resources/textures/pbr/rusted_iron/metallic.png"),
@@ -446,11 +453,12 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
   // render scene, supplying the convoluted irradiance map to the final
   // shader.
   // ------------------------------------------------------------------------------------------
-  pbrShader.use();
+  PbrShader->Bind();
   glm::mat4 model = glm::mat4(1.0f);
   auto view = cameraViewMatrix();
-  pbrShader.setMat4("view", view);
-  pbrShader.setVec3("camPos", cameraPosition());
+  PbrShader->Uniform("view")->SetMat4(view);
+  auto cameraPos = cameraPosition();
+  PbrShader->Uniform("camPos")->SetFloat3(cameraPos);
 
   // initialize static shader uniforms before rendering
   // --------------------------------------------------
@@ -458,7 +466,7 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
                                           (float)scrWidth / (float)scrHeight,
                                           0.1f,
                                           100.0f);
-  pbrShader.setMat4("projection", projection);
+  PbrShader->Uniform("projection")->SetMat4(projection);
 
   // bind pre-computed IBL data
   glActiveTexture(GL_TEXTURE0);
@@ -469,13 +477,13 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
   glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
   // rusted iron
-  m_iron->Bind();
+  Iron->Bind();
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(-5.0, 0.0, 2.0));
-  pbrShader.setMat4("model", model);
-  pbrShader.setMat3("normalMatrix",
-                    glm::transpose(glm::inverse(glm::mat3(model))));
+  PbrShader->Uniform("model")->SetMat4(model);
+  PbrShader->Uniform("normalMatrix")
+    ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
   renderSphere();
 
   // gold
@@ -492,9 +500,9 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(-3.0, 0.0, 2.0));
-  pbrShader.setMat4("model", model);
-  pbrShader.setMat3("normalMatrix",
-                    glm::transpose(glm::inverse(glm::mat3(model))));
+  PbrShader->Uniform("model")->SetMat4(model);
+  PbrShader->Uniform("normalMatrix")
+    ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
   renderSphere();
 
   // grass
@@ -511,9 +519,9 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(-1.0, 0.0, 2.0));
-  pbrShader.setMat4("model", model);
-  pbrShader.setMat3("normalMatrix",
-                    glm::transpose(glm::inverse(glm::mat3(model))));
+  PbrShader->Uniform("model")->SetMat4(model);
+  PbrShader->Uniform("normalMatrix")
+    ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
   renderSphere();
 
   // plastic
@@ -530,9 +538,9 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(1.0, 0.0, 2.0));
-  pbrShader.setMat4("model", model);
-  pbrShader.setMat3("normalMatrix",
-                    glm::transpose(glm::inverse(glm::mat3(model))));
+  PbrShader->Uniform("model")->SetMat4(model);
+  PbrShader->Uniform("normalMatrix")
+    ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
   renderSphere();
 
   // wall
@@ -549,9 +557,9 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(3.0, 0.0, 2.0));
-  pbrShader.setMat4("model", model);
-  pbrShader.setMat3("normalMatrix",
-                    glm::transpose(glm::inverse(glm::mat3(model))));
+  PbrShader->Uniform("model")->SetMat4(model);
+  PbrShader->Uniform("normalMatrix")
+    ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
   renderSphere();
 
   // render light source (simply re-render sphere at light positions)
@@ -563,15 +571,17 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
     glm::vec3 newPos =
       lightPositions[i] + glm::vec3(sin(currentFrame * 5.0) * 5.0, 0.0, 0.0);
     newPos = lightPositions[i];
-    pbrShader.setVec3("lightPositions[" + std::to_string(i) + "]", newPos);
-    pbrShader.setVec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+    PbrShader->Uniform("lightPositions[" + std::to_string(i) + "]")
+      ->SetFloat3(newPos);
+    PbrShader->Uniform("lightColors[" + std::to_string(i) + "]")
+      ->SetFloat3(lightColors[i]);
 
     model = glm::mat4(1.0f);
     model = glm::translate(model, newPos);
     model = glm::scale(model, glm::vec3(0.5f));
-    pbrShader.setMat4("model", model);
-    pbrShader.setMat3("normalMatrix",
-                      glm::transpose(glm::inverse(glm::mat3(model))));
+    PbrShader->Uniform("model")->SetMat4(model);
+    PbrShader->Uniform("normalMatrix")
+      ->SetMat3(glm::transpose(glm::inverse(glm::mat3(model))));
     renderSphere();
   }
 
