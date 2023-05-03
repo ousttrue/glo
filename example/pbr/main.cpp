@@ -1,6 +1,5 @@
 #include "renderer.h"
 
-#include "ibl_specular_textured.h"
 #include <GLFW/glfw3.h>
 #include <grapho/orbitview.h>
 #include <iostream>

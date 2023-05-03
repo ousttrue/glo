@@ -2,7 +2,6 @@ executable(
     'pbr',
     [
         'main.cpp',
-        'ibl_specular_textured.cpp',
         'renderer.cpp',
         'pbrmaterial.cpp',
         'mesh.cpp',

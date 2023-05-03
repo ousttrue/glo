@@ -1,7 +1,38 @@
 #include <GL/glew.h>
 
-#include "ibl_specular_textured.h"
 #include "pbrmaterial.h"
+#include "image.h"
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int
+loadTexture(std::string_view path)
+{
+  Image image(path);
+
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+
+  glBindTexture(GL_TEXTURE_2D, textureID);
+  glTexImage2D(GL_TEXTURE_2D,
+               0,
+               image.Format,
+               image.Width,
+               image.Height,
+               0,
+               image.Format,
+               GL_UNSIGNED_BYTE,
+               image.Data);
+  glGenerateMipmap(GL_TEXTURE_2D);
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  glTexParameteri(
+    GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  return textureID;
+}
 
 std::shared_ptr<PbrMaterial>
 PbrMaterial::Create(std::string_view albedo,
@@ -33,4 +64,3 @@ PbrMaterial::Bind()
   glActiveTexture(GL_TEXTURE7);
   glBindTexture(GL_TEXTURE_2D, AOMap);
 }
-

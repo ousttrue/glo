@@ -1,6 +1,4 @@
 #include "renderer.h"
-#include "ibl_specular_textured.h"
-#include "image.h"
 #include "mesh.h"
 #include "pbrmaterial.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,35 +6,36 @@
 #include <stb_image.h>
 #include <stdexcept>
 
-// utility function for loading a 2D texture from file
-// ---------------------------------------------------
-unsigned int
-loadTexture(std::string_view path)
+// renderQuad() renders a 1x1 XY quad in NDC
+// -----------------------------------------
+static void
+renderQuad()
 {
-  Image image(path);
-
-  unsigned int textureID;
-  glGenTextures(1, &textureID);
-
-  glBindTexture(GL_TEXTURE_2D, textureID);
-  glTexImage2D(GL_TEXTURE_2D,
-               0,
-               image.Format,
-               image.Width,
-               image.Height,
-               0,
-               image.Format,
-               GL_UNSIGNED_BYTE,
-               image.Data);
-  glGenerateMipmap(GL_TEXTURE_2D);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(
-    GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  return textureID;
+  static unsigned int quadVAO = 0;
+  static unsigned int quadVBO;
+  if (quadVAO == 0) {
+    float quadVertices[] = {
+      // positions        // texture Coords
+      -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+      1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
+    };
+    // setup plane VAO
+    glGenVertexArrays(1, &quadVAO);
+    glGenBuffers(1, &quadVBO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(
+      GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(
+      0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+      1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+  }
+  glBindVertexArray(quadVAO);
+  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+  glBindVertexArray(0);
 }
 
 Renderer::Renderer()
