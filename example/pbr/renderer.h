@@ -1,7 +1,9 @@
 #pragma once
 #include <GL/glew.h>
 #include <learnopengl/shader.h>
+#include <memory>
 
+struct PbrMaterial;
 class Renderer
 {
   // timing
@@ -15,11 +17,7 @@ class Renderer
   unsigned int prefilterMap;
   unsigned int brdfLUTTexture;
 
-  unsigned int ironAlbedoMap;
-  unsigned int ironNormalMap;
-  unsigned int ironMetallicMap;
-  unsigned int ironRoughnessMap;
-  unsigned int ironAOMap;
+  std::shared_ptr<PbrMaterial> m_iron;
 
   unsigned int goldAlbedoMap;
   unsigned int goldNormalMap;

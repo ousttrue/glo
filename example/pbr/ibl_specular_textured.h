@@ -1,10 +1,13 @@
 #pragma once
+#include <string_view>
 
-unsigned int
-loadTexture(const char* path);
 void
 renderSphere();
 void
 renderCube();
 void
 renderQuad();
+
+unsigned int
+loadTexture(std::string_view path);
+

@@ -1,10 +1,58 @@
 #include "renderer.h"
+#include "pbrmaterial.h"
 
 #include "camera.h"
 #include "ibl_specular_textured.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <learnopengl/filesystem.h>
 #include <stb_image.h>
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int
+loadTexture(std::string_view path)
+{
+  unsigned int textureID;
+  glGenTextures(1, &textureID);
+
+  int width, height, nrComponents;
+  std::string p(path.begin(), path.end());
+  unsigned char* data = stbi_load(p.c_str(), &width, &height, &nrComponents, 0);
+  if (data) {
+    GLenum format;
+    if (nrComponents == 1)
+      format = GL_RED;
+    else if (nrComponents == 3)
+      format = GL_RGB;
+    else if (nrComponents == 4)
+      format = GL_RGBA;
+
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 format,
+                 width,
+                 height,
+                 0,
+                 format,
+                 GL_UNSIGNED_BYTE,
+                 data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(
+      GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    stbi_image_free(data);
+  } else {
+    std::cout << "Texture failed to load at path: " << path << std::endl;
+    stbi_image_free(data);
+  }
+
+  return textureID;
+}
 
 Renderer::Renderer()
   : pbrShader("2.2.2.pbr.vs", "2.2.2.pbr.fs")
@@ -45,20 +93,12 @@ Renderer::Renderer()
   // load PBR material textures
   // --------------------------
   // rusted iron
-  ironAlbedoMap = loadTexture(
-    FileSystem::getPath("resources/textures/pbr/rusted_iron/albedo.png")
-      .c_str());
-  ironNormalMap = loadTexture(
-    FileSystem::getPath("resources/textures/pbr/rusted_iron/normal.png")
-      .c_str());
-  ironMetallicMap = loadTexture(
-    FileSystem::getPath("resources/textures/pbr/rusted_iron/metallic.png")
-      .c_str());
-  ironRoughnessMap = loadTexture(
-    FileSystem::getPath("resources/textures/pbr/rusted_iron/roughness.png")
-      .c_str());
-  ironAOMap = loadTexture(
-    FileSystem::getPath("resources/textures/pbr/rusted_iron/ao.png").c_str());
+  m_iron = PbrMaterial::Create(
+    FileSystem::getPath("resources/textures/pbr/rusted_iron/albedo.png"),
+    FileSystem::getPath("resources/textures/pbr/rusted_iron/normal.png"),
+    FileSystem::getPath("resources/textures/pbr/rusted_iron/metallic.png"),
+    FileSystem::getPath("resources/textures/pbr/rusted_iron/roughness.png"),
+    FileSystem::getPath("resources/textures/pbr/rusted_iron/ao.png"));
 
   // gold
   goldAlbedoMap = loadTexture(
@@ -429,16 +469,7 @@ Renderer::Render(float currentFrame, int scrWidth, int scrHeight)
   glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 
   // rusted iron
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, ironAlbedoMap);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D, ironNormalMap);
-  glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_2D, ironMetallicMap);
-  glActiveTexture(GL_TEXTURE6);
-  glBindTexture(GL_TEXTURE_2D, ironRoughnessMap);
-  glActiveTexture(GL_TEXTURE7);
-  glBindTexture(GL_TEXTURE_2D, ironAOMap);
+  m_iron->Bind();
 
   model = glm::mat4(1.0f);
   model = glm::translate(model, glm::vec3(-5.0, 0.0, 2.0));
