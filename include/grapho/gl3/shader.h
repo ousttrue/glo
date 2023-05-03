@@ -150,8 +150,8 @@ public:
     auto fs = grapho::StringFromPath(fs_path);
     return Create(vs, fs);
   }
-  void Bind() { glUseProgram(program_); }
-  void Unbind() { glUseProgram(0); }
+  void Use() { glUseProgram(program_); }
+  void UnUse() { glUseProgram(0); }
 
   std::expected<uint32_t, std::string> Attribute(const char* name)
   {

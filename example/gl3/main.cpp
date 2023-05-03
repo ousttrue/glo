@@ -219,7 +219,7 @@ main(void)
       glViewport(0, 0, 512, 512);
       glClearColor(0, 0.2f, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
-      (*program)->Bind();
+      (*program)->Use();
 
       texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
@@ -232,7 +232,7 @@ main(void)
       glViewport(0, 0, width, height);
       glClearColor(0, 0, 0, 0);
       glClear(GL_COLOR_BUFFER_BIT);
-      (*program)->Bind();
+      (*program)->Use();
       fbo->texture->Bind(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
     }

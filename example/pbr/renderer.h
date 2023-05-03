@@ -11,10 +11,9 @@ class Renderer
   float deltaTime = 0.0f;
   float lastFrame = 0.0f;
 
-  // Shader pbrShader;
   std::shared_ptr<grapho::gl3::ShaderProgram> PbrShader;
+  std::shared_ptr<grapho::gl3::ShaderProgram> BackgroundShader;
 
-  Shader backgroundShader;
   unsigned int envCubemap;
   unsigned int irradianceMap;
   unsigned int prefilterMap;
