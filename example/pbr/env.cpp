@@ -1,6 +1,7 @@
 #include "env.h"
 #include "mesh.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <grapho/gl3/fbo.h>
 #include <learnopengl/filesystem.h>
 #include <learnopengl/shader.h>
 #include <stb_image.h>
@@ -52,20 +53,6 @@ Environment::Environment()
   Shader irradianceShader("2.2.2.cubemap.vs",
                           "2.2.2.irradiance_convolution.fs");
   Shader prefilterShader("2.2.2.cubemap.vs", "2.2.2.prefilter.fs");
-  Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
-
-  // pbr: setup framebuffer
-  // ----------------------
-  unsigned int captureFBO;
-  unsigned int captureRBO;
-  glGenFramebuffers(1, &captureFBO);
-  glGenRenderbuffers(1, &captureRBO);
-
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-  glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-  glFramebufferRenderbuffer(
-    GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
 
   // pbr: load the HDR environment map
   // ---------------------------------
@@ -159,24 +146,16 @@ Environment::Environment()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
-  glViewport(
-    0,
-    0,
-    512,
-    512); // don't forget to configure the viewport to the capture dimensions.
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-  for (unsigned int i = 0; i < 6; ++i) {
-    equirectangularToCubemapShader.setMat4("view", captureViews[i]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER,
-                           GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                           envCubemap,
-                           0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+  {
+    auto fbo = grapho::gl3::Fbo::Create(512, 512);
+    for (unsigned int i = 0; i < 6; ++i) {
+      equirectangularToCubemapShader.setMat4("view", captureViews[i]);
+      fbo->AttachCubeMap(i, envCubemap);
+      fbo->Clear();
+      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // then let OpenGL generate mipmaps from first mip face (combatting visible
   // dots artifact)
@@ -205,10 +184,6 @@ Environment::Environment()
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-  glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-
   // pbr: solve diffuse integral by convolution to create an irradiance
   // (cube)map.
   // -----------------------------------------------------------------------------
@@ -218,24 +193,16 @@ Environment::Environment()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
-  glViewport(
-    0,
-    0,
-    32,
-    32); // don't forget to configure the viewport to the capture dimensions.
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-  for (unsigned int i = 0; i < 6; ++i) {
-    irradianceShader.setMat4("view", captureViews[i]);
-    glFramebufferTexture2D(GL_FRAMEBUFFER,
-                           GL_COLOR_ATTACHMENT0,
-                           GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                           irradianceMap,
-                           0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+  {
+    auto fbo = grapho::gl3::Fbo::Create(32, 32);
+    for (unsigned int i = 0; i < 6; ++i) {
+      irradianceShader.setMat4("view", captureViews[i]);
+      fbo->AttachCubeMap(i, irradianceMap);
+      fbo->Clear();
+      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter
   // scale.
@@ -274,33 +241,25 @@ Environment::Environment()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
   unsigned int maxMipLevels = 5;
   for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
     // reisze framebuffer according to mip-level size.
     unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
     unsigned int mipHeight =
       static_cast<unsigned int>(128 * std::pow(0.5, mip));
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(
-      GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mipWidth, mipHeight);
-    glViewport(0, 0, mipWidth, mipHeight);
 
     float roughness = (float)mip / (float)(maxMipLevels - 1);
     prefilterShader.setFloat("roughness", roughness);
+
+    auto fbo = grapho::gl3::Fbo::Create(mipWidth, mipHeight);
     for (unsigned int i = 0; i < 6; ++i) {
       prefilterShader.setMat4("view", captureViews[i]);
-      glFramebufferTexture2D(GL_FRAMEBUFFER,
-                             GL_COLOR_ATTACHMENT0,
-                             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                             prefilterMap,
-                             mip);
-
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      fbo->AttachCubeMap(i, prefilterMap, mip);
+      fbo->Clear();
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   // pbr: generate a 2D LUT from the BRDF equations used.
   // ----------------------------------------------------
@@ -317,18 +276,15 @@ Environment::Environment()
 
   // then re-configure capture framebuffer object and render screen-space quad
   // with BRDF shader.
-  glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-  glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-  glFramebufferTexture2D(
-    GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfLUTTexture, 0);
-
-  glViewport(0, 0, 512, 512);
-  brdfShader.use();
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  renderQuad();
-
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  {
+    auto fbo = grapho::gl3::Fbo::Create(512, 512);
+    fbo->AttachTexture2D(brdfLUTTexture);
+    fbo->Clear();
+    Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
+    brdfShader.use();
+    renderQuad();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
 }
 
 void
