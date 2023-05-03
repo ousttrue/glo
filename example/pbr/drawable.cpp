@@ -1,8 +1,9 @@
-#include <Gl/glew.h>
-
 #include "drawable.h"
 #include "mesh.h"
+#include "pbr_fs.h"
+#include "pbr_vs.h"
 #include "pbrmaterial.h"
+#include <Gl/glew.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/vao.h>
 
@@ -20,8 +21,7 @@ TransposeInv(const DirectX::XMFLOAT4X4& _m)
 Drawable::Drawable()
 {
   {
-    auto shader = grapho::gl3::ShaderProgram::CreateFromPath("2.2.2.pbr.vs",
-                                                             "2.2.2.pbr.fs");
+    auto shader = grapho::gl3::ShaderProgram::Create(PBR_VS, PBR_FS);
     if (!shader) {
       throw std::runtime_error(shader.error());
     }
