@@ -198,7 +198,7 @@ main(void)
       0, 0, 0, 1, //
     }, };
   const uint32_t ubo_binding_point = 1;
-  grapho::gl3::Viewport viewport;
+  grapho::Viewport viewport;
   while (!glfwWindowShouldClose(window)) {
     // update
     glfwPollEvents();
@@ -212,12 +212,12 @@ main(void)
 
     {
       fbo->AttachTexture2D(fboTexture->texture_);
-      grapho::gl3::Viewport{
+      grapho::Viewport fboViewport{
         .Width = 512,
         .Height = 512,
         .Color = { 0, 0.2f, 0, 1.0f },
-      }
-        .Clear();
+      };
+      grapho::gl3::ClearViewport(fboViewport);
       (*program)->Use();
 
       texture->Bind(0);
@@ -229,7 +229,7 @@ main(void)
     {
       (*program)->Use();
       fboTexture->Bind(0);
-      viewport.Clear();
+      grapho::gl3::ClearViewport(viewport);
       vao->Draw(GL_TRIANGLES, 6, 0);
     }
 

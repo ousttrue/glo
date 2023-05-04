@@ -1,4 +1,5 @@
 #pragma once
+#include "viewport.h"
 #include <DirectXMath.h>
 #include <array>
 #include <cmath>
@@ -7,8 +8,7 @@ namespace grapho {
 
 struct OrbitView
 {
-  int Width = 1;
-  int Height = 1;
+  Viewport Viewport;
   float FovY = DirectX::XMConvertToRadians(30.0f);
   float NearZ = 0.01f;
   float FarZ = 1000.0f;
@@ -23,11 +23,11 @@ struct OrbitView
 
   void SetSize(int w, int h)
   {
-    if (w == Width && h == Height) {
+    if (w == Viewport.Width && h == Viewport.Height) {
       return;
     }
-    Width = w;
-    Height = h;
+    Viewport.Width = w;
+    Viewport.Height = h;
   }
 
   void YawPitch(int dx, int dy)
@@ -38,7 +38,7 @@ struct OrbitView
 
   void Shift(int dx, int dy)
   {
-    auto factor = std::tan(FovY * 0.5f) * 2.0f * shift_[2] / Height;
+    auto factor = std::tan(FovY * 0.5f) * 2.0f * shift_[2] / Viewport.Height;
     shift_[0] -= dx * factor;
     shift_[1] += dy * factor;
   }
@@ -54,7 +54,7 @@ struct OrbitView
 
   void Update(const float projection[16], const float view[16])
   {
-    float aspectRatio = (float)Width / (float)Height;
+    auto aspectRatio = Viewport.AspectRatio();
     DirectX::XMStoreFloat4x4(
       (DirectX::XMFLOAT4X4*)projection,
       DirectX::XMMatrixPerspectiveFovRH(FovY, aspectRatio, NearZ, FarZ));

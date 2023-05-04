@@ -148,11 +148,11 @@ Environment::Environment()
 
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::gl3::Viewport fboViewport{ 512, 512 };
+    grapho::Viewport fboViewport{ 512, 512 };
     for (unsigned int i = 0; i < 6; ++i) {
       equirectangularToCubemapShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, envCubemap);
-      fboViewport.Clear();
+      grapho::gl3::ClearViewport(fboViewport);
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -196,11 +196,11 @@ Environment::Environment()
 
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::gl3::Viewport fboViewport{ 32, 32 };
+    grapho::Viewport fboViewport{ 32, 32 };
     for (unsigned int i = 0; i < 6; ++i) {
       irradianceShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, irradianceMap);
-      fboViewport.Clear();
+      grapho::gl3::ClearViewport(fboViewport);
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -248,7 +248,7 @@ Environment::Environment()
     // reisze framebuffer according to mip-level size.
     auto mipWidth = static_cast<int>(128 * std::pow(0.5, mip));
     auto mipHeight = static_cast<int>(128 * std::pow(0.5, mip));
-    grapho::gl3::Viewport fboViewport{ mipWidth, mipHeight };
+    grapho::Viewport fboViewport{ mipWidth, mipHeight };
 
     float roughness = (float)mip / (float)(maxMipLevels - 1);
     prefilterShader.setFloat("roughness", roughness);
@@ -257,7 +257,7 @@ Environment::Environment()
     for (unsigned int i = 0; i < 6; ++i) {
       prefilterShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, prefilterMap, mip);
-      fboViewport.Clear();
+      grapho::gl3::ClearViewport(fboViewport);
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -280,9 +280,9 @@ Environment::Environment()
   // with BRDF shader.
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::gl3::Viewport fboViewport{ 512, 512 };
+    grapho::Viewport fboViewport{ 512, 512 };
     fbo->AttachTexture2D(brdfLUTTexture);
-    fboViewport.Clear();
+    grapho::gl3::ClearViewport(fboViewport);
     Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
     brdfShader.use();
     renderQuad();

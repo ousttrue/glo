@@ -1,32 +1,26 @@
 #pragma once
+#include "../viewport.h"
 #include "texture.h"
 #include <assert.h>
 
 namespace grapho::gl3 {
 
-struct Viewport
+void
+ClearViewport(const Viewport& vp, bool applyAlpha = false)
 {
-  int Width = 0;
-  int Height = 0;
-  float Color[4] = { 1, 0, 1, 0 };
-  float Depth = 1.0f;
-
-  void Clear(bool applyAlpha = false)
-  {
-    glViewport(0, 0, Width, Height);
-    glScissor(0, 0, Width, Height);
-    if (applyAlpha) {
-      glClearColor(Color[0] * Color[3],
-                   Color[1] * Color[3],
-                   Color[2] * Color[3],
-                   Color[3]);
-    } else {
-      glClearColor(Color[0], Color[1], Color[2], Color[3]);
-    }
-    glClearDepth(Depth);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glViewport(0, 0, vp.Width, vp.Height);
+  glScissor(0, 0, vp.Width, vp.Height);
+  if (applyAlpha) {
+    glClearColor(vp.Color[0] * vp.Color[3],
+                 vp.Color[1] * vp.Color[3],
+                 vp.Color[2] * vp.Color[3],
+                 vp.Color[3]);
+  } else {
+    glClearColor(vp.Color[0], vp.Color[1], vp.Color[2], vp.Color[3]);
   }
-};
+  glClearDepth(vp.Depth);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
 struct Fbo
 {
