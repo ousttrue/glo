@@ -5,6 +5,7 @@
 #include "shaders/equirectangular_to_cubemap_fs.h"
 #include "shaders/irradiance_convolution_fs.h"
 #include "shaders/prefilter_fs.h"
+#include <grapho/gl3/cubemapper.h>
 #include <grapho/gl3/fbo.h>
 #include <grapho/vertexlayout.h>
 #include <iostream>
@@ -113,89 +114,9 @@ GenerateBrdfLUTTexture()
   return brdfLUTTexture;
 }
 
-class CubeMapper
-{
-  std::shared_ptr<grapho::gl3::Vao> m_cube;
-  uint32_t m_cubeDrawCount = 0;
-
-  // pbr: set up projection and view matrices for capturing data onto the 6
-  // cubemap face directions
-  // ---------------------------------------------------------------------------
-  DirectX::XMFLOAT4X4 m_captureProjection;
-  DirectX::XMFLOAT4X4 m_captureViews[6];
-
-public:
-  CubeMapper()
-  {
-    auto cube = grapho::Mesh::Cube();
-    auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
-    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
-    m_cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
-    m_cubeDrawCount = cube->Vertices.size();
-
-    DirectX::XMStoreFloat4x4(
-      &m_captureProjection,
-      DirectX::XMMatrixPerspectiveFovRH(
-        DirectX::XMConvertToRadians(90.0f), 1.0f, 0.1f, 10.0f));
-
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[0],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(1.0f, 0, 0, 0),
-                                DirectX::XMVectorSet(0, -1.0f, 0, 0)));
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[1],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(-1.0f, 0, 0, 0),
-                                DirectX::XMVectorSet(0, -1.0f, 0, 0)));
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[2],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(0, 1.0f, 0, 0),
-                                DirectX::XMVectorSet(0, 0, 1.0f, 0)));
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[3],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(0, -1.0f, 0, 0),
-                                DirectX::XMVectorSet(0, 0, -1.0f, 0)));
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[4],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(0, 0, 1.0f, 0),
-                                DirectX::XMVectorSet(0, -1.0f, 0, 0)));
-    DirectX::XMStoreFloat4x4(
-      &m_captureViews[5],
-      DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
-                                DirectX::XMVectorSet(0, 0, -1.0f, 0),
-                                DirectX::XMVectorSet(0, -1.0f, 0, 0)));
-  }
-  ~CubeMapper() {}
-
-  using CallbackFunc = std::function<void(const DirectX::XMFLOAT4X4& projection,
-                                          const DirectX::XMFLOAT4X4& view)>;
-  void Map(int size,
-           uint32_t dst,
-           const CallbackFunc& callback,
-           int mipLevel = 0) const
-  {
-    auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::Viewport fboViewport{
-      .Width = size, .Height = size,
-      // .Color = { 0, 0, 0, 0 },
-    };
-    for (unsigned int i = 0; i < 6; ++i) {
-      callback(m_captureProjection, m_captureViews[i]);
-      fbo->AttachCubeMap(i, dst, mipLevel);
-      grapho::gl3::ClearViewport(fboViewport);
-      m_cube->Draw(GL_TRIANGLES, m_cubeDrawCount);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  }
-};
-
 // pbr: setup cubemap to render to and attach to framebuffer
 static uint32_t
-GenerateEnvCubeMap(const CubeMapper& mapper)
+GenerateEnvCubeMap(const grapho::gl3::CubeMapper& mapper)
 {
   uint32_t envCubemap;
   glGenTextures(1, &envCubemap);
@@ -248,7 +169,8 @@ GenerateEnvCubeMap(const CubeMapper& mapper)
 // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance
 // scale.
 static uint32_t
-GenerateIrradianceMap(const CubeMapper& mapper, uint32_t envCubemap)
+GenerateIrradianceMap(const grapho::gl3::CubeMapper& mapper,
+                      uint32_t envCubemap)
 {
   uint32_t irradianceMap;
   glGenTextures(1, &irradianceMap);
@@ -293,7 +215,7 @@ GenerateIrradianceMap(const CubeMapper& mapper, uint32_t envCubemap)
 // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter
 // scale.
 static uint32_t
-GeneratePrefilterMap(const CubeMapper& mapper, uint32_t envCubemap)
+GeneratePrefilterMap(const grapho::gl3::CubeMapper& mapper, uint32_t envCubemap)
 {
   uint32_t prefilterMap;
   glGenTextures(1, &prefilterMap);
@@ -359,7 +281,7 @@ Environment::Environment()
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
-  CubeMapper mapper;
+  grapho::gl3::CubeMapper mapper;
   envCubemap = GenerateEnvCubeMap(mapper);
   irradianceMap = GenerateIrradianceMap(mapper, envCubemap);
   prefilterMap = GeneratePrefilterMap(mapper, envCubemap);
