@@ -8,15 +8,9 @@
 Drawable::Drawable()
 {
   auto sphere = grapho::Mesh::Sphere();
-
-  auto vbo = grapho::gl3::Vbo::Create(sphere->Vertices);
-  std::shared_ptr<grapho::gl3::Vbo> slots[]{
-    vbo,
-  };
-  auto ibo = grapho::gl3::Ibo::Create(sphere->Indices);
-
-  Mesh = grapho::gl3::Vao::Create(sphere->Layouts, slots, ibo);
+  Mesh = grapho::gl3::Vao::Create(sphere);
   MeshDrawCount = sphere->Indices.size();
+  MeshDrawMode = *grapho::gl3::GLMode(sphere->Mode);
 }
 
 void
@@ -26,5 +20,5 @@ Drawable::Draw(const DirectX::XMFLOAT4X4& projection,
                const Lights& lights)
 {
   Material->Activate(projection, view, Position, cameraPos, lights);
-  Mesh->Draw(GL_TRIANGLE_STRIP, MeshDrawCount);
+  Mesh->Draw(MeshDrawMode, MeshDrawCount);
 }

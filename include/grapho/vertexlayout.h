@@ -53,7 +53,34 @@ struct Mesh
     DirectX::XMFLOAT2 Uv;
   };
   DrawMode Mode = DrawMode::Triangles;
-  std::vector<grapho::VertexLayout> Layouts{
+  std::vector<grapho::VertexLayout> Layouts;
+  std::vector<Vertex> Vertices;
+  std::vector<unsigned int> Indices;
+
+  static std::shared_ptr<Mesh> Sphere()
+  {
+    std::vector<DirectX::XMFLOAT3> positions;
+    std::vector<DirectX::XMFLOAT2> uv;
+    std::vector<DirectX::XMFLOAT3> normals;
+    const unsigned int X_SEGMENTS = 64;
+    const unsigned int Y_SEGMENTS = 64;
+    const float PI = 3.14159265359f;
+    for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
+      for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
+        float xSegment = (float)x / (float)X_SEGMENTS;
+        float ySegment = (float)y / (float)Y_SEGMENTS;
+        float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+        float yPos = std::cos(ySegment * PI);
+        float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
+        positions.push_back({ xPos, yPos, zPos });
+        uv.push_back({ xSegment, ySegment });
+        normals.push_back({ xPos, yPos, zPos });
+      }
+    }
+
+    auto ptr = std::make_shared<Mesh>();
+    ptr->Layouts=
+    {
     {
       .Id = {
        .AttributeLocation=0,
@@ -85,31 +112,7 @@ struct Mesh
       .Stride = sizeof(Vertex),
     },
   };
-  std::vector<Vertex> Vertices;
-  std::vector<unsigned int> Indices;
 
-  static std::shared_ptr<Mesh> Sphere()
-  {
-    std::vector<DirectX::XMFLOAT3> positions;
-    std::vector<DirectX::XMFLOAT2> uv;
-    std::vector<DirectX::XMFLOAT3> normals;
-    const unsigned int X_SEGMENTS = 64;
-    const unsigned int Y_SEGMENTS = 64;
-    const float PI = 3.14159265359f;
-    for (unsigned int x = 0; x <= X_SEGMENTS; ++x) {
-      for (unsigned int y = 0; y <= Y_SEGMENTS; ++y) {
-        float xSegment = (float)x / (float)X_SEGMENTS;
-        float ySegment = (float)y / (float)Y_SEGMENTS;
-        float xPos = std::cos(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
-        float yPos = std::cos(ySegment * PI);
-        float zPos = std::sin(xSegment * 2.0f * PI) * std::sin(ySegment * PI);
-        positions.push_back({ xPos, yPos, zPos });
-        uv.push_back({ xSegment, ySegment });
-        normals.push_back({ xPos, yPos, zPos });
-      }
-    }
-
-    auto ptr = std::make_shared<Mesh>();
     bool oddRow = false;
     for (unsigned int y = 0; y < Y_SEGMENTS; ++y) {
       if (!oddRow) // even rows: y == 0, y == 2; and so on
@@ -135,6 +138,7 @@ struct Mesh
       });
     }
 
+    ptr->Mode = DrawMode::TriangleStrip;
     return ptr;
   }
 
@@ -257,7 +261,41 @@ struct Mesh
         { 0.0f, 0.0f } } // bottom-left
     };
     auto ptr = std::make_shared<Mesh>();
+    ptr->Layouts=
+  {
+    {
+      .Id = {
+       .AttributeLocation=0,
+       .Slot=0,
+      },
+      .Type = grapho::ValueType::Float,
+      .Count = 3,
+      .Offset = offsetof(Vertex, Position),
+      .Stride = sizeof(Vertex),
+    },
+    {
+      .Id = {
+       .AttributeLocation=1,
+       .Slot=0,
+      },
+      .Type = grapho::ValueType::Float,
+      .Count = 3,
+      .Offset = offsetof(Vertex, Normal),
+      .Stride = sizeof(Vertex),
+    },
+    {
+      .Id = {
+       .AttributeLocation=2,
+       .Slot=0,
+      },
+      .Type = grapho::ValueType::Float,
+      .Count = 2,
+      .Offset = offsetof(Vertex, Uv),
+      .Stride = sizeof(Vertex),
+    },
+  };
     ptr->Vertices = vertices;
+    ptr->Mode = DrawMode::Triangles;
     return ptr;
   }
 };

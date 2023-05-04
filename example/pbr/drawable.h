@@ -14,6 +14,7 @@ struct Drawable
 {
   std::shared_ptr<grapho::gl3::Vao> Mesh;
   uint32_t MeshDrawCount = 0;
+  uint32_t MeshDrawMode = 0;
   std::shared_ptr<PbrMaterial> Material;
   DirectX::XMFLOAT3 Position = {};
 
