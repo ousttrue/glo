@@ -12,7 +12,10 @@
 unsigned int
 loadTexture(std::string_view path)
 {
-  Image image(path);
+  Image image;
+  if (!image.Load(path)) {
+    return {};
+  }
 
   unsigned int textureID;
   glGenTextures(1, &textureID);

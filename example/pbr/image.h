@@ -11,6 +11,10 @@ struct Image
   uint32_t Format = 0;
   Image(const Image&) = delete;
   Image& operator=(const Image&) = delete;
-  Image(std::string_view path);
+  Image(){}
   ~Image();
+
+  bool Load(std::string_view path);
+  bool LoadHdr(std::string_view path);
 };
+
