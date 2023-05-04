@@ -1,48 +1,66 @@
 #pragma once
 #include "texture.h"
+#include <assert.h>
 
 namespace grapho::gl3 {
 
+struct Viewport
+{
+  int Width = 0;
+  int Height = 0;
+  float Color[4] = { 1, 0, 1, 0 };
+  float Depth = 1.0f;
+
+  void Clear(bool applyAlpha = false)
+  {
+    glViewport(0, 0, Width, Height);
+    glScissor(0, 0, Width, Height);
+    if (applyAlpha) {
+      glClearColor(Color[0] * Color[3],
+                   Color[1] * Color[3],
+                   Color[2] * Color[3],
+                   Color[3]);
+    } else {
+      glClearColor(Color[0], Color[1], Color[2], Color[3]);
+    }
+    glClearDepth(Depth);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  }
+};
+
 struct Fbo
 {
-  int width_ = 0;
-  int height_ = 0;
-  uint32_t fbo_ = 0;
-  uint32_t rbo_ = 0;
-
-private:
-  Fbo(int width, int height, bool use_depth)
-    : width_(width)
-    , height_(height)
+  uint32_t m_fbo = 0;
+  uint32_t m_rbo = 0;
+  Fbo()
   {
     // this->texture = Texture::Create(width, height);
-    glGenFramebuffers(1, &this->fbo_);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
-
-    if (use_depth) {
-      glGenRenderbuffers(1, &rbo_);
-      glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
-      glRenderbufferStorage(
-        GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-      glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glGenFramebuffers(1, &m_fbo);
+    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
   }
-
-public:
+  ~Fbo()
+  {
+    glDeleteFramebuffers(1, &m_fbo);
+    if (m_rbo) {
+      glDeleteRenderbuffers(1, &m_rbo);
+    }
+  }
   Fbo(const Fbo&) = delete;
   Fbo& operator=(const Fbo&) = delete;
-  ~Fbo() { glDeleteFramebuffers(1, &fbo_); }
-  static std::shared_ptr<Fbo> Create(int width,
-                                     int height,
-                                     bool use_depth = true)
-  {
-    return std::shared_ptr<Fbo>(new Fbo(width, height, use_depth));
-  }
-  void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, fbo_); }
+
+  void Bind() { glBindFramebuffer(GL_FRAMEBUFFER, m_fbo); }
   void Unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
+
+  void AttachDepth(int width, int height)
+  {
+    assert(m_rbo == 0);
+    glGenRenderbuffers(1, &m_rbo);
+    glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glFramebufferRenderbuffer(
+      GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_rbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
 
   void AttachTexture2D(uint32_t texture, int mipLevel = 0)
   {
@@ -61,26 +79,6 @@ public:
                            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                            texture,
                            mipLevel);
-  }
-
-  void Clear(const float color[4] = {}, float depth = 1.0f)
-  {
-    Bind();
-    glViewport(0, 0, width_, height_);
-    glScissor(0, 0, width_, height_);
-    if (color) {
-      glClearColor(color[0] * color[3],
-                   color[1] * color[3],
-                   color[2] * color[3],
-                   color[3]);
-    }
-    if (rbo_) {
-      glClearDepth(depth);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      // glDepthFunc(GL_LESS);
-    } else {
-      glClear(GL_COLOR_BUFFER_BIT);
-    }
   }
 };
 

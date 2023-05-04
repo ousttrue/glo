@@ -147,11 +147,12 @@ Environment::Environment()
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
   {
-    auto fbo = grapho::gl3::Fbo::Create(512, 512);
+    auto fbo = std::make_shared<grapho::gl3::Fbo>();
+    grapho::gl3::Viewport fboViewport{ 512, 512 };
     for (unsigned int i = 0; i < 6; ++i) {
       equirectangularToCubemapShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, envCubemap);
-      fbo->Clear();
+      fboViewport.Clear();
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -194,11 +195,12 @@ Environment::Environment()
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
   {
-    auto fbo = grapho::gl3::Fbo::Create(32, 32);
+    auto fbo = std::make_shared<grapho::gl3::Fbo>();
+    grapho::gl3::Viewport fboViewport{ 32, 32 };
     for (unsigned int i = 0; i < 6; ++i) {
       irradianceShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, irradianceMap);
-      fbo->Clear();
+      fboViewport.Clear();
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -244,18 +246,18 @@ Environment::Environment()
   unsigned int maxMipLevels = 5;
   for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
     // reisze framebuffer according to mip-level size.
-    unsigned int mipWidth = static_cast<unsigned int>(128 * std::pow(0.5, mip));
-    unsigned int mipHeight =
-      static_cast<unsigned int>(128 * std::pow(0.5, mip));
+    auto mipWidth = static_cast<int>(128 * std::pow(0.5, mip));
+    auto mipHeight = static_cast<int>(128 * std::pow(0.5, mip));
+    grapho::gl3::Viewport fboViewport{ mipWidth, mipHeight };
 
     float roughness = (float)mip / (float)(maxMipLevels - 1);
     prefilterShader.setFloat("roughness", roughness);
 
-    auto fbo = grapho::gl3::Fbo::Create(mipWidth, mipHeight);
+    auto fbo = std::make_shared<grapho::gl3::Fbo>();
     for (unsigned int i = 0; i < 6; ++i) {
       prefilterShader.setMat4("view", captureViews[i]);
       fbo->AttachCubeMap(i, prefilterMap, mip);
-      fbo->Clear();
+      fboViewport.Clear();
       Cube->Draw(GL_TRIANGLES, CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -277,9 +279,10 @@ Environment::Environment()
   // then re-configure capture framebuffer object and render screen-space quad
   // with BRDF shader.
   {
-    auto fbo = grapho::gl3::Fbo::Create(512, 512);
+    auto fbo = std::make_shared<grapho::gl3::Fbo>();
+    grapho::gl3::Viewport fboViewport{ 512, 512 };
     fbo->AttachTexture2D(brdfLUTTexture);
-    fbo->Clear();
+    fboViewport.Clear();
     Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
     brdfShader.use();
     renderQuad();

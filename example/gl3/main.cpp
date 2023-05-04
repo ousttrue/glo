@@ -185,7 +185,7 @@ main(void)
 
   auto texture = grapho::gl3::Texture::Create(2, 2, &pixels[0].r);
 
-  std::shared_ptr<grapho::gl3::Fbo> fbo = grapho::gl3::Fbo::Create(512, 512);
+  std::shared_ptr<grapho::gl3::Fbo> fbo = std::make_shared<grapho::gl3::Fbo>();
   std::shared_ptr<grapho::gl3::Texture> fboTexture =
     grapho::gl3::Texture::Create(512, 512);
 
@@ -198,10 +198,11 @@ main(void)
       0, 0, 0, 1, //
     }, };
   const uint32_t ubo_binding_point = 1;
+  grapho::gl3::Viewport viewport;
   while (!glfwWindowShouldClose(window)) {
     // update
     glfwPollEvents();
-    int width, height;
+    glfwGetFramebufferSize(window, &viewport.Width, &viewport.Height);
 
     // (*program)->SetUniformMatrix(*mvp_location, mvp);
     // (*program)->SetUniformMatrix(*mvp_location, mvp);
@@ -211,11 +212,12 @@ main(void)
 
     {
       fbo->AttachTexture2D(fboTexture->texture_);
-      static float clear_color[] = { 0, 0.2f, 0, 0 };
-      fbo->Clear(clear_color);
-      // glViewport(0, 0, 512, 512);
-      // glClearColor(0, 0.2f, 0, 0);
-      // glClear(GL_COLOR_BUFFER_BIT);
+      grapho::gl3::Viewport{
+        .Width = 512,
+        .Height = 512,
+        .Color = { 0, 0.2f, 0, 1.0f },
+      }
+        .Clear();
       (*program)->Use();
 
       texture->Bind(0);
@@ -225,12 +227,9 @@ main(void)
 
     // draw backbuffer
     {
-      glfwGetFramebufferSize(window, &width, &height);
-      glViewport(0, 0, width, height);
-      glClearColor(0, 0, 0, 0);
-      glClear(GL_COLOR_BUFFER_BIT);
       (*program)->Use();
       fboTexture->Bind(0);
+      viewport.Clear();
       vao->Draw(GL_TRIANGLES, 6, 0);
     }
 
