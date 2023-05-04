@@ -108,16 +108,69 @@ GenerateBrdfLUTTexture()
   return brdfLUTTexture;
 }
 
-Environment::Environment()
+struct CubeMapper
 {
-  auto cube = Mesh::Cube();
-  auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
-  std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
-  auto Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
-  auto CubeDrawCount = cube->Vertices.size();
+  std::shared_ptr<grapho::gl3::Vao> Cube;
+  uint32_t CubeDrawCount = 0;
 
-  // pbr: setup cubemap to render to and attach to framebuffer
-  // ---------------------------------------------------------
+  // pbr: set up projection and view matrices for capturing data onto the 6
+  // cubemap face directions
+  // ---------------------------------------------------------------------------
+  glm::mat4 captureProjection =
+    glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+  glm::mat4 captureViews[6] = { glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(1.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(-1.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, 1.0f, 0.0f),
+                                            glm::vec3(0.0f, 0.0f, 1.0f)),
+                                glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, -1.0f, 0.0f),
+                                            glm::vec3(0.0f, 0.0f, -1.0f)),
+                                glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, 0.0f, 1.0f),
+                                            glm::vec3(0.0f, -1.0f, 0.0f)),
+                                glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
+                                            glm::vec3(0.0f, 0.0f, -1.0f),
+                                            glm::vec3(0.0f, -1.0f, 0.0f)) };
+
+  CubeMapper()
+  {
+    auto cube = Mesh::Cube();
+    auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
+    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
+    Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+    CubeDrawCount = cube->Vertices.size();
+  }
+  ~CubeMapper() {}
+
+  void Map(int size,
+           uint32_t dst,
+           const std::function<void(const glm::mat4&)>& callback) const
+  {
+    auto fbo = std::make_shared<grapho::gl3::Fbo>();
+    grapho::Viewport fboViewport{
+      .Width = size, .Height = size,
+      // .Color = { 0, 0, 0, 0 },
+    };
+    for (unsigned int i = 0; i < 6; ++i) {
+      callback(captureViews[i]);
+      fbo->AttachCubeMap(i, dst);
+      grapho::gl3::ClearViewport(fboViewport);
+      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+    }
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  }
+};
+
+// pbr: setup cubemap to render to and attach to framebuffer
+static uint32_t
+GenerateEnvCubeMap(const CubeMapper& mapper)
+{
+  uint32_t envCubemap;
   glGenTextures(1, &envCubemap);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
   for (unsigned int i = 0; i < 6; ++i) {
@@ -141,58 +194,36 @@ Environment::Environment()
                               // visible dots artifact)
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-  // pbr: set up projection and view matrices for capturing data onto the 6
-  // cubemap face directions
-  // ----------------------------------------------------------------------------------------------
-  glm::mat4 captureProjection =
-    glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-  glm::mat4 captureViews[] = { glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(1.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, -1.0f, 0.0f)),
-                               glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(-1.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, -1.0f, 0.0f)),
-                               glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, 1.0f, 0.0f),
-                                           glm::vec3(0.0f, 0.0f, 1.0f)),
-                               glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, -1.0f, 0.0f),
-                                           glm::vec3(0.0f, 0.0f, -1.0f)),
-                               glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, 0.0f, 1.0f),
-                                           glm::vec3(0.0f, -1.0f, 0.0f)),
-                               glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f),
-                                           glm::vec3(0.0f, 0.0f, -1.0f),
-                                           glm::vec3(0.0f, -1.0f, 0.0f)) };
-
   // pbr: convert HDR equirectangular environment map to cubemap equivalent
   // ----------------------------------------------------------------------
   Shader equirectangularToCubemapShader("2.2.2.cubemap.vs",
                                         "2.2.2.equirectangular_to_cubemap.fs");
   equirectangularToCubemapShader.use();
   equirectangularToCubemapShader.setInt("equirectangularMap", 0);
-  equirectangularToCubemapShader.setMat4("projection", captureProjection);
+  equirectangularToCubemapShader.setMat4("projection",
+                                         mapper.captureProjection);
 
-  auto hdrTexture = LoadHdrTexture();
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, hdrTexture);
-
-  {
-    auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::Viewport fboViewport{ 512, 512 };
-    for (unsigned int i = 0; i < 6; ++i) {
-      equirectangularToCubemapShader.setMat4("view", captureViews[i]);
-      fbo->AttachCubeMap(i, envCubemap);
-      grapho::gl3::ClearViewport(fboViewport);
-      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  }
+  mapper.Map(
+    512, envCubemap, [&equirectangularToCubemapShader](const glm::mat4& view) {
+      equirectangularToCubemapShader.setMat4("view", view);
+    });
 
   // then let OpenGL generate mipmaps from first mip face (combatting visible
   // dots artifact)
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
   glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+  return envCubemap;
+}
+
+Environment::Environment()
+{
+  auto hdrTexture = LoadHdrTexture();
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, hdrTexture);
+
+  CubeMapper mapper;
+  envCubemap = GenerateEnvCubeMap(mapper);
 
   // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance
   // scale.
@@ -223,7 +254,7 @@ Environment::Environment()
                           "2.2.2.irradiance_convolution.fs");
   irradianceShader.use();
   irradianceShader.setInt("environmentMap", 0);
-  irradianceShader.setMat4("projection", captureProjection);
+  irradianceShader.setMat4("projection", mapper.captureProjection);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
@@ -231,10 +262,10 @@ Environment::Environment()
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
     grapho::Viewport fboViewport{ 32, 32 };
     for (unsigned int i = 0; i < 6; ++i) {
-      irradianceShader.setMat4("view", captureViews[i]);
+      irradianceShader.setMat4("view", mapper.captureViews[i]);
       fbo->AttachCubeMap(i, irradianceMap);
       grapho::gl3::ClearViewport(fboViewport);
-      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+      mapper.Cube->Draw(GL_TRIANGLES, mapper.CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
@@ -273,7 +304,7 @@ Environment::Environment()
   Shader prefilterShader("2.2.2.cubemap.vs", "2.2.2.prefilter.fs");
   prefilterShader.use();
   prefilterShader.setInt("environmentMap", 0);
-  prefilterShader.setMat4("projection", captureProjection);
+  prefilterShader.setMat4("projection", mapper.captureProjection);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
@@ -289,10 +320,10 @@ Environment::Environment()
 
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
     for (unsigned int i = 0; i < 6; ++i) {
-      prefilterShader.setMat4("view", captureViews[i]);
+      prefilterShader.setMat4("view", mapper.captureViews[i]);
       fbo->AttachCubeMap(i, prefilterMap, mip);
       grapho::gl3::ClearViewport(fboViewport);
-      Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+      mapper.Cube->Draw(GL_TRIANGLES, mapper.CubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
