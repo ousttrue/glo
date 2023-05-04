@@ -12,7 +12,7 @@
 #include "skybox.h"
 
 #include <GLFW/glfw3.h>
-#include <grapho/gl3/cubemapper.h>
+#include <grapho/gl3/cuberenderer.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/orbitview.h>
 #include <iostream>
@@ -134,7 +134,7 @@ GenerateBrdfLUTTexture()
 
 // pbr: setup cubemap to render to and attach to framebuffer
 static uint32_t
-GenerateEnvCubeMap(const grapho::gl3::CubeMapper& mapper)
+GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer)
 {
   uint32_t envCubemap;
   glGenTextures(1, &envCubemap);
@@ -167,7 +167,7 @@ GenerateEnvCubeMap(const grapho::gl3::CubeMapper& mapper)
   equirectangularToCubemapShader->Use();
   equirectangularToCubemapShader->Uniform("equirectangularMap")->SetInt(0);
 
-  mapper.Map(
+  cubeRenderer.Render(
     512,
     envCubemap,
     [equirectangularToCubemapShader](const auto& projection, const auto& view) {
@@ -187,7 +187,7 @@ GenerateEnvCubeMap(const grapho::gl3::CubeMapper& mapper)
 // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance
 // scale.
 static uint32_t
-GenerateIrradianceMap(const grapho::gl3::CubeMapper& mapper,
+GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
                       uint32_t envCubemap)
 {
   uint32_t irradianceMap;
@@ -220,7 +220,7 @@ GenerateIrradianceMap(const grapho::gl3::CubeMapper& mapper,
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
-  mapper.Map(32,
+  cubeRenderer.Render(32,
              irradianceMap,
              [irradianceShader](const auto& projection, const auto& view) {
                irradianceShader->Uniform("projection")->SetMat4(projection);
@@ -233,7 +233,7 @@ GenerateIrradianceMap(const grapho::gl3::CubeMapper& mapper,
 // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter
 // scale.
 static uint32_t
-GeneratePrefilterMap(const grapho::gl3::CubeMapper& mapper, uint32_t envCubemap)
+GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer, uint32_t envCubemap)
 {
   uint32_t prefilterMap;
   glGenTextures(1, &prefilterMap);
@@ -278,7 +278,7 @@ GeneratePrefilterMap(const grapho::gl3::CubeMapper& mapper, uint32_t envCubemap)
     float roughness = (float)mip / (float)(maxMipLevels - 1);
     prefilterShader->Uniform("roughness")->SetFloat(roughness);
 
-    mapper.Map(
+    cubeRenderer.Render(
       mipSize,
       prefilterMap,
       [prefilterShader](const auto& projection, const auto& view) {
@@ -428,14 +428,14 @@ main(int argc, char** argv)
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
-  grapho::gl3::CubeMapper mapper;
-  auto envCubemap = GenerateEnvCubeMap(mapper);
-  auto irradianceMap = GenerateIrradianceMap(mapper, envCubemap);
-  auto prefilterMap = GeneratePrefilterMap(mapper, envCubemap);
+  grapho::gl3::CubeRenderer cubeRenderer;
+  auto envCubemap = GenerateEnvCubeMap(cubeRenderer);
+  auto irradianceMap = GenerateIrradianceMap(cubeRenderer, envCubemap);
+  auto prefilterMap = GeneratePrefilterMap(cubeRenderer, envCubemap);
   auto brdfLUTTexture = GenerateBrdfLUTTexture();
 
   Scene scene;
-  scene.Load(argv[1]);
+  scene.Load(dir);
   Lights lights{};
   Skybox skybox(envCubemap);
 

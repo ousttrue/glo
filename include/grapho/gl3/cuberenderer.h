@@ -7,7 +7,7 @@
 namespace grapho {
 namespace gl3 {
 
-class CubeMapper
+class CubeRenderer
 {
   std::shared_ptr<grapho::gl3::Vao> m_cube;
   uint32_t m_cubeDrawCount = 0;
@@ -20,7 +20,7 @@ class CubeMapper
   DirectX::XMFLOAT4X4 m_captureViews[6];
 
 public:
-  CubeMapper()
+  CubeRenderer()
   {
     auto cube = grapho::mesh::Cube();
     m_cube = grapho::gl3::Vao::Create(cube);
@@ -63,11 +63,11 @@ public:
                                 DirectX::XMVectorSet(0, 0, -1.0f, 0),
                                 DirectX::XMVectorSet(0, -1.0f, 0, 0)));
   }
-  ~CubeMapper() {}
+  ~CubeRenderer() {}
 
   using CallbackFunc = std::function<void(const DirectX::XMFLOAT4X4& projection,
                                           const DirectX::XMFLOAT4X4& view)>;
-  void Map(int size,
+  void Render(int size,
            uint32_t dst,
            const CallbackFunc& callback,
            int mipLevel = 0) const
