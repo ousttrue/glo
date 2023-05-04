@@ -85,7 +85,11 @@ concept Mat4 = sizeof(T) == sizeof(float) * 16;
 struct UniformVariable
 {
   uint32_t Location;
+
   void SetInt(int value) { glUniform1i(Location, value); }
+
+  void SetFloat(float value) { glUniform1f(Location, value); }
+
   template<Float3 T>
   void SetFloat3(const T& t)
   {
