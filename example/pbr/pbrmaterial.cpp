@@ -1,9 +1,9 @@
 #include <GL/glew.h>
 
 #include "image.h"
-#include "pbr_fs.h"
-#include "pbr_vs.h"
 #include "pbrmaterial.h"
+#include "shaders/pbr_fs.h"
+#include "shaders/pbr_vs.h"
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/ubo.h>
 
