@@ -38,6 +38,36 @@ renderQuad()
   glBindVertexArray(0);
 }
 
+// pbr: generate a 2D LUT(look up table) from the BRDF equations used.
+static uint32_t
+GenerateBrdfLUTTexture()
+{
+  uint32_t brdfLUTTexture;
+  glGenTextures(1, &brdfLUTTexture);
+
+  // pre-allocate enough memory for the LUT texture.
+  glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
+  // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // then re-configure capture framebuffer object and render screen-space quad
+  // with BRDF shader.
+  auto fbo = std::make_shared<grapho::gl3::Fbo>();
+  grapho::Viewport fboViewport{ 512, 512 };
+  fbo->AttachTexture2D(brdfLUTTexture);
+  grapho::gl3::ClearViewport(fboViewport);
+  Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
+  brdfShader.use();
+  renderQuad();
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  return brdfLUTTexture;
+}
+
 Environment::Environment()
 {
   {
@@ -263,31 +293,7 @@ Environment::Environment()
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 
-  // pbr: generate a 2D LUT from the BRDF equations used.
-  // ----------------------------------------------------
-  glGenTextures(1, &brdfLUTTexture);
-
-  // pre-allocate enough memory for the LUT texture.
-  glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
-  // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  // then re-configure capture framebuffer object and render screen-space quad
-  // with BRDF shader.
-  {
-    auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::Viewport fboViewport{ 512, 512 };
-    fbo->AttachTexture2D(brdfLUTTexture);
-    grapho::gl3::ClearViewport(fboViewport);
-    Shader brdfShader("2.2.2.brdf.vs", "2.2.2.brdf.fs");
-    brdfShader.use();
-    renderQuad();
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  }
+  brdfLUTTexture = GenerateBrdfLUTTexture();
 }
 
 void
