@@ -2,6 +2,7 @@
 #include "../mesh.h"
 #include "fbo.h"
 #include "vao.h"
+#include <functional>
 
 namespace grapho {
 namespace gl3 {

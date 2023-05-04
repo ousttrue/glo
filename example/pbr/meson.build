@@ -4,7 +4,6 @@ executable(
         'main.cpp',
         'pbrmaterial.cpp',
         'image.cpp',
-        'env.cpp',
         'drawable.cpp',
         'skybox.cpp',
     ],
