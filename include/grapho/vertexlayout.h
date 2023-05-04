@@ -38,6 +38,12 @@ struct VertexLayout
   uint32_t Divisor = 0;
 };
 
+enum class DrawMode
+{
+  Triangles,
+  TriangleStrip,
+};
+
 struct Mesh
 {
   struct Vertex
@@ -46,7 +52,8 @@ struct Mesh
     DirectX::XMFLOAT3 Normal;
     DirectX::XMFLOAT2 Uv;
   };
-  grapho::VertexLayout Layouts[3]{
+  DrawMode Mode = DrawMode::Triangles;
+  std::vector<grapho::VertexLayout> Layouts{
     {
       .Id = {
        .AttributeLocation=0,

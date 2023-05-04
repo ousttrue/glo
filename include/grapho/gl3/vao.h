@@ -27,6 +27,19 @@ GLType(ValueType type)
   }
 }
 
+inline std::expected<uint32_t, std::string>
+GLMode(grapho::DrawMode mode)
+{
+  switch (mode) {
+    case DrawMode::Triangles:
+      return GL_TRIANGLES;
+    case DrawMode::TriangleStrip:
+      return GL_TRIANGLE_STRIP;
+    default:
+      return std::unexpected{ "unknown GLType" };
+  }
+}
+
 template<typename T>
 concept ArrayType = std::is_array<T>::value == true;
 
@@ -175,6 +188,15 @@ struct Vao
     auto ptr = std::shared_ptr<Vao>(new Vao(vao, layouts, slots, ibo));
     return ptr;
   }
+  static std::shared_ptr<Vao> Create(const std::shared_ptr<Mesh>& mesh)
+  {
+    std::shared_ptr<Vbo> slots[1] = { Vbo::Create(mesh->Vertices) };
+    std::shared_ptr<Ibo> ibo;
+    if (mesh->Indices.size()) {
+      ibo = Ibo::Create(mesh->Indices);
+    }
+    return Create(mesh->Layouts, slots, ibo);
+  }
   void Bind() { glBindVertexArray(vao_); }
   void Unbind() { glBindVertexArray(0); }
   void Draw(uint32_t mode, uint32_t count, uint32_t offsetBytes = 0)
@@ -209,5 +231,4 @@ struct Vao
     Unbind();
   }
 };
-
 }

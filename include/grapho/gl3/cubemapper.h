@@ -9,6 +9,7 @@ class CubeMapper
 {
   std::shared_ptr<grapho::gl3::Vao> m_cube;
   uint32_t m_cubeDrawCount = 0;
+  uint32_t m_mode = 0;
 
   // pbr: set up projection and view matrices for capturing data onto the 6
   // cubemap face directions
@@ -20,10 +21,9 @@ public:
   CubeMapper()
   {
     auto cube = grapho::Mesh::Cube();
-    auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
-    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
-    m_cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+    m_cube = grapho::gl3::Vao::Create(cube);
     m_cubeDrawCount = cube->Vertices.size();
+    m_mode = *grapho::gl3::GLMode(cube->Mode);
 
     DirectX::XMStoreFloat4x4(
       &m_captureProjection,
@@ -79,7 +79,7 @@ public:
       callback(m_captureProjection, m_captureViews[i]);
       fbo->AttachCubeMap(i, dst, mipLevel);
       grapho::gl3::ClearViewport(fboViewport);
-      m_cube->Draw(GL_TRIANGLES, m_cubeDrawCount);
+      m_cube->Draw(m_mode, m_cubeDrawCount);
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
