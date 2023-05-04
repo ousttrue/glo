@@ -173,7 +173,7 @@ main()
 
   glfwMakeContextCurrent(window);
   if (glewInit() != GLEW_OK) {
-    std::cout << "Failed to initialize GLAD" << std::endl;
+    std::cout << "Failed to initialize GLEW" << std::endl;
     return 2;
   }
 

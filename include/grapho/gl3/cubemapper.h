@@ -1,4 +1,5 @@
 #pragma once
+#include "../mesh.h"
 #include "fbo.h"
 #include "vao.h"
 
@@ -20,9 +21,9 @@ class CubeMapper
 public:
   CubeMapper()
   {
-    auto cube = grapho::Mesh::Cube();
+    auto cube = grapho::mesh::Cube();
     m_cube = grapho::gl3::Vao::Create(cube);
-    m_cubeDrawCount = cube->Vertices.size();
+    m_cubeDrawCount = cube->DrawCount();
     m_mode = *grapho::gl3::GLMode(cube->Mode);
 
     DirectX::XMStoreFloat4x4(

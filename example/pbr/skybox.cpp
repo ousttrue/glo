@@ -1,18 +1,18 @@
 #include <GL/glew.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/vao.h>
-#include <grapho/vertexlayout.h>
+#include <grapho/mesh.h>
 
 #include "skybox.h"
 
 Skybox::Skybox(uint32_t cubemap)
   : envCubemap(cubemap)
 {
-  auto cube = grapho::Mesh::Cube();
-  auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
+  auto cube = grapho::mesh::Cube();
+  auto vbo = grapho::gl3::Vbo::Create(cube->Vertices.Size(), cube->Vertices.Data());
   std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
   Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
-  CubeDrawCount = cube->Vertices.size();
+  CubeDrawCount = cube->Vertices.Count;
 
   auto backgroundShader = grapho::gl3::ShaderProgram::CreateFromPath(
     "2.2.2.background.vs", "2.2.2.background.fs");

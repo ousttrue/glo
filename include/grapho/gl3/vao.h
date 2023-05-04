@@ -28,6 +28,24 @@ GLType(ValueType type)
 }
 
 inline std::expected<uint32_t, std::string>
+GLIndexTypeFromStride(uint32_t stride)
+{
+  switch (stride) {
+    case 1:
+      return GL_UNSIGNED_BYTE;
+
+    case 2:
+      return GL_UNSIGNED_SHORT;
+
+    case 4:
+      return GL_UNSIGNED_INT;
+
+    default:
+      return std::unexpected{ "invalid index stride" };
+  }
+}
+
+inline std::expected<uint32_t, std::string>
 GLMode(grapho::DrawMode mode)
 {
   switch (mode) {
@@ -190,10 +208,13 @@ struct Vao
   }
   static std::shared_ptr<Vao> Create(const std::shared_ptr<Mesh>& mesh)
   {
-    std::shared_ptr<Vbo> slots[1] = { Vbo::Create(mesh->Vertices) };
+    std::shared_ptr<Vbo> slots[1] = { Vbo::Create(mesh->Vertices.Size(),
+                                                  mesh->Vertices.Data()) };
     std::shared_ptr<Ibo> ibo;
-    if (mesh->Indices.size()) {
-      ibo = Ibo::Create(mesh->Indices);
+    if (mesh->Indices.Size()) {
+      ibo = Ibo::Create(mesh->Indices.Size(),
+                        mesh->Indices.Data(),
+                        *GLIndexTypeFromStride(mesh->Indices.Stride()));
     }
     return Create(mesh->Layouts, slots, ibo);
   }

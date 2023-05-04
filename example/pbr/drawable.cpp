@@ -3,13 +3,13 @@
 #include "drawable.h"
 #include "pbrmaterial.h"
 #include <grapho/gl3/vao.h>
-#include <grapho/vertexlayout.h>
+#include <grapho/mesh.h>
 
 Drawable::Drawable()
 {
-  auto sphere = grapho::Mesh::Sphere();
+  auto sphere = grapho::mesh::Sphere();
   Mesh = grapho::gl3::Vao::Create(sphere);
-  MeshDrawCount = sphere->Indices.size();
+  MeshDrawCount = sphere->DrawCount();
   MeshDrawMode = *grapho::gl3::GLMode(sphere->Mode);
 }
 
