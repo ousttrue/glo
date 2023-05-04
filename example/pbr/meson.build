@@ -3,7 +3,6 @@ executable(
     [
         'main.cpp',
         'pbrmaterial.cpp',
-        'mesh.cpp',
         'image.cpp',
         'env.cpp',
         'drawable.cpp',

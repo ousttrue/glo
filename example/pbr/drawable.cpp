@@ -1,13 +1,13 @@
 #include <GL/glew.h>
 
 #include "drawable.h"
-#include "mesh.h"
 #include "pbrmaterial.h"
 #include <grapho/gl3/vao.h>
+#include <grapho/vertexlayout.h>
 
 Drawable::Drawable()
 {
-  auto sphere = Mesh::Sphere();
+  auto sphere = grapho::Mesh::Sphere();
 
   auto vbo = grapho::gl3::Vbo::Create(sphere->Vertices);
   std::shared_ptr<grapho::gl3::Vbo> slots[]{

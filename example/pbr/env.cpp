@@ -1,5 +1,4 @@
 #include "env.h"
-#include "mesh.h"
 #include "shaders/brdf_fs.h"
 #include "shaders/brdf_vs.h"
 #include "shaders/cubemap_vs.h"
@@ -7,6 +6,7 @@
 #include "shaders/irradiance_convolution_fs.h"
 #include "shaders/prefilter_fs.h"
 #include <grapho/gl3/fbo.h>
+#include <grapho/vertexlayout.h>
 #include <iostream>
 #include <learnopengl/filesystem.h>
 #include <stb_image.h>
@@ -127,7 +127,7 @@ class CubeMapper
 public:
   CubeMapper()
   {
-    auto cube = Mesh::Cube();
+    auto cube = grapho::Mesh::Cube();
     auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
     std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
     m_cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
