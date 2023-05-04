@@ -1,5 +1,6 @@
 #pragma once
 #include <DirectXMath.h>
+#include <filesystem>
 #include <memory>
 #include <string_view>
 
@@ -41,11 +42,12 @@ struct PbrMaterial
   PbrMaterial(const PbrMaterial&) = delete;
   PbrMaterial& operator=(const PbrMaterial&) = delete;
 
-  static std::shared_ptr<PbrMaterial> Create(std::string_view texture_path,
-                                             std::string_view normal,
-                                             std::string_view metallic,
-                                             std::string_view roughness,
-                                             std::string_view ao);
+  static std::shared_ptr<PbrMaterial> Create(
+    const std::filesystem::path& texture_path,
+    const std::filesystem::path& normal,
+    const std::filesystem::path& metallic,
+    const std::filesystem::path& roughness,
+    const std::filesystem::path& ao);
   void Activate(const DirectX::XMFLOAT4X4& projection,
                 const DirectX::XMFLOAT4X4& view,
                 const DirectX::XMFLOAT3& position,

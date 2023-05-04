@@ -10,7 +10,7 @@
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
 unsigned int
-loadTexture(std::string_view path)
+loadTexture(const std::filesystem::path& path)
 {
   Image image;
   if (!image.Load(path)) {
@@ -72,11 +72,11 @@ PbrMaterial::PbrMaterial()
 }
 
 std::shared_ptr<PbrMaterial>
-PbrMaterial::Create(std::string_view albedo,
-                    std::string_view normal,
-                    std::string_view metallic,
-                    std::string_view roughness,
-                    std::string_view ao)
+PbrMaterial::Create(const std::filesystem::path& albedo,
+                    const std::filesystem::path& normal,
+                    const std::filesystem::path& metallic,
+                    const std::filesystem::path& roughness,
+                    const std::filesystem::path& ao)
 {
   auto ptr = std::make_shared<PbrMaterial>();
   {

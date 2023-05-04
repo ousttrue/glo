@@ -10,17 +10,14 @@
 #include <grapho/gl3/fbo.h>
 #include <grapho/vertexlayout.h>
 #include <iostream>
-#include <learnopengl/filesystem.h>
 #include <stb_image.h>
 
 // pbr: load the HDR environment map
 static uint32_t
-LoadHdrTexture()
+LoadHdrTexture(const std::filesystem::path& dir)
 {
   Image image;
-  if (!image.LoadHdr(
-        FileSystem::getPath("resources/textures/hdr/newport_loft.hdr")
-          .c_str())) {
+  if (!image.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
     std::cout << "Failed to load HDR image." << std::endl;
     return {};
   }
@@ -270,9 +267,9 @@ GeneratePrefilterMap(const grapho::gl3::CubeMapper& mapper, uint32_t envCubemap)
   return prefilterMap;
 }
 
-Environment::Environment()
+Environment::Environment(const std::filesystem::path& dir)
 {
-  auto hdrTexture = LoadHdrTexture();
+  auto hdrTexture = LoadHdrTexture(dir);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 

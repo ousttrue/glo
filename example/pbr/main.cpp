@@ -7,7 +7,6 @@
 #include <GLFW/glfw3.h>
 #include <grapho/orbitview.h>
 #include <iostream>
-#include <learnopengl/filesystem.h>
 #include <vector>
 
 // settings
@@ -91,62 +90,62 @@ struct Scene
 {
   std::vector<std::shared_ptr<Drawable>> Drawables;
 
-  void Load()
+  void Load(const std::filesystem::path& baseDir)
   {
     auto iron = std::make_shared<Drawable>();
     iron->Material = PbrMaterial::Create(
-      FileSystem::getPath("resources/textures/pbr/rusted_iron/albedo.png"),
-      FileSystem::getPath("resources/textures/pbr/rusted_iron/normal.png"),
-      FileSystem::getPath("resources/textures/pbr/rusted_iron/metallic.png"),
-      FileSystem::getPath("resources/textures/pbr/rusted_iron/roughness.png"),
-      FileSystem::getPath("resources/textures/pbr/rusted_iron/ao.png"));
+      baseDir / "resources/textures/pbr/rusted_iron/albedo.png",
+      baseDir / "resources/textures/pbr/rusted_iron/normal.png",
+      baseDir / "resources/textures/pbr/rusted_iron/metallic.png",
+      baseDir / "resources/textures/pbr/rusted_iron/roughness.png",
+      baseDir / "resources/textures/pbr/rusted_iron/ao.png");
     iron->Position = { -5.0, 0.0, 2.0 };
     Drawables.push_back(iron);
 
     auto gold = std::make_shared<Drawable>();
     gold->Material = PbrMaterial::Create(
-      FileSystem::getPath("resources/textures/pbr/gold/albedo.png"),
-      FileSystem::getPath("resources/textures/pbr/gold/normal.png"),
-      FileSystem::getPath("resources/textures/pbr/gold/metallic.png"),
-      FileSystem::getPath("resources/textures/pbr/gold/roughness.png"),
-      FileSystem::getPath("resources/textures/pbr/gold/ao.png"));
+      baseDir / ("resources/textures/pbr/gold/albedo.png"),
+      baseDir / ("resources/textures/pbr/gold/normal.png"),
+      baseDir / ("resources/textures/pbr/gold/metallic.png"),
+      baseDir / ("resources/textures/pbr/gold/roughness.png"),
+      baseDir / ("resources/textures/pbr/gold/ao.png"));
     gold->Position = { -3.0, 0.0, 2.0 };
     Drawables.push_back(gold);
 
     auto grass = std::make_shared<Drawable>();
     grass->Material = PbrMaterial::Create(
-      FileSystem::getPath("resources/textures/pbr/grass/albedo.png"),
-      FileSystem::getPath("resources/textures/pbr/grass/normal.png"),
-      FileSystem::getPath("resources/textures/pbr/grass/metallic.png"),
-      FileSystem::getPath("resources/textures/pbr/grass/roughness.png"),
-      FileSystem::getPath("resources/textures/pbr/grass/ao.png"));
+      baseDir / ("resources/textures/pbr/grass/albedo.png"),
+      baseDir / ("resources/textures/pbr/grass/normal.png"),
+      baseDir / ("resources/textures/pbr/grass/metallic.png"),
+      baseDir / ("resources/textures/pbr/grass/roughness.png"),
+      baseDir / ("resources/textures/pbr/grass/ao.png"));
     grass->Position = { -1.0, 0.0, 2.0 };
     Drawables.push_back(grass);
 
     auto plastic = std::make_shared<Drawable>();
     plastic->Material = PbrMaterial::Create(
-      FileSystem::getPath("resources/textures/pbr/plastic/albedo.png"),
-      FileSystem::getPath("resources/textures/pbr/plastic/normal.png"),
-      FileSystem::getPath("resources/textures/pbr/plastic/metallic.png"),
-      FileSystem::getPath("resources/textures/pbr/plastic/roughness.png"),
-      FileSystem::getPath("resources/textures/pbr/plastic/ao.png"));
+      baseDir / ("resources/textures/pbr/plastic/albedo.png"),
+      baseDir / ("resources/textures/pbr/plastic/normal.png"),
+      baseDir / ("resources/textures/pbr/plastic/metallic.png"),
+      baseDir / ("resources/textures/pbr/plastic/roughness.png"),
+      baseDir / ("resources/textures/pbr/plastic/ao.png"));
     plastic->Position = { 1.0, 0.0, 2.0 };
     Drawables.push_back(plastic);
 
     auto wall = std::make_shared<Drawable>();
     wall->Material = PbrMaterial::Create(
-      FileSystem::getPath("resources/textures/pbr/wall/albedo.png"),
-      FileSystem::getPath("resources/textures/pbr/wall/normal.png"),
-      FileSystem::getPath("resources/textures/pbr/wall/metallic.png"),
-      FileSystem::getPath("resources/textures/pbr/wall/roughness.png"),
-      FileSystem::getPath("resources/textures/pbr/wall/ao.png"));
+      baseDir / ("resources/textures/pbr/wall/albedo.png"),
+      baseDir / ("resources/textures/pbr/wall/normal.png"),
+      baseDir / ("resources/textures/pbr/wall/metallic.png"),
+      baseDir / ("resources/textures/pbr/wall/roughness.png"),
+      baseDir / ("resources/textures/pbr/wall/ao.png"));
     wall->Position = { 3.0, 0.0, 2.0 };
     Drawables.push_back(wall);
   }
 };
 
 int
-main()
+main(int argc, char** argv)
 {
   g_camera.shift_[2] = -10;
 
@@ -193,9 +192,9 @@ main()
   //
   // scene
   //
-  Environment Env;
+  Environment Env(argv[1]);
   Scene scene;
-  scene.Load();
+  scene.Load(argv[1]);
   Lights lights{};
   Skybox skybox(Env.envCubemap);
 

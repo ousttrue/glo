@@ -31,15 +31,12 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/prefix/bin/pbr.exe",
-            "args": [],
+            "args": [
+                "${workspaceFolder}/subprojects/logl"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/subprojects/logl/src/6.pbr/2.2.2.ibl_specular_textured",
-            "environment": [
-                {
-                    "name": "LOGL_ROOT_PATH",
-                    "value": "${workspaceFolder}/subprojects/logl",
-                }
-            ],
+            "environment": [],
             "console": "integratedTerminal"
         },
     ]

@@ -1,6 +1,6 @@
 #pragma once
+#include <filesystem>
 #include <stdint.h>
-#include <string_view>
 
 struct Image
 {
@@ -11,10 +11,9 @@ struct Image
   uint32_t Format = 0;
   Image(const Image&) = delete;
   Image& operator=(const Image&) = delete;
-  Image(){}
+  Image() {}
   ~Image();
 
-  bool Load(std::string_view path);
-  bool LoadHdr(std::string_view path);
+  bool Load(const std::filesystem::path& path);
+  bool LoadHdr(const std::filesystem::path& path);
 };
-
