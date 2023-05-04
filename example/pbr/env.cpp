@@ -6,6 +6,46 @@
 #include <learnopengl/shader.h>
 #include <stb_image.h>
 
+// pbr: load the HDR environment map
+static uint32_t
+LoadHdrTexture()
+{
+  stbi_set_flip_vertically_on_load(true);
+  int width, height, nrComponents;
+  float* data = stbi_loadf(
+    FileSystem::getPath("resources/textures/hdr/newport_loft.hdr").c_str(),
+    &width,
+    &height,
+    &nrComponents,
+    0);
+  unsigned int hdrTexture;
+  if (!data) {
+    std::cout << "Failed to load HDR image." << std::endl;
+    return {};
+  }
+
+  glGenTextures(1, &hdrTexture);
+  glBindTexture(GL_TEXTURE_2D, hdrTexture);
+  glTexImage2D(
+    GL_TEXTURE_2D,
+    0,
+    GL_RGB16F,
+    width,
+    height,
+    0,
+    GL_RGB,
+    GL_FLOAT,
+    data); // note how we specify the texture's data value to be float
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  stbi_image_free(data);
+  return hdrTexture;
+}
+
 // renderQuad() renders a 1x1 XY quad in NDC
 // -----------------------------------------
 static void
@@ -70,54 +110,11 @@ GenerateBrdfLUTTexture()
 
 Environment::Environment()
 {
-  {
-    auto cube = Mesh::Cube();
-    auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
-    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
-    Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
-    CubeDrawCount = cube->Vertices.size();
-  }
-
-  Shader equirectangularToCubemapShader("2.2.2.cubemap.vs",
-                                        "2.2.2.equirectangular_to_cubemap.fs");
-  Shader irradianceShader("2.2.2.cubemap.vs",
-                          "2.2.2.irradiance_convolution.fs");
-  Shader prefilterShader("2.2.2.cubemap.vs", "2.2.2.prefilter.fs");
-
-  // pbr: load the HDR environment map
-  // ---------------------------------
-  stbi_set_flip_vertically_on_load(true);
-  int width, height, nrComponents;
-  float* data = stbi_loadf(
-    FileSystem::getPath("resources/textures/hdr/newport_loft.hdr").c_str(),
-    &width,
-    &height,
-    &nrComponents,
-    0);
-  unsigned int hdrTexture;
-  if (data) {
-    glGenTextures(1, &hdrTexture);
-    glBindTexture(GL_TEXTURE_2D, hdrTexture);
-    glTexImage2D(
-      GL_TEXTURE_2D,
-      0,
-      GL_RGB16F,
-      width,
-      height,
-      0,
-      GL_RGB,
-      GL_FLOAT,
-      data); // note how we specify the texture's data value to be float
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    stbi_image_free(data);
-  } else {
-    std::cout << "Failed to load HDR image." << std::endl;
-  }
+  auto cube = Mesh::Cube();
+  auto vbo = grapho::gl3::Vbo::Create(cube->Vertices);
+  std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
+  auto Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+  auto CubeDrawCount = cube->Vertices.size();
 
   // pbr: setup cubemap to render to and attach to framebuffer
   // ---------------------------------------------------------
@@ -170,9 +167,13 @@ Environment::Environment()
 
   // pbr: convert HDR equirectangular environment map to cubemap equivalent
   // ----------------------------------------------------------------------
+  Shader equirectangularToCubemapShader("2.2.2.cubemap.vs",
+                                        "2.2.2.equirectangular_to_cubemap.fs");
   equirectangularToCubemapShader.use();
   equirectangularToCubemapShader.setInt("equirectangularMap", 0);
   equirectangularToCubemapShader.setMat4("projection", captureProjection);
+
+  auto hdrTexture = LoadHdrTexture();
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 
@@ -218,6 +219,8 @@ Environment::Environment()
   // pbr: solve diffuse integral by convolution to create an irradiance
   // (cube)map.
   // -----------------------------------------------------------------------------
+  Shader irradianceShader("2.2.2.cubemap.vs",
+                          "2.2.2.irradiance_convolution.fs");
   irradianceShader.use();
   irradianceShader.setInt("environmentMap", 0);
   irradianceShader.setMat4("projection", captureProjection);
@@ -267,6 +270,7 @@ Environment::Environment()
   // pbr: run a quasi monte-carlo simulation on the environment lighting to
   // create a prefilter (cube)map.
   // ----------------------------------------------------------------------------------------------------
+  Shader prefilterShader("2.2.2.cubemap.vs", "2.2.2.prefilter.fs");
   prefilterShader.use();
   prefilterShader.setInt("environmentMap", 0);
   prefilterShader.setMat4("projection", captureProjection);
