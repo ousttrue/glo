@@ -12,70 +12,6 @@
 #include <iostream>
 #include <stb_image.h>
 
-// pbr: load the HDR environment map
-static uint32_t
-LoadHdrTexture(const std::filesystem::path& dir)
-{
-  Image image;
-  if (!image.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
-    std::cout << "Failed to load HDR image." << std::endl;
-    return {};
-  }
-
-  unsigned int hdrTexture;
-  glGenTextures(1, &hdrTexture);
-  glBindTexture(GL_TEXTURE_2D, hdrTexture);
-  glTexImage2D(
-    GL_TEXTURE_2D,
-    0,
-    image.Format,
-    image.Width,
-    image.Height,
-    0,
-    GL_RGB,
-    GL_FLOAT,
-    image.Data); // note how we specify the texture's data value to be float
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  return hdrTexture;
-}
-
-// renderQuad() renders a 1x1 XY quad in NDC
-// -----------------------------------------
-static void
-renderQuad()
-{
-  static unsigned int quadVAO = 0;
-  static unsigned int quadVBO;
-  if (quadVAO == 0) {
-    float quadVertices[] = {
-      // positions        // texture Coords
-      -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
-      1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
-    };
-    // setup plane VAO
-    glGenVertexArrays(1, &quadVAO);
-    glGenBuffers(1, &quadVBO);
-    glBindVertexArray(quadVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-    glBufferData(
-      GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(
-      0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(
-      1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-  }
-  glBindVertexArray(quadVAO);
-  glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-  glBindVertexArray(0);
-}
-
 // pbr: generate a 2D LUT(look up table) from the BRDF equations used.
 static uint32_t
 GenerateBrdfLUTTexture()
@@ -100,7 +36,14 @@ GenerateBrdfLUTTexture()
   grapho::gl3::ClearViewport(fboViewport);
   auto brdfShader = *grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
   brdfShader->Use();
-  renderQuad();
+
+  // renderQuad() renders a 1x1 XY quad in NDC
+  auto quad = grapho::mesh::Quad();
+  auto quadVao = grapho::gl3::Vao::Create(quad);
+  auto drawCount = quad->DrawCount();
+  auto drawMode = *grapho::gl3::GLMode(quad->Mode);
+  quadVao->Draw(drawMode, drawCount);
+
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
   return brdfLUTTexture;
@@ -269,7 +212,33 @@ GeneratePrefilterMap(const grapho::gl3::CubeMapper& mapper, uint32_t envCubemap)
 
 Environment::Environment(const std::filesystem::path& dir)
 {
-  auto hdrTexture = LoadHdrTexture(dir);
+  // auto hdrTexture = LoadHdrTexture(dir);
+  Image image;
+  if (!image.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
+    std::cout << "Failed to load HDR image." << std::endl;
+    // return {};
+  }
+
+  unsigned int hdrTexture;
+  glGenTextures(1, &hdrTexture);
+  glBindTexture(GL_TEXTURE_2D, hdrTexture);
+  glTexImage2D(
+    GL_TEXTURE_2D,
+    0,
+    image.Format,
+    image.Width,
+    image.Height,
+    0,
+    GL_RGB,
+    GL_FLOAT,
+    image.Data); // note how we specify the texture's data value to be float
+
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+  // return hdrTexture;
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, hdrTexture);
 

@@ -45,6 +45,7 @@ inline VertexLayout Vertex::Layouts[3] = {
     .Stride = sizeof(Vertex),
   },
 };
+
 inline std::shared_ptr<Mesh>
 Sphere()
 {
@@ -217,6 +218,56 @@ Cube()
                       Vertex::Layouts + std::size(Vertex::Layouts));
   ptr->Vertices.Assign(vertices);
   ptr->Mode = DrawMode::Triangles;
+  return ptr;
+}
+
+struct QuadVertex
+{
+  DirectX::XMFLOAT3 Position;
+  DirectX::XMFLOAT2 Uv;
+
+  static VertexLayout Layouts[2];
+};
+
+inline VertexLayout QuadVertex::Layouts[2] = {
+  {
+    .Id = {
+     .AttributeLocation=0,
+     .Slot=0,
+    },
+    .Type = grapho::ValueType::Float,
+    .Count = 3,
+    .Offset = offsetof(Vertex, Position),
+    .Stride = sizeof(Vertex),
+  },
+  {
+    .Id = {
+     .AttributeLocation=1,
+     .Slot=0,
+    },
+    .Type = grapho::ValueType::Float,
+    .Count = 2,
+    .Offset = offsetof(Vertex, Uv),
+    .Stride = sizeof(Vertex),
+  },
+};
+
+inline std::shared_ptr<Mesh>
+Quad()
+{
+  QuadVertex vertices[4] = {
+    // positions        // texture Coords
+    { { -1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f } },
+    { { -1.0f, -1.0f, 0.0f }, { 0.0f, 0.0f } },
+    { { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f } },
+    { { 1.0f, -1.0f, 0.0f }, { 1.0f, 0.0f } },
+  };
+
+  auto ptr = std::make_shared<Mesh>();
+  ptr->Layouts.assign(QuadVertex::Layouts,
+                      QuadVertex::Layouts + std::size(QuadVertex::Layouts));
+  ptr->Vertices.Assign(vertices);
+  ptr->Mode = DrawMode::TriangleStrip;
   return ptr;
 }
 

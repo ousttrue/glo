@@ -55,6 +55,12 @@ struct VertexBuffer
     Bytes.assign((const uint8_t*)values.data(),
                  (const uint8_t*)(values.data() + Count));
   }
+  template<typename T, size_t N>
+  void Assign(const T (&values)[N])
+  {
+    Count = N;
+    Bytes.assign((const uint8_t*)values, (const uint8_t*)(values + Count));
+  }
   uint32_t Size() const { return Bytes.size(); }
   const uint8_t* Data() const { return Bytes.data(); }
   uint32_t Stride() const { return Bytes.size() / Count; }
