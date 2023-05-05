@@ -9,6 +9,7 @@ enum class PixelFormat
   // grayscale
   u8_R,
   f16_RGB,
+  f32_RGB,
 };
 
 }

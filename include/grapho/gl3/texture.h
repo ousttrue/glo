@@ -13,6 +13,8 @@ inline std::expected<uint32_t, std::string>
 GLImageFormat(PixelFormat format)
 {
   switch (format) {
+    case PixelFormat::f32_RGB:
+      return GL_RGB32F;
     case PixelFormat::f16_RGB:
       return GL_RGB16F;
     case PixelFormat::u8_RGBA:

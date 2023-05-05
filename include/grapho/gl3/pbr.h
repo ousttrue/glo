@@ -191,8 +191,10 @@ struct PbrEnv
     Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
     CubeDrawCount = cube->Vertices.Count;
 
-    auto backgroundShader = grapho::gl3::ShaderProgram::CreateFromPath(
-      "2.2.2.background.vs", "2.2.2.background.fs");
+#include "shaders/background_fs.h"
+#include "shaders/background_vs.h"
+    auto backgroundShader =
+      grapho::gl3::ShaderProgram::Create(BACKGROUND_VS, BACKGROUND_FS);
     if (!backgroundShader) {
       throw std::runtime_error(backgroundShader.error());
     }
@@ -213,6 +215,7 @@ struct PbrEnv
   void DrawSkybox(const DirectX::XMFLOAT4X4& projection,
                   const DirectX::XMFLOAT4X4& view)
   {
+    Activate();
     EnvCubemap->Activate(0);
     // skybox.Draw(projection, view);
 
@@ -293,15 +296,25 @@ struct PbrMaterial
 
   void Activate(const DirectX::XMFLOAT4X4& projection,
                 const DirectX::XMFLOAT4X4& view,
-                const DirectX::XMFLOAT3& position,
+                const DirectX::XMFLOAT4X4& model,
                 const DirectX::XMFLOAT3& cameraPos,
                 uint32_t UBO_LIGHTS_BINDING)
   {
-    AlbedoMap->Activate(3);
-    NormalMap->Activate(4);
-    MetallicMap->Activate(5);
-    RoughnessMap->Activate(6);
-    AOMap->Activate(7);
+    if (AlbedoMap) {
+      AlbedoMap->Activate(3);
+    }
+    if (NormalMap) {
+      NormalMap->Activate(4);
+    }
+    if (MetallicMap) {
+      MetallicMap->Activate(5);
+    }
+    if (RoughnessMap) {
+      RoughnessMap->Activate(6);
+    }
+    if (AOMap) {
+      AOMap->Activate(7);
+    }
 
     Shader->Use();
     // auto view = cameraViewMatrix();
@@ -314,9 +327,10 @@ struct PbrMaterial
     auto uboBlock = Shader->UboBlockIndex("lights");
     Shader->UboBind(*uboBlock, UBO_LIGHTS_BINDING);
 
-    DirectX::XMFLOAT4X4 model;
-    DirectX::XMStoreFloat4x4(
-      &model, DirectX::XMMatrixTranslation(position.x, position.y, position.z));
+    // DirectX::XMFLOAT4X4 model;
+    // DirectX::XMStoreFloat4x4(
+    //   &model, DirectX::XMMatrixTranslation(position.x, position.y,
+    //   position.z));
     Shader->Uniform("model")->SetMat4(model);
     Shader->Uniform("normalMatrix")->SetMat3(TransposeInv(model));
   }
