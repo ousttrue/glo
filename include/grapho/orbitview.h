@@ -17,7 +17,7 @@ struct OrbitView
   float Pitch = {};
   float shift_[3] = { 0, -0.8f, -5 };
 
-  DirectX::XMFLOAT3 Position = {};
+  mutable DirectX::XMFLOAT3 Position = {};
 
   OrbitView() {}
 
@@ -52,7 +52,7 @@ struct OrbitView
     }
   }
 
-  void Update(const float projection[16], const float view[16])
+  void Update(const float projection[16], const float view[16]) const
   {
     auto aspectRatio = Viewport.AspectRatio();
     DirectX::XMStoreFloat4x4(

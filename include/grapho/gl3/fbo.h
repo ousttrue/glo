@@ -26,12 +26,7 @@ struct Fbo
 {
   uint32_t m_fbo = 0;
   uint32_t m_rbo = 0;
-  Fbo()
-  {
-    // this->texture = Texture::Create(width, height);
-    glGenFramebuffers(1, &m_fbo);
-    // glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
-  }
+  Fbo() { glGenFramebuffers(1, &m_fbo); }
   ~Fbo()
   {
     glDeleteFramebuffers(1, &m_fbo);
@@ -47,8 +42,10 @@ struct Fbo
 
   void AttachDepth(int width, int height)
   {
-    assert(m_rbo == 0);
-    glGenRenderbuffers(1, &m_rbo);
+    Bind();
+    if (!m_rbo) {
+      glGenRenderbuffers(1, &m_rbo);
+    }
     glBindRenderbuffer(GL_RENDERBUFFER, m_rbo);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
     glFramebufferRenderbuffer(

@@ -78,6 +78,8 @@ link(GLuint vs, GLuint fs)
 template<typename T>
 concept Float3 = sizeof(T) == sizeof(float) * 3;
 template<typename T>
+concept Float4 = sizeof(T) == sizeof(float) * 4;
+template<typename T>
 concept Mat3 = sizeof(T) == sizeof(float) * 9;
 template<typename T>
 concept Mat4 = sizeof(T) == sizeof(float) * 16;
@@ -94,6 +96,11 @@ struct UniformVariable
   void SetFloat3(const T& t)
   {
     glUniform3fv(Location, 1, (const float*)&t);
+  }
+  template<Float4 T>
+  void SetFloat4(const T& t)
+  {
+    glUniform4fv(Location, 1, (const float*)&t);
   }
   template<Mat3 T>
   void SetMat3(const T& t)
