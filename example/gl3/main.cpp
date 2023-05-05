@@ -183,11 +183,14 @@ main(void)
   };
   auto vao = grapho::gl3::Vao::Create(layouts, slots, ibo);
 
-  auto texture = grapho::gl3::Texture::Create(2, 2, &pixels[0].r);
+  auto texture = grapho::gl3::Texture::Create(
+    2, 2, grapho::PixelFormat::u8_RGBA, &pixels[0].r);
+  texture->WrapClamp();
+  texture->SamplingPoint();
 
   std::shared_ptr<grapho::gl3::Fbo> fbo = std::make_shared<grapho::gl3::Fbo>();
   std::shared_ptr<grapho::gl3::Texture> fboTexture =
-    grapho::gl3::Texture::Create(512, 512);
+    grapho::gl3::Texture::Create(512, 512, grapho::PixelFormat::u8_RGBA);
 
   MatrixData data
   {
@@ -220,7 +223,7 @@ main(void)
       grapho::gl3::ClearViewport(fboViewport);
       (*program)->Use();
 
-      texture->Bind(0);
+      texture->Activate(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
       fbo->Unbind();
     }
@@ -228,7 +231,7 @@ main(void)
     // draw backbuffer
     {
       (*program)->Use();
-      fboTexture->Bind(0);
+      fboTexture->Activate(0);
       grapho::gl3::ClearViewport(viewport);
       vao->Draw(GL_TRIANGLES, 6, 0);
     }

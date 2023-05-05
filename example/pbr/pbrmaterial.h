@@ -8,6 +8,7 @@ namespace grapho {
 namespace gl3 {
 class ShaderProgram;
 struct Ubo;
+struct Texture;
 }
 }
 
@@ -31,11 +32,11 @@ struct PbrMaterial
 {
   std::shared_ptr<grapho::gl3::ShaderProgram> Shader;
   std::shared_ptr<grapho::gl3::Ubo> LightsUbo;
-  unsigned int AlbedoMap;
-  unsigned int NormalMap;
-  unsigned int MetallicMap;
-  unsigned int RoughnessMap;
-  unsigned int AOMap;
+  std::shared_ptr<grapho::gl3::Texture> AlbedoMap;
+  std::shared_ptr<grapho::gl3::Texture> NormalMap;
+  std::shared_ptr<grapho::gl3::Texture> MetallicMap;
+  std::shared_ptr<grapho::gl3::Texture> RoughnessMap;
+  std::shared_ptr<grapho::gl3::Texture> AOMap;
 
   PbrMaterial();
   ~PbrMaterial() {}

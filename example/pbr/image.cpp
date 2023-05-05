@@ -21,13 +21,13 @@ Image::Load(const std::filesystem::path& path)
 
   switch (nrComponents) {
     case 1:
-      Format = GL_RED;
+      Format = grapho::PixelFormat::u8_R;
       break;
     case 3:
-      Format = GL_RGB;
+      Format = grapho::PixelFormat::u8_RGB;
       break;
     case 4:
-      Format = GL_RGBA;
+      Format = grapho::PixelFormat::u8_RGBA;
       break;
 
     default:
@@ -50,6 +50,7 @@ Image::LoadHdr(const std::filesystem::path& path)
   }
 
   assert(nrComponents == 3);
-  Format = GL_RGB16F;
+  Format = grapho::PixelFormat::f16_RGB;
+
   return true;
 }

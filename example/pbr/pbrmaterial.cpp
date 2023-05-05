@@ -5,11 +5,12 @@
 #include "shaders/pbr_fs.h"
 #include "shaders/pbr_vs.h"
 #include <grapho/gl3/shader.h>
+#include <grapho/gl3/texture.h>
 #include <grapho/gl3/ubo.h>
 
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
-unsigned int
+static std::shared_ptr<grapho::gl3::Texture>
 loadTexture(const std::filesystem::path& path)
 {
   Image image;
@@ -17,28 +18,11 @@ loadTexture(const std::filesystem::path& path)
     return {};
   }
 
-  unsigned int textureID;
-  glGenTextures(1, &textureID);
-
-  glBindTexture(GL_TEXTURE_2D, textureID);
-  glTexImage2D(GL_TEXTURE_2D,
-               0,
-               image.Format,
-               image.Width,
-               image.Height,
-               0,
-               image.Format,
-               GL_UNSIGNED_BYTE,
-               image.Data);
-  glGenerateMipmap(GL_TEXTURE_2D);
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glTexParameteri(
-    GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  return textureID;
+  auto texture = grapho::gl3::Texture::Create(
+    image.Width, image.Height, image.Format, image.Data);
+  texture->SamplingLinear(true);
+  texture->WrapRepeat();
+  return texture;
 }
 
 static DirectX::XMFLOAT3X3
@@ -79,8 +63,6 @@ PbrMaterial::Create(const std::filesystem::path& albedo,
                     const std::filesystem::path& ao)
 {
   auto ptr = std::make_shared<PbrMaterial>();
-  {
-  }
   ptr->AlbedoMap = loadTexture(albedo);
   ptr->NormalMap = loadTexture(normal);
   ptr->MetallicMap = loadTexture(metallic);
@@ -96,16 +78,11 @@ PbrMaterial::Activate(const DirectX::XMFLOAT4X4& projection,
                       const DirectX::XMFLOAT3& cameraPos,
                       const Lights& lights)
 {
-  glActiveTexture(GL_TEXTURE3);
-  glBindTexture(GL_TEXTURE_2D, AlbedoMap);
-  glActiveTexture(GL_TEXTURE4);
-  glBindTexture(GL_TEXTURE_2D, NormalMap);
-  glActiveTexture(GL_TEXTURE5);
-  glBindTexture(GL_TEXTURE_2D, MetallicMap);
-  glActiveTexture(GL_TEXTURE6);
-  glBindTexture(GL_TEXTURE_2D, RoughnessMap);
-  glActiveTexture(GL_TEXTURE7);
-  glBindTexture(GL_TEXTURE_2D, AOMap);
+  AlbedoMap->Activate(3);
+  NormalMap->Activate(4);
+  MetallicMap->Activate(5);
+  RoughnessMap->Activate(6);
+  AOMap->Activate(7);
 
   const uint32_t UBO_LIGHTS_BINDING = 0;
 

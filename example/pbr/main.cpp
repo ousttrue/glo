@@ -220,12 +220,13 @@ GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
-  cubeRenderer.Render(32,
-             irradianceMap,
-             [irradianceShader](const auto& projection, const auto& view) {
-               irradianceShader->Uniform("projection")->SetMat4(projection);
-               irradianceShader->Uniform("view")->SetMat4(view);
-             });
+  cubeRenderer.Render(
+    32,
+    irradianceMap,
+    [irradianceShader](const auto& projection, const auto& view) {
+      irradianceShader->Uniform("projection")->SetMat4(projection);
+      irradianceShader->Uniform("view")->SetMat4(view);
+    });
 
   return irradianceMap;
 }
@@ -233,7 +234,8 @@ GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
 // pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter
 // scale.
 static uint32_t
-GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer, uint32_t envCubemap)
+GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
+                     uint32_t envCubemap)
 {
   uint32_t prefilterMap;
   glGenTextures(1, &prefilterMap);
@@ -407,26 +409,12 @@ main(int argc, char** argv)
   }
 
   // HDR
-  unsigned int hdrTexture;
-  glGenTextures(1, &hdrTexture);
-  glBindTexture(GL_TEXTURE_2D, hdrTexture);
-  glTexImage2D(
-    GL_TEXTURE_2D,
-    0,
-    image.Format,
-    image.Width,
-    image.Height,
-    0,
-    GL_RGB,
-    GL_FLOAT,
-    image.Data); // note how we specify the texture's data value to be float
-
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, hdrTexture);
+  auto hdrTexture = grapho::gl3::Texture::Create(
+    image.Width, image.Height, image.Format, image.Data, true);
+  if (!hdrTexture) {
+    return 4;
+  }
+  hdrTexture->Activate(0);
 
   grapho::gl3::CubeRenderer cubeRenderer;
   auto envCubemap = GenerateEnvCubeMap(cubeRenderer);

@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <grapho/pixelformat.h>
 #include <stdint.h>
 
 struct Image
@@ -8,7 +9,7 @@ struct Image
   int Height = 0;
   int nrComponents = 0;
   uint8_t* Data = nullptr;
-  uint32_t Format = 0;
+  grapho::PixelFormat Format = {};
   Image(const Image&) = delete;
   Image& operator=(const Image&) = delete;
   Image() {}
