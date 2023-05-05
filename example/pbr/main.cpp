@@ -96,27 +96,17 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 }
 
 // pbr: generate a 2D LUT(look up table) from the BRDF equations used.
-static uint32_t
+static std::shared_ptr<grapho::gl3::Texture>
 GenerateBrdfLUTTexture()
 {
-  uint32_t brdfLUTTexture;
-  glGenTextures(1, &brdfLUTTexture);
-
-  // pre-allocate enough memory for the LUT texture.
-  glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
-  // be sure to set wrapping mode to GL_CLAMP_TO_EDGE
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  auto brdfLUTTexture = grapho::gl3::Texture::Create(
+    512, 512, grapho::PixelFormat::f16_RGB, nullptr, true);
 
   // then re-configure capture framebuffer object and render screen-space quad
   // with BRDF shader.
-  auto fbo = std::make_shared<grapho::gl3::Fbo>();
-  grapho::Viewport fboViewport{ 512, 512 };
-  fbo->AttachTexture2D(brdfLUTTexture);
-  grapho::gl3::ClearViewport(fboViewport);
+  grapho::gl3::Fbo fbo;
+  fbo.AttachTexture2D(brdfLUTTexture->texture_);
+  grapho::gl3::ClearViewport(grapho::Viewport{ 512, 512 });
   auto brdfShader = *grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
   brdfShader->Use();
 
@@ -132,36 +122,11 @@ GenerateBrdfLUTTexture()
   return brdfLUTTexture;
 }
 
-// pbr: setup cubemap to render to and attach to framebuffer
-static uint32_t
-GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer)
+// pbr: convert HDR equirectangular environment map to cubemap equivalent
+static void
+GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer,
+                   uint32_t envCubemap)
 {
-  uint32_t envCubemap;
-  glGenTextures(1, &envCubemap);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
-  for (unsigned int i = 0; i < 6; ++i) {
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                 0,
-                 GL_RGB16F,
-                 512,
-                 512,
-                 0,
-                 GL_RGB,
-                 GL_FLOAT,
-                 nullptr);
-  }
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(
-    GL_TEXTURE_CUBE_MAP,
-    GL_TEXTURE_MIN_FILTER,
-    GL_LINEAR_MIPMAP_LINEAR); // enable pre-filter mipmap sampling (combatting
-                              // visible dots artifact)
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  // pbr: convert HDR equirectangular environment map to cubemap equivalent
-  // ----------------------------------------------------------------------
   auto equirectangularToCubemapShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, EQUIRECTANGULAR_FS);
   equirectangularToCubemapShader->Use();
@@ -175,50 +140,18 @@ GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer)
         ->SetMat4(projection);
       equirectangularToCubemapShader->Uniform("view")->SetMat4(view);
     });
-
-  // then let OpenGL generate mipmaps from first mip face (combatting visible
-  // dots artifact)
-  glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
-  glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-
-  return envCubemap;
 }
 
-// pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance
-// scale.
-static uint32_t
+// pbr: solve diffuse integral by convolution to create an irradiance
+// (cube)map.
+static void
 GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
-                      uint32_t envCubemap)
+                      uint32_t irradianceMap)
 {
-  uint32_t irradianceMap;
-  glGenTextures(1, &irradianceMap);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-  for (unsigned int i = 0; i < 6; ++i) {
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                 0,
-                 GL_RGB16F,
-                 32,
-                 32,
-                 0,
-                 GL_RGB,
-                 GL_FLOAT,
-                 nullptr);
-  }
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-  // pbr: solve diffuse integral by convolution to create an irradiance
-  // (cube)map.
-  // -----------------------------------------------------------------------------
   auto irradianceShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, IRRADIANCE_CONVOLUTION_FS);
   irradianceShader->Use();
   irradianceShader->Uniform("environmentMap")->SetInt(0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
   cubeRenderer.Render(
     32,
@@ -227,51 +160,18 @@ GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
       irradianceShader->Uniform("projection")->SetMat4(projection);
       irradianceShader->Uniform("view")->SetMat4(view);
     });
-
-  return irradianceMap;
 }
 
-// pbr: create a pre-filter cubemap, and re-scale capture FBO to pre-filter
-// scale.
-static uint32_t
+// pbr: run a quasi monte-carlo simulation on the environment lighting to
+// create a prefilter (cube)map.
+static void
 GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
-                     uint32_t envCubemap)
+                     uint32_t prefilterMap)
 {
-  uint32_t prefilterMap;
-  glGenTextures(1, &prefilterMap);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
-  for (unsigned int i = 0; i < 6; ++i) {
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                 0,
-                 GL_RGB16F,
-                 128,
-                 128,
-                 0,
-                 GL_RGB,
-                 GL_FLOAT,
-                 nullptr);
-  }
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_CUBE_MAP,
-                  GL_TEXTURE_MIN_FILTER,
-                  GL_LINEAR_MIPMAP_LINEAR); // be sure to set minification
-                                            // filter to mip_linear
-  glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  // generate mipmaps for the cubemap so OpenGL automatically allocates the
-  // required memory.
-  glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-
-  // pbr: run a quasi monte-carlo simulation on the environment lighting to
-  // create a prefilter (cube)map.
-  // ----------------------------------------------------------------------------------------------------
   auto prefilterShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
   prefilterShader->Use();
   prefilterShader->Uniform("environmentMap")->SetInt(0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
   unsigned int maxMipLevels = 5;
   for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
@@ -291,8 +191,6 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
-
-  return prefilterMap;
 }
 
 struct Scene
@@ -414,18 +312,39 @@ main(int argc, char** argv)
   if (!hdrTexture) {
     return 4;
   }
-  hdrTexture->Activate(0);
 
+  auto envCubemap =
+    grapho::gl3::Cubemap::Create(512, 512, grapho::PixelFormat::f16_RGB, true);
+  envCubemap->SamplingLinear(true);
+
+  // hdr to cuemap
+  hdrTexture->Activate(0);
   grapho::gl3::CubeRenderer cubeRenderer;
-  auto envCubemap = GenerateEnvCubeMap(cubeRenderer);
-  auto irradianceMap = GenerateIrradianceMap(cubeRenderer, envCubemap);
-  auto prefilterMap = GeneratePrefilterMap(cubeRenderer, envCubemap);
+  GenerateEnvCubeMap(cubeRenderer, envCubemap->texture_);
+  envCubemap->GenerateMipmap();
+  envCubemap->UnBind();
+
+  // irradianceMap
+  auto irradianceMap =
+    grapho::gl3::Cubemap::Create(32, 32, grapho::PixelFormat::f16_RGB, true);
+  envCubemap->Activate(0);
+  GenerateIrradianceMap(cubeRenderer, irradianceMap->texture_);
+
+  // prefilterMap
+  auto prefilterMap =
+    grapho::gl3::Cubemap::Create(128, 128, grapho::PixelFormat::f16_RGB, true);
+  prefilterMap->SamplingLinear(true);
+  envCubemap->Activate(0);
+  GeneratePrefilterMap(cubeRenderer, prefilterMap->texture_);
+  prefilterMap->GenerateMipmap();
+
+  // brdefLUT
   auto brdfLUTTexture = GenerateBrdfLUTTexture();
 
   Scene scene;
   scene.Load(dir);
   Lights lights{};
-  Skybox skybox(envCubemap);
+  Skybox skybox;
 
   while (!glfwWindowShouldClose(window)) {
     //
@@ -449,16 +368,17 @@ main(int argc, char** argv)
 
     {
       // ENV
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap);
-      glActiveTexture(GL_TEXTURE2);
-      glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
+      irradianceMap->Activate(0);
+      prefilterMap->Activate(1);
+      brdfLUTTexture->Activate(2);
+
       // OBJECTS
       for (auto& drawable : scene.Drawables) {
         drawable->Draw(projection, view, g_camera.Position, lights);
       }
+
+      // skybox
+      envCubemap->Activate(0);
       skybox.Draw(projection, view);
     }
 

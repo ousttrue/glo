@@ -5,8 +5,7 @@
 
 #include "skybox.h"
 
-Skybox::Skybox(uint32_t cubemap)
-  : envCubemap(cubemap)
+Skybox::Skybox()
 {
   auto cube = grapho::mesh::Cube();
   auto vbo = grapho::gl3::Vbo::Create(cube->Vertices.Size(), cube->Vertices.Data());
@@ -32,8 +31,6 @@ Skybox::Draw(const DirectX::XMFLOAT4X4& projection,
   BackgroundShader->Use();
   BackgroundShader->Uniform("projection")->SetMat4(projection);
   BackgroundShader->Uniform("view")->SetMat4(view);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
   // glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance
   // map glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display
   // prefilter map
