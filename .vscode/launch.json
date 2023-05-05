@@ -32,10 +32,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/prefix/bin/pbr.exe",
             "args": [
-                "${workspaceFolder}/subprojects/logl"
+                "subprojects/logl"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/subprojects/logl/src/6.pbr/2.2.2.ibl_specular_textured",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "integratedTerminal"
         },
