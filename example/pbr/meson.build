@@ -2,7 +2,6 @@ executable(
     'pbr',
     [
         'main.cpp',
-        'pbrmaterial.cpp',
         'image.cpp',
         'drawable.cpp',
     ],

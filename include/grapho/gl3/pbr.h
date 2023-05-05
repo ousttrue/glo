@@ -2,12 +2,6 @@
 #include "cuberenderer.h"
 #include "fbo.h"
 #include "shader.h"
-#include "shaders/brdf_fs.h"
-#include "shaders/brdf_vs.h"
-#include "shaders/cubemap_vs.h"
-#include "shaders/equirectangular_to_cubemap_fs.h"
-#include "shaders/irradiance_convolution_fs.h"
-#include "shaders/prefilter_fs.h"
 #include "texture.h"
 #include "ubo.h"
 #include "vao.h"
@@ -19,6 +13,9 @@ namespace gl3 {
 inline std::shared_ptr<grapho::gl3::Texture>
 GenerateBrdfLUTTexture()
 {
+#include "shaders/brdf_fs.h"
+#include "shaders/brdf_vs.h"
+
   auto brdfLUTTexture = grapho::gl3::Texture::Create(
     512, 512, grapho::PixelFormat::f16_RGB, nullptr, true);
 
@@ -47,6 +44,9 @@ inline void
 GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer,
                    uint32_t envCubemap)
 {
+#include "shaders/cubemap_vs.h"
+#include "shaders/equirectangular_to_cubemap_fs.h"
+
   auto equirectangularToCubemapShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, EQUIRECTANGULAR_FS);
   equirectangularToCubemapShader->Use();
@@ -68,6 +68,8 @@ inline void
 GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
                       uint32_t irradianceMap)
 {
+#include "shaders/cubemap_vs.h"
+#include "shaders/irradiance_convolution_fs.h"
   auto irradianceShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, IRRADIANCE_CONVOLUTION_FS);
   irradianceShader->Use();
@@ -88,6 +90,8 @@ inline void
 GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
                      uint32_t prefilterMap)
 {
+#include "shaders/cubemap_vs.h"
+#include "shaders/prefilter_fs.h"
   auto prefilterShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
   prefilterShader->Use();
@@ -227,5 +231,95 @@ struct PbrEnv
   }
 };
 
+inline DirectX::XMFLOAT3X3
+TransposeInv(const DirectX::XMFLOAT4X4& _m)
+{
+  auto m = DirectX::XMLoadFloat4x4(&_m);
+  DirectX::XMVECTOR det;
+  auto ti = DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, m));
+  DirectX::XMFLOAT3X3 mat3;
+  DirectX::XMStoreFloat3x3(&mat3, ti);
+  return mat3;
+}
+
+struct PbrMaterial
+{
+  std::shared_ptr<grapho::gl3::ShaderProgram> Shader;
+  std::shared_ptr<grapho::gl3::Texture> AlbedoMap;
+  std::shared_ptr<grapho::gl3::Texture> NormalMap;
+  std::shared_ptr<grapho::gl3::Texture> MetallicMap;
+  std::shared_ptr<grapho::gl3::Texture> RoughnessMap;
+  std::shared_ptr<grapho::gl3::Texture> AOMap;
+
+  PbrMaterial()
+  {
+#include "shaders/pbr_fs.h"
+#include "shaders/pbr_vs.h"
+    auto shader = grapho::gl3::ShaderProgram::Create(PBR_VS, PBR_FS);
+    if (!shader) {
+      throw std::runtime_error(shader.error());
+    }
+    Shader = *shader;
+    Shader->Use();
+    Shader->Uniform("irradianceMap")->SetInt(0);
+    Shader->Uniform("prefilterMap")->SetInt(1);
+    Shader->Uniform("brdfLUT")->SetInt(2);
+    Shader->Uniform("albedoMap")->SetInt(3);
+    Shader->Uniform("normalMap")->SetInt(4);
+    Shader->Uniform("metallicMap")->SetInt(5);
+    Shader->Uniform("roughnessMap")->SetInt(6);
+    Shader->Uniform("aoMap")->SetInt(7);
+  }
+
+  ~PbrMaterial() {}
+  PbrMaterial(const PbrMaterial&) = delete;
+  PbrMaterial& operator=(const PbrMaterial&) = delete;
+
+  static std::shared_ptr<PbrMaterial> Create(
+    const std::shared_ptr<grapho::gl3::Texture>& albedo,
+    const std::shared_ptr<grapho::gl3::Texture>& normal,
+    const std::shared_ptr<grapho::gl3::Texture>& metallic,
+    const std::shared_ptr<grapho::gl3::Texture>& roughness,
+    const std::shared_ptr<grapho::gl3::Texture>& ao)
+  {
+    auto ptr = std::make_shared<PbrMaterial>();
+    ptr->AlbedoMap = albedo;
+    ptr->NormalMap = normal;
+    ptr->MetallicMap = metallic;
+    ptr->RoughnessMap = roughness;
+    ptr->AOMap = ao;
+    return ptr;
+  }
+
+  void Activate(const DirectX::XMFLOAT4X4& projection,
+                const DirectX::XMFLOAT4X4& view,
+                const DirectX::XMFLOAT3& position,
+                const DirectX::XMFLOAT3& cameraPos,
+                uint32_t UBO_LIGHTS_BINDING)
+  {
+    AlbedoMap->Activate(3);
+    NormalMap->Activate(4);
+    MetallicMap->Activate(5);
+    RoughnessMap->Activate(6);
+    AOMap->Activate(7);
+
+    Shader->Use();
+    // auto view = cameraViewMatrix();
+    Shader->Uniform("view")->SetMat4(view);
+    // auto cameraPos = cameraPosition();
+    Shader->Uniform("camPos")->SetFloat3(cameraPos);
+    // initialize static shader uniforms before rendering
+    Shader->Uniform("projection")->SetMat4(projection);
+
+    auto uboBlock = Shader->UboBlockIndex("lights");
+    Shader->UboBind(*uboBlock, UBO_LIGHTS_BINDING);
+
+    DirectX::XMFLOAT4X4 model;
+    DirectX::XMStoreFloat4x4(
+      &model, DirectX::XMMatrixTranslation(position.x, position.y, position.z));
+    Shader->Uniform("model")->SetMat4(model);
+    Shader->Uniform("normalMatrix")->SetMat3(TransposeInv(model));
+  }
+};
 }
 }

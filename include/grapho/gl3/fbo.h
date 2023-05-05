@@ -5,7 +5,7 @@
 
 namespace grapho::gl3 {
 
-void
+inline void
 ClearViewport(const Viewport& vp, bool applyAlpha = false)
 {
   glViewport(0, 0, vp.Width, vp.Height);

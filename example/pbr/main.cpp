@@ -2,12 +2,8 @@
 
 #include "drawable.h"
 #include "image.h"
-#include "pbrmaterial.h"
-
 #include <GLFW/glfw3.h>
-#include <grapho/gl3/cuberenderer.h>
 #include <grapho/gl3/pbr.h>
-#include <grapho/gl3/shader.h>
 #include <grapho/orbitview.h>
 #include <iostream>
 #include <vector>
@@ -89,64 +85,6 @@ scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
   g_camera.Dolly(static_cast<int>(yoffset));
 }
 
-struct Scene
-{
-  std::vector<std::shared_ptr<Drawable>> Drawables;
-
-  void Load(const std::filesystem::path& baseDir)
-  {
-    auto iron = std::make_shared<Drawable>();
-    iron->Material = PbrMaterial::Create(
-      baseDir / "resources/textures/pbr/rusted_iron/albedo.png",
-      baseDir / "resources/textures/pbr/rusted_iron/normal.png",
-      baseDir / "resources/textures/pbr/rusted_iron/metallic.png",
-      baseDir / "resources/textures/pbr/rusted_iron/roughness.png",
-      baseDir / "resources/textures/pbr/rusted_iron/ao.png");
-    iron->Position = { -5.0, 0.0, 2.0 };
-    Drawables.push_back(iron);
-
-    auto gold = std::make_shared<Drawable>();
-    gold->Material = PbrMaterial::Create(
-      baseDir / ("resources/textures/pbr/gold/albedo.png"),
-      baseDir / ("resources/textures/pbr/gold/normal.png"),
-      baseDir / ("resources/textures/pbr/gold/metallic.png"),
-      baseDir / ("resources/textures/pbr/gold/roughness.png"),
-      baseDir / ("resources/textures/pbr/gold/ao.png"));
-    gold->Position = { -3.0, 0.0, 2.0 };
-    Drawables.push_back(gold);
-
-    auto grass = std::make_shared<Drawable>();
-    grass->Material = PbrMaterial::Create(
-      baseDir / ("resources/textures/pbr/grass/albedo.png"),
-      baseDir / ("resources/textures/pbr/grass/normal.png"),
-      baseDir / ("resources/textures/pbr/grass/metallic.png"),
-      baseDir / ("resources/textures/pbr/grass/roughness.png"),
-      baseDir / ("resources/textures/pbr/grass/ao.png"));
-    grass->Position = { -1.0, 0.0, 2.0 };
-    Drawables.push_back(grass);
-
-    auto plastic = std::make_shared<Drawable>();
-    plastic->Material = PbrMaterial::Create(
-      baseDir / ("resources/textures/pbr/plastic/albedo.png"),
-      baseDir / ("resources/textures/pbr/plastic/normal.png"),
-      baseDir / ("resources/textures/pbr/plastic/metallic.png"),
-      baseDir / ("resources/textures/pbr/plastic/roughness.png"),
-      baseDir / ("resources/textures/pbr/plastic/ao.png"));
-    plastic->Position = { 1.0, 0.0, 2.0 };
-    Drawables.push_back(plastic);
-
-    auto wall = std::make_shared<Drawable>();
-    wall->Material = PbrMaterial::Create(
-      baseDir / ("resources/textures/pbr/wall/albedo.png"),
-      baseDir / ("resources/textures/pbr/wall/normal.png"),
-      baseDir / ("resources/textures/pbr/wall/metallic.png"),
-      baseDir / ("resources/textures/pbr/wall/roughness.png"),
-      baseDir / ("resources/textures/pbr/wall/ao.png"));
-    wall->Position = { 3.0, 0.0, 2.0 };
-    Drawables.push_back(wall);
-  }
-};
-
 int
 main(int argc, char** argv)
 {
@@ -193,7 +131,7 @@ main(int argc, char** argv)
   glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
   //
-  // scene
+  // PbrEnv
   //
   std::filesystem::path dir(argv[1]);
   Image hdr;
@@ -202,7 +140,6 @@ main(int argc, char** argv)
     return 3;
   }
 
-  // HDR
   auto hdrTexture = grapho::gl3::Texture::Create(
     hdr.Width, hdr.Height, hdr.Format, hdr.Data, true);
   if (!hdrTexture) {
@@ -210,6 +147,9 @@ main(int argc, char** argv)
   }
   auto pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
 
+  //
+  // PbrMaterial objects
+  //
   Scene scene;
   scene.Load(dir);
 
