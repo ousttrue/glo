@@ -215,7 +215,12 @@ struct PbrEnv
   void DrawSkybox(const DirectX::XMFLOAT4X4& projection,
                   const DirectX::XMFLOAT4X4& view)
   {
-    Activate();
+    auto isCull = glIsEnabled(GL_CULL_FACE);
+    if(isCull)
+    {
+      glDisable(GL_CULL_FACE);
+    }
+    
     EnvCubemap->Activate(0);
     // skybox.Draw(projection, view);
 
@@ -231,6 +236,10 @@ struct PbrEnv
     // render BRDF map to screen
     // brdfShader.Use();
     // renderQuad();
+    if(isCull)
+    {
+      glEnable(GL_CULL_FACE);
+    }
   }
 };
 
