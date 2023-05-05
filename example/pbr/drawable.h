@@ -23,5 +23,5 @@ struct Drawable
   void Draw(const DirectX::XMFLOAT4X4& projection,
             const DirectX::XMFLOAT4X4& view,
             const DirectX::XMFLOAT3& cameraPos,
-            const Lights& lights);
+            uint32_t UBO_LIGHTS_BINDING);
 };

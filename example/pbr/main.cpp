@@ -3,7 +3,6 @@
 #include "drawable.h"
 #include "image.h"
 #include "pbrmaterial.h"
-#include "skybox.h"
 
 #include <GLFW/glfw3.h>
 #include <grapho/gl3/cuberenderer.h>
@@ -197,51 +196,22 @@ main(int argc, char** argv)
   // scene
   //
   std::filesystem::path dir(argv[1]);
-  Image image;
-  if (!image.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
+  Image hdr;
+  if (!hdr.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
     std::cout << "Failed to load HDR image." << std::endl;
     return 3;
   }
 
   // HDR
   auto hdrTexture = grapho::gl3::Texture::Create(
-    image.Width, image.Height, image.Format, image.Data, true);
+    hdr.Width, hdr.Height, hdr.Format, hdr.Data, true);
   if (!hdrTexture) {
     return 4;
   }
-
-  auto envCubemap =
-    grapho::gl3::Cubemap::Create(512, 512, grapho::PixelFormat::f16_RGB, true);
-  envCubemap->SamplingLinear(true);
-
-  // hdr to cuemap
-  hdrTexture->Activate(0);
-  grapho::gl3::CubeRenderer cubeRenderer;
-  grapho::gl3::GenerateEnvCubeMap(cubeRenderer, envCubemap->texture_);
-  envCubemap->GenerateMipmap();
-  envCubemap->UnBind();
-
-  // irradianceMap
-  auto irradianceMap =
-    grapho::gl3::Cubemap::Create(32, 32, grapho::PixelFormat::f16_RGB, true);
-  envCubemap->Activate(0);
-  grapho::gl3::GenerateIrradianceMap(cubeRenderer, irradianceMap->texture_);
-
-  // prefilterMap
-  auto prefilterMap =
-    grapho::gl3::Cubemap::Create(128, 128, grapho::PixelFormat::f16_RGB, true);
-  prefilterMap->SamplingLinear(true);
-  envCubemap->Activate(0);
-  grapho::gl3::GeneratePrefilterMap(cubeRenderer, prefilterMap->texture_);
-  prefilterMap->GenerateMipmap();
-
-  // brdefLUT
-  auto brdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
+  auto pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
 
   Scene scene;
   scene.Load(dir);
-  Lights lights{};
-  Skybox skybox;
 
   while (!glfwWindowShouldClose(window)) {
     //
@@ -251,34 +221,30 @@ main(int argc, char** argv)
     processInput(window);
     int scrWidth, scrHeight;
     glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
+
+    // update camera
     g_camera.SetSize(scrWidth, scrHeight);
     DirectX::XMFLOAT4X4 projection;
     DirectX::XMFLOAT4X4 view;
     g_camera.Update(&projection._11, &view._11);
 
-    //
     // render
-    //
     glViewport(0, 0, scrWidth, scrHeight);
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     {
       // ENV
-      irradianceMap->Activate(0);
-      prefilterMap->Activate(1);
-      brdfLUTTexture->Activate(2);
-
+      pbrEnv->Activate();
       // OBJECTS
       for (auto& drawable : scene.Drawables) {
-        drawable->Draw(projection, view, g_camera.Position, lights);
+        drawable->Draw(projection,
+                       view,
+                       g_camera.Position,
+                       grapho::gl3::PbrEnv::UBO_LIGHTS_BINDING);
       }
-
       // skybox
-      envCubemap->Activate(0);
-      skybox.Draw(projection, view);
+      pbrEnv->DrawSkybox(projection, view);
     }
-
     glfwSwapBuffers(window);
   }
 

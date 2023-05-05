@@ -1,4 +1,5 @@
 #pragma once
+#include "cuberenderer.h"
 #include "fbo.h"
 #include "shader.h"
 #include "shaders/brdf_fs.h"
@@ -8,6 +9,8 @@
 #include "shaders/irradiance_convolution_fs.h"
 #include "shaders/prefilter_fs.h"
 #include "texture.h"
+#include "ubo.h"
+#include "vao.h"
 
 namespace grapho {
 namespace gl3 {
@@ -109,6 +112,120 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 }
+
+struct Lights
+{
+  DirectX::XMFLOAT4 Positions[4] = {
+    { -10.0f, 10.0f, 10.0f, 0 },
+    { 10.0f, 10.0f, 10.0f, 0 },
+    { -10.0f, -10.0f, 10.0f, 0 },
+    { 10.0f, -10.0f, 10.0f, 0 },
+  };
+  DirectX::XMFLOAT4 Colors[4] = {
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+    { 300.0f, 300.0f, 300.0f, 0 },
+  };
+};
+
+struct PbrEnv
+{
+  std::shared_ptr<Cubemap> EnvCubemap;
+  std::shared_ptr<Cubemap> IrradianceMap;
+  std::shared_ptr<Cubemap> PrefilterMap;
+  std::shared_ptr<Texture> BrdfLUTTexture;
+
+  // light ubo
+  Lights lights{};
+  std::shared_ptr<grapho::gl3::Ubo> LightsUbo;
+  static const uint32_t UBO_LIGHTS_BINDING = 0;
+
+  // Skybox skybox;
+  std::shared_ptr<grapho::gl3::Vao> Cube;
+  uint32_t CubeDrawCount = 0;
+  std::shared_ptr<grapho::gl3::ShaderProgram> BackgroundShader;
+
+  PbrEnv(const std::shared_ptr<Texture>& hdrTexture)
+  {
+    EnvCubemap = grapho::gl3::Cubemap::Create(
+      512, 512, grapho::PixelFormat::f16_RGB, true);
+    EnvCubemap->SamplingLinear(true);
+
+    // hdr to cuemap
+    hdrTexture->Activate(0);
+    grapho::gl3::CubeRenderer cubeRenderer;
+    grapho::gl3::GenerateEnvCubeMap(cubeRenderer, EnvCubemap->texture_);
+    EnvCubemap->GenerateMipmap();
+    EnvCubemap->UnBind();
+
+    // irradianceMap
+    IrradianceMap =
+      grapho::gl3::Cubemap::Create(32, 32, grapho::PixelFormat::f16_RGB, true);
+    EnvCubemap->Activate(0);
+    grapho::gl3::GenerateIrradianceMap(cubeRenderer, IrradianceMap->texture_);
+
+    // prefilterMap
+    PrefilterMap = grapho::gl3::Cubemap::Create(
+      128, 128, grapho::PixelFormat::f16_RGB, true);
+    PrefilterMap->SamplingLinear(true);
+    EnvCubemap->Activate(0);
+    grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->texture_);
+    PrefilterMap->GenerateMipmap();
+
+    // brdefLUT
+    BrdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
+
+    // ubo
+    LightsUbo = grapho::gl3::Ubo::Create(sizeof(Lights), nullptr);
+
+    // skybox
+    auto cube = grapho::mesh::Cube();
+    auto vbo =
+      grapho::gl3::Vbo::Create(cube->Vertices.Size(), cube->Vertices.Data());
+    std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
+    Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+    CubeDrawCount = cube->Vertices.Count;
+
+    auto backgroundShader = grapho::gl3::ShaderProgram::CreateFromPath(
+      "2.2.2.background.vs", "2.2.2.background.fs");
+    if (!backgroundShader) {
+      throw std::runtime_error(backgroundShader.error());
+    }
+    BackgroundShader = *backgroundShader;
+    BackgroundShader->Use();
+    BackgroundShader->Uniform("environmentMap")->SetInt(0);
+  }
+
+  void Activate()
+  {
+    IrradianceMap->Activate(0);
+    PrefilterMap->Activate(1);
+    BrdfLUTTexture->Activate(2);
+    LightsUbo->Upload(lights);
+    LightsUbo->SetBindingPoint(UBO_LIGHTS_BINDING);
+  }
+
+  void DrawSkybox(const DirectX::XMFLOAT4X4& projection,
+                  const DirectX::XMFLOAT4X4& view)
+  {
+    EnvCubemap->Activate(0);
+    // skybox.Draw(projection, view);
+
+    // render skybox (render as last to prevent overdraw)
+    BackgroundShader->Use();
+    BackgroundShader->Uniform("projection")->SetMat4(projection);
+    BackgroundShader->Uniform("view")->SetMat4(view);
+    // glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance
+    // map glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display
+    // prefilter map
+    Cube->Draw(GL_TRIANGLES, CubeDrawCount);
+
+    // render BRDF map to screen
+    // brdfShader.Use();
+    // renderQuad();
+  }
+};
 
 }
 }

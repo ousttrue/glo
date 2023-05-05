@@ -52,7 +52,6 @@ PbrMaterial::PbrMaterial()
   Shader->Uniform("metallicMap")->SetInt(5);
   Shader->Uniform("roughnessMap")->SetInt(6);
   Shader->Uniform("aoMap")->SetInt(7);
-  LightsUbo = grapho::gl3::Ubo::Create(sizeof(Lights), nullptr);
 }
 
 std::shared_ptr<PbrMaterial>
@@ -75,19 +74,14 @@ void
 PbrMaterial::Activate(const DirectX::XMFLOAT4X4& projection,
                       const DirectX::XMFLOAT4X4& view,
                       const DirectX::XMFLOAT3& position,
-                      const DirectX::XMFLOAT3& cameraPos,
-                      const Lights& lights)
+                      const DirectX::XMFLOAT3& cameraPos, 
+                      uint32_t UBO_LIGHTS_BINDING)
 {
   AlbedoMap->Activate(3);
   NormalMap->Activate(4);
   MetallicMap->Activate(5);
   RoughnessMap->Activate(6);
   AOMap->Activate(7);
-
-  const uint32_t UBO_LIGHTS_BINDING = 0;
-
-  LightsUbo->Upload(lights);
-  LightsUbo->SetBindingPoint(UBO_LIGHTS_BINDING);
 
   Shader->Use();
   // auto view = cameraViewMatrix();

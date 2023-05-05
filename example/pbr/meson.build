@@ -5,7 +5,6 @@ executable(
         'pbrmaterial.cpp',
         'image.cpp',
         'drawable.cpp',
-        'skybox.cpp',
     ],
     install: true,
     dependencies: [

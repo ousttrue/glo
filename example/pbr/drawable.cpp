@@ -17,8 +17,8 @@ void
 Drawable::Draw(const DirectX::XMFLOAT4X4& projection,
                const DirectX::XMFLOAT4X4& view,
                const DirectX::XMFLOAT3& cameraPos,
-               const Lights& lights)
+               uint32_t UBO_LIGHTS_BINDING)
 {
-  Material->Activate(projection, view, Position, cameraPos, lights);
+  Material->Activate(projection, view, Position, cameraPos, UBO_LIGHTS_BINDING);
   Mesh->Draw(MeshDrawMode, MeshDrawCount);
 }
