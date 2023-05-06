@@ -14,10 +14,8 @@ if get_option('example')
         'glfw3',
         default_options: ['default_library=static'],
     )
-    subdir('example/gl3')
-    subdir('example/dx11')
-
     logl_dep = dependency('logl')
     imgui_dep = dependency('imgui')
-    subdir('example/pbr')
+
+    subdir('example')
 endif
