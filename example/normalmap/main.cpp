@@ -9,6 +9,8 @@
 #include <grapho/orbitview.h>
 #include <iostream>
 
+const std::optional<bool> NOP = std::nullopt;
+
 // settings
 auto SCR_WIDTH = 800;
 auto SCR_HEIGHT = 600;
@@ -138,6 +140,7 @@ main(int argc, char** argv)
   auto result =
     grapho::gl3::ShaderProgram::Create(NORMAL_MAPPING_VS, NORMAL_MAPPING_FS);
   if (!result) {
+    std::cout << result.error() << std::endl;
     return 4;
   }
   auto shader = *result;
@@ -152,8 +155,14 @@ main(int argc, char** argv)
   // shader configuration
   // --------------------
   shader->Use();
-  shader->Uniform("diffuseMap")->SetInt(0);
-  shader->Uniform("normalMap")->SetInt(1);
+  shader->Uniform("diffuseMap").and_then([&](auto u) {
+    u.SetInt(0);
+    return NOP;
+  });
+  shader->Uniform("normalMap").and_then([&](auto u) {
+    u.SetInt(1);
+    return NOP;
+  });
 
   // lighting info
   // -------------
@@ -180,8 +189,14 @@ main(int argc, char** argv)
     shader->Use();
     shader->Uniform("projection")->SetMat4(projection);
     shader->Uniform("view")->SetMat4(view);
-    shader->Uniform("viewPos")->SetFloat3(g_camera.Position);
-    shader->Uniform("lightPos")->SetFloat3(lightPos);
+    shader->Uniform("viewPos").and_then([&](auto u) {
+      u.SetFloat3(g_camera.Position);
+      return NOP;
+    });
+    shader->Uniform("lightPos").and_then([&](auto u) {
+      u.SetFloat3(lightPos);
+      return NOP;
+    });
 
     {
       // render normal-mapped quad

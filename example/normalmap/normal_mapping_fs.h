@@ -38,5 +38,7 @@ void main()
 
     vec3 specular = vec3(0.2) * spec;
     FragColor = vec4(ambient + diffuse + specular, 1.0);
+    // FragColor = vec4(vec3(diff), 1.0);
+    // FragColor = texture(normalMap, fs_in.TexCoords);
 }
 )";

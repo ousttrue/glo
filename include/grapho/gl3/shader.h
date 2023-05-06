@@ -164,29 +164,29 @@ public:
   void Use() { glUseProgram(program_); }
   void UnUse() { glUseProgram(0); }
 
-  std::expected<uint32_t, std::string> Attribute(const char* name)
+  std::optional<uint32_t> Attribute(const char* name)
   {
     auto location = glGetAttribLocation(program_, name);
     if (location < 0) {
-      return std::unexpected{ "glGetAttribLocation" };
+      return std::nullopt;
     }
     return static_cast<uint32_t>(location);
   }
 
-  std::expected<UniformVariable, std::string> Uniform(const std::string& name)
+  std::optional<UniformVariable> Uniform(const std::string& name)
   {
     auto location = glGetUniformLocation(program_, name.c_str());
     if (location < 0) {
-      return std::unexpected{ "glGetUniformLocation" };
+      return std::nullopt;
     }
     return UniformVariable{ static_cast<uint32_t>(location) };
   }
 
-  std::expected<uint32_t, std::string> UboBlockIndex(const char* name)
+  std::optional<uint32_t> UboBlockIndex(const char* name)
   {
     auto blockIndex = glGetUniformBlockIndex(program_, name);
     if (blockIndex < 0) {
-      return std::unexpected{ "fail to glGetUniformBlockIndex" };
+      return std::nullopt;
     }
     return blockIndex;
   }

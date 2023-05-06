@@ -135,19 +135,16 @@ main(void)
 
   auto vpos_location = (*program)->Attribute("vPos");
   if (!vpos_location) {
-    std::cerr << vpos_location.error() << std::endl;
     return 6;
   }
   auto vuv_location = (*program)->Attribute("vUv");
   if (!vuv_location) {
-    std::cerr << vuv_location.error() << std::endl;
     return 7;
   }
 
   auto ubo = grapho::gl3::Ubo::Create(sizeof(MatrixData), nullptr);
   auto block_index = (*program)->UboBlockIndex("Scene");
   if (!block_index) {
-    std::cerr << block_index.error();
     return 8;
   }
 
