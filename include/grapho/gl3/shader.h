@@ -153,6 +153,16 @@ public:
     std::u8string_view fss[] = { fs };
     return Create(vss, fss);
   }
+  static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
+    std::string_view vs,
+    std::string_view fs)
+  {
+    std::u8string_view vss[] = { { (const char8_t*)vs.data(),
+                                   (const char8_t*)vs.data() + vs.size() } };
+    std::u8string_view fss[] = { { (const char8_t*)fs.data(),
+                                   (const char8_t*)fs.data() + fs.size() } };
+    return Create(vss, fss);
+  }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string>
   CreateFromPath(const std::filesystem::path& vs_path,
                  const std::filesystem::path& fs_path)
