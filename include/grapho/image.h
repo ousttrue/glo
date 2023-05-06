@@ -5,8 +5,8 @@ namespace grapho {
 
 enum class ColorSpace
 {
-  sRGB,
   Linear,
+  sRGB,
 };
 
 struct Image
@@ -14,7 +14,7 @@ struct Image
   int Width;
   int Height;
   PixelFormat Format;
-  ColorSpace ColorSpace = ColorSpace::sRGB;
+  ColorSpace ColorSpace = ColorSpace::Linear;
   const uint8_t* Pixels = nullptr;
 };
 
