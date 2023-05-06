@@ -2,6 +2,7 @@ executable(
     'normalmap',
     [
         'main.cpp',
+        'normalmap.cpp',
     ],
     install: true,
     dependencies: [
