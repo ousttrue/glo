@@ -1,10 +1,93 @@
+#include "normal_mapping_fs.h"
+#include "normal_mapping_vs.h"
 #include "normalmap.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <filesystem>
 #include <glm/gtc/matrix_transform.hpp>
+#include <grapho/gl3/shader.h>
+#include <grapho/orbitview.h>
 #include <iostream>
-#include <learnopengl/shader.h>
+
+// settings
+auto SCR_WIDTH = 800;
+auto SCR_HEIGHT = 600;
+
+bool g_mouseRight = false;
+bool g_mouseMiddle = false;
+static void
+mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+  switch (button) {
+    case GLFW_MOUSE_BUTTON_RIGHT:
+      if (action == GLFW_PRESS) {
+        g_mouseRight = true;
+      } else if (action == GLFW_RELEASE) {
+        g_mouseRight = false;
+      }
+      break;
+    case GLFW_MOUSE_BUTTON_MIDDLE:
+      if (action == GLFW_PRESS) {
+        g_mouseMiddle = true;
+      } else if (action == GLFW_RELEASE) {
+        g_mouseMiddle = false;
+      }
+      break;
+  }
+}
+
+grapho::OrbitView g_camera;
+void
+mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+  static int lastX;
+  static int lastY;
+  static bool firstMouse = true;
+
+  auto xpos = static_cast<int>(xposIn);
+  auto ypos = static_cast<int>(yposIn);
+  if (firstMouse) {
+    firstMouse = false;
+  } else {
+    auto xoffset = xpos - lastX;
+    auto yoffset = ypos - lastY;
+    if (g_mouseRight) {
+      g_camera.YawPitch(xoffset, yoffset);
+    }
+    if (g_mouseMiddle) {
+      g_camera.Shift(xoffset, yoffset);
+    }
+  }
+  lastX = xpos;
+  lastY = ypos;
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+// ----------------------------------------------------------------------
+void
+scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+  g_camera.Dolly(static_cast<int>(yoffset));
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this
+// frame and react accordingly
+// ---------------------------------------------------------------------------------------------------------
+void
+processInput(GLFWwindow* window)
+{
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    glfwSetWindowShouldClose(window, true);
+
+  // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(FORWARD, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(BACKWARD, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(LEFT, deltaTime);
+  // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+  //   camera.ProcessKeyboard(RIGHT, deltaTime);
+}
 
 int
 main(int argc, char** argv)
@@ -35,12 +118,9 @@ main(int argc, char** argv)
     return 2;
   }
   glfwMakeContextCurrent(window);
-  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetMouseButtonCallback(window, mouse_button_callback);
   glfwSetCursorPosCallback(window, mouse_callback);
   glfwSetScrollCallback(window, scroll_callback);
-
-  // tell GLFW to capture our mouse
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // glad: load all OpenGL function pointers
   // ---------------------------------------
@@ -55,7 +135,12 @@ main(int argc, char** argv)
 
   // build and compile shaders
   // -------------------------
-  Shader shader("4.normal_mapping.vs", "4.normal_mapping.fs");
+  auto result =
+    grapho::gl3::ShaderProgram::Create(NORMAL_MAPPING_VS, NORMAL_MAPPING_FS);
+  if (!result) {
+    return 4;
+  }
+  auto shader = *result;
 
   // load textures
   // -------------
@@ -66,9 +151,9 @@ main(int argc, char** argv)
 
   // shader configuration
   // --------------------
-  shader.use();
-  shader.setInt("diffuseMap", 0);
-  shader.setInt("normalMap", 1);
+  shader->Use();
+  shader->Uniform("diffuseMap")->SetInt(0);
+  shader->Uniform("normalMap")->SetInt(1);
 
   // lighting info
   // -------------
@@ -77,54 +162,53 @@ main(int argc, char** argv)
   // render loop
   // -----------
   while (!glfwWindowShouldClose(window)) {
-    // per-frame time logic
-    // --------------------
-    float currentFrame = static_cast<float>(glfwGetTime());
-    deltaTime = currentFrame - lastFrame;
-    lastFrame = currentFrame;
-
-    // input
-    // -----
     processInput(window);
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    g_camera.SetSize(width, height);
+    DirectX::XMFLOAT4X4 projection;
+    DirectX::XMFLOAT4X4 view;
+    g_camera.Update(&projection._11, &view._11);
 
     // render
     // ------
+    glViewport(0, 0, width, height);
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // configure view/projection matrices
-    glm::mat4 projection =
-      glm::perspective(glm::radians(camera.Zoom),
-                       (float)SCR_WIDTH / (float)SCR_HEIGHT,
-                       0.1f,
-                       100.0f);
-    glm::mat4 view = camera.GetViewMatrix();
-    shader.use();
-    shader.setMat4("projection", projection);
-    shader.setMat4("view", view);
-    // render normal-mapped quad
-    glm::mat4 model = glm::mat4(1.0f);
-    model = glm::rotate(model,
-                        glm::radians((float)glfwGetTime() * -10.0f),
-                        glm::normalize(glm::vec3(
-                          1.0, 0.0, 1.0))); // rotate the quad to show normal
-                                            // mapping from multiple directions
-    shader.setMat4("model", model);
-    shader.setVec3("viewPos", camera.Position);
-    shader.setVec3("lightPos", lightPos);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffuseMap);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalMap);
-    renderQuad();
+    shader->Use();
+    shader->Uniform("projection")->SetMat4(projection);
+    shader->Uniform("view")->SetMat4(view);
+    shader->Uniform("viewPos")->SetFloat3(g_camera.Position);
+    shader->Uniform("lightPos")->SetFloat3(lightPos);
 
-    // render light source (simply re-renders a smaller plane at the light's
-    // position for debugging/visualization)
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, lightPos);
-    model = glm::scale(model, glm::vec3(0.1f));
-    shader.setMat4("model", model);
-    renderQuad();
+    {
+      // render normal-mapped quad
+      glm::mat4 model = glm::mat4(1.0f);
+      model =
+        glm::rotate(model,
+                    glm::radians((float)glfwGetTime() * -10.0f),
+                    glm::normalize(glm::vec3(
+                      1.0, 0.0, 1.0))); // rotate the quad to show normal
+                                        // mapping from multiple directions
+      shader->Uniform("model")->SetMat4(model);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, diffuseMap);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, normalMap);
+      renderQuad();
+    }
+
+    {
+      // render light source (simply re-renders a smaller plane at the light's
+      // position for debugging/visualization)
+      auto model = glm::mat4(1.0f);
+      model = glm::translate(model, lightPos);
+      model = glm::scale(model, glm::vec3(0.1f));
+      shader->Uniform("model")->SetMat4(model);
+      renderQuad();
+    }
 
     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved
     // etc.)

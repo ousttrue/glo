@@ -39,5 +39,18 @@
             "environment": [],
             "console": "integratedTerminal"
         },
+        {
+            "name": "normalmap",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/prefix/bin/normalmap.exe",
+            "args": [
+                "subprojects/logl"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "integratedTerminal"
+        },
     ]
 }
