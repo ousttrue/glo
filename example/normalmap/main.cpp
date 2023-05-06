@@ -6,7 +6,9 @@
 #include <filesystem>
 #include <glm/gtc/matrix_transform.hpp>
 #include <grapho/gl3/shader.h>
+#include <grapho/gl3/shadergenerator.h>
 #include <grapho/orbitview.h>
+#include <grapho/shadersnippet.h>
 #include <iostream>
 
 const std::optional<bool> NOP = std::nullopt;
@@ -91,121 +93,6 @@ processInput(GLFWwindow* window)
   //   camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
-enum class ShaderTypes
-{
-  vec2,
-  vec3,
-  vec4,
-  mat4,
-  sampler2D,
-};
-std::string_view
-ShaderTypeNames(ShaderTypes type)
-{
-  static const char* s_names[]{
-    "vec2", "vec3", "vec4", "mat4", "sampler2D",
-  };
-  return s_names[(int)type];
-}
-struct ShaderVariable
-{
-  ShaderTypes Type;
-  std::string Name;
-};
-std::ostream&
-operator<<(std::ostream& os, const ShaderVariable& var)
-{
-  os << ShaderTypeNames(var.Type) << " " << var.Name;
-  return os;
-}
-
-struct ShaderBuilder
-{
-  std::vector<ShaderVariable> Inputs;
-  std::vector<ShaderVariable> Outputs;
-  std::vector<ShaderVariable> Uniforms;
-  std::vector<std::string> Codes;
-  void In(ShaderTypes type, std::string_view name)
-  {
-    Inputs.push_back({ type, { name.begin(), name.end() } });
-  }
-  void Out(ShaderTypes type, std::string_view name)
-  {
-    Outputs.push_back({ type, { name.begin(), name.end() } });
-  }
-  void Uniform(ShaderTypes type, std::string_view name)
-  {
-    Uniforms.push_back({ type, { name.begin(), name.end() } });
-  }
-  void Code(std::string_view code)
-  {
-    Codes.push_back({ code.begin(), code.end() });
-  }
-
-  /// layout (location=0) in vec3 pos;
-  /// out VS_OUT{
-  /// } vs_out;
-  /// uniform mat4 view;
-  std::string GenerateVS(std::string_view version = "#version 330 core")
-  {
-    std::stringstream ss;
-    ss << version << std::endl << std::endl;
-
-    int i = 0;
-    for (auto& var : Inputs) {
-      ss << "layout (location = " << (i++) << ") in " << var << ";"
-         << std::endl;
-    }
-    ss << std::endl;
-
-    ss << "out VS_OUT {" << std::endl;
-    for (auto& var : Outputs) {
-      ss << "    " << var << ";" << std::endl;
-    }
-    ss << "} vs_out;" << std::endl << std::endl;
-
-    for (auto& var : Uniforms) {
-      ss << "uniform " << var << ";" << std::endl;
-    }
-    ss << std::endl;
-
-    for (auto& code : Codes) {
-      ss << code << std::endl << std::endl;
-    }
-    return ss.str();
-  }
-
-  /// out vec4 FragColor;
-  /// in VS_OUT {
-  /// } fs_in;
-  /// uniform vec4 color;
-  std::string GenerateFS(std::string_view version = "#version 330 core")
-  {
-    std::stringstream ss;
-    ss << version << std::endl << std::endl;
-
-    for (auto& var : Outputs) {
-      ss << "out " << var << ";" << std::endl;
-    }
-
-    ss << "in VS_OUT {" << std::endl;
-    for (auto& var : Inputs) {
-      ss << "    " << var << ";" << std::endl;
-    }
-    ss << "} fs_in;" << std::endl << std::endl;
-
-    for (auto& var : Uniforms) {
-      ss << "uniform " << var << ";" << std::endl;
-    }
-    ss << std::endl;
-
-    for (auto& code : Codes) {
-      ss << code << std::endl << std::endl;
-    }
-    return ss.str();
-  }
-};
-
 int
 main(int argc, char** argv)
 {
@@ -250,23 +137,23 @@ main(int argc, char** argv)
   // -----------------------------
   glEnable(GL_DEPTH_TEST);
 
-  ShaderBuilder vsBuilder;
-  vsBuilder.In(ShaderTypes::vec3, "aPos");
-  vsBuilder.In(ShaderTypes::vec3, "aNormal");
-  vsBuilder.In(ShaderTypes::vec2, "aTexCoords");
-  vsBuilder.In(ShaderTypes::vec3, "aTangent");
-  vsBuilder.In(ShaderTypes::vec3, "aBitangent");
-  vsBuilder.Out(ShaderTypes::vec3, "FragPos");
-  vsBuilder.Out(ShaderTypes::vec2, "TexCoords");
-  vsBuilder.Out(ShaderTypes::vec3, "TangentLightPos");
-  vsBuilder.Out(ShaderTypes::vec3, "TangentViewPos");
-  vsBuilder.Out(ShaderTypes::vec3, "TangentFragPos");
-  vsBuilder.Uniform(ShaderTypes::mat4, "projection");
-  vsBuilder.Uniform(ShaderTypes::mat4, "view");
-  vsBuilder.Uniform(ShaderTypes::mat4, "model");
-  vsBuilder.Uniform(ShaderTypes::vec3, "lightPos");
-  vsBuilder.Uniform(ShaderTypes::vec3, "viewPos");
-  vsBuilder.Code(R"(
+  grapho::VertexAndFragment snippet;
+  snippet.Attribute(grapho::ShaderTypes::vec3, "aPos");
+  snippet.Attribute(grapho::ShaderTypes::vec3, "aNormal");
+  snippet.Attribute(grapho::ShaderTypes::vec2, "aTexCoords");
+  snippet.Attribute(grapho::ShaderTypes::vec3, "aTangent");
+  snippet.Attribute(grapho::ShaderTypes::vec3, "aBitangent");
+  snippet.VsToFs(grapho::ShaderTypes::vec3, "FragPos");
+  snippet.VsToFs(grapho::ShaderTypes::vec2, "TexCoords");
+  snippet.VsToFs(grapho::ShaderTypes::vec3, "TangentLightPos");
+  snippet.VsToFs(grapho::ShaderTypes::vec3, "TangentViewPos");
+  snippet.VsToFs(grapho::ShaderTypes::vec3, "TangentFragPos");
+  snippet.Uniform(grapho::ShaderTypes::mat4, "projection");
+  snippet.Uniform(grapho::ShaderTypes::mat4, "view");
+  snippet.Uniform(grapho::ShaderTypes::mat4, "model");
+  snippet.Uniform(grapho::ShaderTypes::vec3, "lightPos");
+  snippet.Uniform(grapho::ShaderTypes::vec3, "viewPos");
+  snippet.VsEntry(R"(
 void main()
 {
     vs_out.FragPos = vec3(model * vec4(aPos, 1.0));   
@@ -286,23 +173,15 @@ void main()
     gl_Position = projection * view * model * vec4(aPos, 1.0);
 }
 )");
-  auto vs = vsBuilder.GenerateVS();
+  auto vs = grapho::gl3::GenerateVS(snippet);
   std::cout << "####################" << std::endl
             << vs << std::endl
             << "####################" << std::endl;
 
-  ShaderBuilder fsBuilder;
-  fsBuilder.Out(ShaderTypes::vec4, "FragColor");
-  fsBuilder.In(ShaderTypes::vec3, "FragPos");
-  fsBuilder.In(ShaderTypes::vec2, "TexCoords");
-  fsBuilder.In(ShaderTypes::vec3, "TangentLightPos");
-  fsBuilder.In(ShaderTypes::vec3, "TangentViewPos");
-  fsBuilder.In(ShaderTypes::vec3, "TangentFragPos");
-  fsBuilder.Uniform(ShaderTypes::sampler2D, "diffuseMap");
-  fsBuilder.Uniform(ShaderTypes::sampler2D, "normalMap");
-  fsBuilder.Uniform(ShaderTypes::vec3, "lightPos");
-  fsBuilder.Uniform(ShaderTypes::vec3, "viewPos");
-  fsBuilder.Code(R"(
+  snippet.Out(grapho::ShaderTypes::vec4, "FragColor");
+  snippet.Uniform(grapho::ShaderTypes::sampler2D, "diffuseMap");
+  snippet.Uniform(grapho::ShaderTypes::sampler2D, "normalMap");
+  snippet.FsEntry(R"(
 void main()
 {           
     // obtain normal from normal map in range [0,1]
@@ -329,7 +208,7 @@ void main()
     // FragColor = vec4(vec3(diff), 1.0);
     // FragColor = texture(normalMap, fs_in.TexCoords);
 })");
-  auto fs = fsBuilder.GenerateFS();
+  auto fs = grapho::gl3::GenerateFS(snippet);
 
   std::cout << "####################" << std::endl
             << fs << std::endl
