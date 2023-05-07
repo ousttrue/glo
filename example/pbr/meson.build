@@ -11,5 +11,6 @@ executable(
         glew_dep,
         logl_dep,
         grapho_dep,
+        directxmath_dep,
     ],
 )

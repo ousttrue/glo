@@ -1,6 +1,10 @@
 /prefix/
 /builddir/
 /subprojects/*
-!/subprojects/*.wrap
 !/subprojects/packagefiles
+!/subprojects/glew.wrap
+!/subprojects/glfw.wrap
+!/subprojects/imgui.wrap
+!/subprojects/logl.wrap
+!/subprojects/DirectXMath.wrap
 imgui.ini
