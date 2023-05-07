@@ -2,6 +2,7 @@
 #include <functional>
 #include <imgui_internal.h>
 #include <string>
+#include <span>
 
 namespace grapho {
 namespace imgui {
@@ -51,7 +52,8 @@ struct Dock
 inline void
 DockSpace(const char* dock_space,
           std::span<Dock> docks,
-          bool* resetLayout = nullptr)
+          bool* resetLayout = nullptr,
+          const std::function<void()>& additionalMenu = {})
 {
   // If you strip some features of, this demo is pretty much equivalent to
   // calling DockSpaceOverViewport()! In most cases you should be able to just
@@ -60,7 +62,7 @@ DockSpace(const char* dock_space,
   // - we allow the host window to be floating/moveable instead of filling the
   // viewport (when opt_fullscreen == false)
   // - we allow the host window to have padding (when opt_padding == true)
-  // - we have a local menu bar in the host window (vs. you could use
+  // - we have a local  bar in the host window (vs. you could use
   // BeginMainMenuBar() + DockSpaceOverViewport() in your code!) TL;DR; this
   // demo is more complicated than what you would normally use. If we removed
   // all the options we are showcasing, this demo would become:
@@ -137,6 +139,11 @@ DockSpace(const char* dock_space,
   }
 
   if (ImGui::BeginMenuBar()) {
+
+    if (additionalMenu) {
+      additionalMenu();
+    }
+
     if (ImGui::BeginMenu("Options")) {
       // Disabling fullscreen would allow the window to be moved to the front of
       // other windows, which we can't undo at the moment without finer window
