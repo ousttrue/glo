@@ -1,4 +1,5 @@
 #include "glfw_platform.h"
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <iostream>
 
@@ -21,8 +22,15 @@ processInput(GLFWwindow* window)
   //   camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 
+static void
+error_callback(int error, const char* description)
+{
+  fprintf(stderr, "Error: %s\n", description);
+}
+
 GlfwPlatform::GlfwPlatform()
 {
+  glfwSetErrorCallback(error_callback);
   glfwInit();
 }
 
@@ -57,18 +65,18 @@ GlfwPlatform::CreateWindow(const char* title, int width, int height)
   return m_window;
 }
 
-bool
+std::optional<GlfwPlatform::Frame>
 GlfwPlatform::BeginFrame()
 {
   if (glfwWindowShouldClose(m_window)) {
-    return false;
+    return std::nullopt;
   }
   glfwPollEvents();
   processInput(m_window);
-  int width, height;
-  glfwGetFramebufferSize(m_window, &width, &height);
 
-  return true;
+  Frame frame;
+  glfwGetFramebufferSize(m_window, &frame.Width, &frame.Height);
+  return frame;
 }
 
 void

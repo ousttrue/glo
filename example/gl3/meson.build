@@ -7,5 +7,6 @@ executable(
         glew_dep,
         grapho_dep,
         directxmath_dep,
+        platform_dep,
     ],
 )

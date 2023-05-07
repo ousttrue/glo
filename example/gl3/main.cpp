@@ -1,6 +1,5 @@
+#include "glfw_platform.h"
 #include <GL/glew.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
 #include <grapho/gl3/fbo.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/texture.h>
@@ -88,43 +87,18 @@ void main()
 };
 )";
 
-static void
-error_callback(int error, const char* description)
-{
-  fprintf(stderr, "Error: %s\n", description);
-}
-
-static void
-key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-  if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
 int
 main(void)
 {
-  glfwSetErrorCallback(error_callback);
-  if (!glfwInit()) {
+  GlfwPlatform platform;
+  if (!platform.CreateWindow(WINDOW_NAME, WIDTH, HEIGHT)) {
     return 1;
   }
-
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  auto window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_NAME, nullptr, nullptr);
-  if (!window) {
-    glfwTerminate();
-    return 2;
-  }
-  glfwMakeContextCurrent(window);
   if (glewInit() != GLEW_OK) {
-    return 3;
+    return 2;
   }
   std::cout << "GL_VERSION: " << glGetString(GL_VERSION) << std::endl;
   std::cout << "GL_VENDOR: " << glGetString(GL_VENDOR) << std::endl;
-  glfwSwapInterval(1);
-
-  glfwSetKeyCallback(window, key_callback);
 
   auto program = grapho::gl3::ShaderProgram::Create(vertex_shader_text,
                                                     fragment_shader_text);
@@ -208,13 +182,10 @@ main(void)
     }, };
   const uint32_t ubo_binding_point = 1;
   grapho::Viewport viewport;
-  while (!glfwWindowShouldClose(window)) {
+  while (auto frame = platform.BeginFrame()) {
     // update
-    glfwPollEvents();
-    glfwGetFramebufferSize(window, &viewport.Width, &viewport.Height);
-
-    // (*program)->SetUniformMatrix(*mvp_location, mvp);
-    // (*program)->SetUniformMatrix(*mvp_location, mvp);
+    viewport.Width = frame->Width;
+    viewport.Height = frame->Height;
     ubo->Upload(data);
     (*program)->UboBind(*block_index, ubo_binding_point);
     ubo->SetBindingPoint(ubo_binding_point);
@@ -243,11 +214,8 @@ main(void)
     }
 
     // present
-    glfwSwapBuffers(window);
+    platform.EndFrame();
   }
 
-  glfwDestroyWindow(window);
-
-  glfwTerminate();
   return 0;
 }

@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <optional>
 
 class GlfwPlatform
 {
@@ -9,6 +10,11 @@ public:
   GlfwPlatform();
   ~GlfwPlatform();
   GLFWwindow* CreateWindow(const char* titlle, int width, int height);
-  bool BeginFrame();
-  void EndFrame(const std::function<void()>& callback);
+  struct Frame
+  {
+    int Width;
+    int Height;
+  };
+  std::optional<Frame> BeginFrame();
+  void EndFrame(const std::function<void()>& callback = {});
 };
