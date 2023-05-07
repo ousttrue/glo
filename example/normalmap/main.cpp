@@ -98,36 +98,46 @@ main(int argc, char** argv)
   DirectX::XMFLOAT4 clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   {
     docks.push_back(
-      { "normalmap", [&scene, &fbo, &camera, &clearColor]() {
-         // get and update fbo size
-         auto size = ImGui::GetContentRegionAvail();
-         auto texture = fbo.Bind(size.x, size.y, clearColor);
-         auto [isActive, isHovered] =
-           grapho::imgui::DraggableImage((ImTextureID)(uint64_t)texture, size);
+      { "normalmap",
+        [&scene, &fbo, &camera, &clearColor](const char* title, bool* p_open) {
+          ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, { 0, 0 });
+          if (ImGui::Begin(title,
+                           p_open,
+                           ImGuiWindowFlags_NoScrollbar |
+                             ImGuiWindowFlags_NoScrollWithMouse)) {
 
-         // update camera from mouse
-         ImGuiIO& io = ImGui::GetIO();
-         camera.SetSize(io.DisplaySize.x, io.DisplaySize.y);
-         if (isActive) {
-           if (io.MouseDown[ImGuiMouseButton_Right]) {
-             camera.YawPitch(io.MouseDelta.x, io.MouseDelta.y);
-           }
-           if (io.MouseDown[ImGuiMouseButton_Middle]) {
-             camera.Shift(io.MouseDelta.x, io.MouseDelta.y);
-           }
-         }
-         if (isHovered) {
-           camera.Dolly(io.MouseWheel);
-         }
+            // get and update fbo size
+            auto size = ImGui::GetContentRegionAvail();
+            auto texture = fbo.Bind(size.x, size.y, clearColor);
+            auto [isActive, isHovered] = grapho::imgui::DraggableImage(
+              (ImTextureID)(uint64_t)texture, size);
 
-         // render to fbo
-         DirectX::XMFLOAT4X4 projection;
-         DirectX::XMFLOAT4X4 view;
-         camera.Update(&projection._11, &view._11);
-         scene.Render(io.DeltaTime, projection, view, camera.Position);
+            // update camera from mouse
+            ImGuiIO& io = ImGui::GetIO();
+            camera.SetSize(io.DisplaySize.x, io.DisplaySize.y);
+            if (isActive) {
+              if (io.MouseDown[ImGuiMouseButton_Right]) {
+                camera.YawPitch(io.MouseDelta.x, io.MouseDelta.y);
+              }
+              if (io.MouseDown[ImGuiMouseButton_Middle]) {
+                camera.Shift(io.MouseDelta.x, io.MouseDelta.y);
+              }
+            }
+            if (isHovered) {
+              camera.Dolly(io.MouseWheel);
+            }
 
-         fbo.Unbind();
-       } });
+            // render to fbo
+            DirectX::XMFLOAT4X4 projection;
+            DirectX::XMFLOAT4X4 view;
+            camera.Update(&projection._11, &view._11);
+            scene.Render(io.DeltaTime, projection, view, camera.Position);
+
+            fbo.Unbind();
+          }
+          ImGui::End();
+          ImGui::PopStyleVar();
+        } });
   }
 
   // render loop
