@@ -1,7 +1,6 @@
 #pragma once
 #include "../image.h"
 #include <assert.h>
-#include <expected>
 #include <memory>
 #include <stdint.h>
 #include <string>
@@ -9,7 +8,7 @@
 namespace grapho {
 namespace gl3 {
 
-inline std::expected<uint32_t, std::string>
+inline uint32_t
 GLImageFormat(PixelFormat format, ColorSpace colorspace)
 {
   if (colorspace == ColorSpace::Linear) {
@@ -34,12 +33,12 @@ GLImageFormat(PixelFormat format, ColorSpace colorspace)
       case PixelFormat::u8_RGB:
         return GL_SRGB8;
       default:
-        assert(false);
         break;
     }
   }
 
-  return std::unexpected{ "unknown PixelFormat" };
+  assert(false);
+  return {};
 }
 
 inline uint32_t
@@ -88,7 +87,7 @@ public:
     Bind();
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 *GLImageFormat(data.Format, data.ColorSpace),
+                 GLImageFormat(data.Format, data.ColorSpace),
                  width_,
                  height_,
                  0,
@@ -168,7 +167,7 @@ struct Cubemap
     for (unsigned int i = 0; i < 6; ++i) {
       glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                    0,
-                   *GLImageFormat(data.Format, data.ColorSpace),
+                   GLImageFormat(data.Format, data.ColorSpace),
                    ptr->width_,
                    ptr->height_,
                    0,
