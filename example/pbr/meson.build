@@ -2,7 +2,7 @@ executable(
     'pbr',
     [
         'main.cpp',
-        'image.cpp',
+        'imageloader.cpp',
         'drawable.cpp',
     ],
     install: true,

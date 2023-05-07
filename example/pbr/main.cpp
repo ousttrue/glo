@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 
 #include "drawable.h"
-#include "image.h"
+#include "imageloader.h"
 #include <GLFW/glfw3.h>
 #include <grapho/gl3/pbr.h>
 #include <grapho/orbitview.h>
@@ -134,14 +134,13 @@ main(int argc, char** argv)
   // PbrEnv
   //
   std::filesystem::path dir(argv[1]);
-  Image hdr;
+  ImageLoader hdr;
   if (!hdr.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
     std::cout << "Failed to load HDR image." << std::endl;
     return 3;
   }
 
-  auto hdrTexture = grapho::gl3::Texture::Create(
-    hdr.Width, hdr.Height, hdr.Format, hdr.Data, true);
+  auto hdrTexture = grapho::gl3::Texture::Create(hdr.Image, true);
   if (!hdrTexture) {
     return 4;
   }
