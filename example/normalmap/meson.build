@@ -3,6 +3,7 @@ executable(
     [
         'main.cpp',
         'normalmap.cpp',
+        'scene.cpp',
     ],
     install: true,
     dependencies: [

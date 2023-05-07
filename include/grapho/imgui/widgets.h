@@ -5,15 +5,18 @@
 namespace grapho {
 namespace imgui {
 
-inline struct
+struct CursorState
 {
   bool IsActive;
   bool IsHovered;
-} DraggableImage(ImTextureID texture, float w, float h)
+};
+
+inline CursorState
+DraggableImage(ImTextureID texture, const ImVec2& size)
 {
   // image button. capture mouse event
   ImGui::ImageButton(
-    texture, { w, h }, { 0, 1 }, { 1, 0 }, 0, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
+    texture, size, { 0, 1 }, { 1, 0 }, 0, { 1, 1, 1, 1 }, { 1, 1, 1, 1 });
   ImGui::ButtonBehavior(ImGui::GetCurrentContext()->LastItemData.Rect,
                         ImGui::GetCurrentContext()->LastItemData.ID,
                         nullptr,

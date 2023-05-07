@@ -73,4 +73,38 @@ struct Fbo
   }
 };
 
+struct FboHolder
+{
+  std::shared_ptr<grapho::gl3::Texture> FboTexture;
+  grapho::gl3::Fbo Fbo;
+
+  template<typename T>
+    requires(sizeof(T) == sizeof(float) * 4)
+  uint32_t Bind(int width, int height, const T& color)
+  {
+    if (!FboTexture || FboTexture->width_ != width ||
+        FboTexture->height_ != height) {
+      FboTexture = grapho::gl3::Texture::Create({
+        width,
+        height,
+        grapho::PixelFormat::u8_RGBA,
+
+      });
+      Fbo.AttachDepth(width, height);
+      Fbo.AttachTexture2D(FboTexture->texture_);
+    }
+
+    Fbo.Bind();
+    grapho::gl3::ClearViewport({
+      .Width = width,
+      .Height = height,
+      .Color = *((const std::array<float, 4>*)&color),
+    });
+
+    return FboTexture->texture_;
+  }
+
+  void Unbind() { Fbo.Unbind(); }
+};
+
 }
