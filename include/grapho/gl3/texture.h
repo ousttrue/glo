@@ -51,7 +51,7 @@ GLInternalFormat(PixelFormat format)
     case PixelFormat::u8_R:
       return GL_RED;
 
-    defualt:
+    default:
       break;
   }
   return GL_RGB;

@@ -11,5 +11,6 @@ executable(
         logl_dep,
         grapho_dep,
         imgui_dep,
+        directxmath_dep,
     ],
 )

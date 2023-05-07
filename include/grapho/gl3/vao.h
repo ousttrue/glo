@@ -15,15 +15,22 @@ GLType(ValueType type)
   switch (type) {
     case ValueType::Float:
       return GL_FLOAT;
-
     case ValueType::Double:
       return GL_DOUBLE;
 
+    case ValueType::Int8:
+      return GL_BYTE;
+    case ValueType::Int16:
+      return GL_SHORT;
+    case ValueType::Int32:
+      return GL_INT;
+
     case ValueType::UInt8:
       return GL_UNSIGNED_BYTE;
-
-    default:
-      return std::unexpected{ "unknown GLType" };
+    case ValueType::UInt16:
+      return GL_UNSIGNED_SHORT;
+    case ValueType::UInt32:
+      return GL_UNSIGNED_INT;
   }
 }
 

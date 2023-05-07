@@ -2,8 +2,7 @@
 
 #include "normalmap.h"
 #include <glm/glm.hpp>
-// #include <glm/gtc/type_ptr.hpp>
-#include <learnopengl/model.h>
+#include <iostream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -132,13 +131,16 @@ loadTexture(char const* path)
   int width, height, nrComponents;
   unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
   if (data) {
-    GLenum format;
+    GLenum format = {};
     if (nrComponents == 1)
       format = GL_RED;
     else if (nrComponents == 3)
       format = GL_RGB;
     else if (nrComponents == 4)
       format = GL_RGBA;
+    else {
+      assert(false);
+    }
 
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D,

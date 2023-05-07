@@ -111,7 +111,7 @@ main(void)
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-  auto window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_NAME, NULL, NULL);
+  auto window = glfwCreateWindow(WIDTH, HEIGHT, WINDOW_NAME, nullptr, nullptr);
   if (!window) {
     glfwTerminate();
     return 2;
