@@ -10,5 +10,6 @@ executable(
         glew_dep,
         logl_dep,
         grapho_dep,
+        imgui_dep,
     ],
 )

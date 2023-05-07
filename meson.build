@@ -15,7 +15,7 @@ if get_option('example')
         default_options: ['default_library=static'],
     )
     logl_dep = dependency('logl')
-    imgui_dep = dependency('imgui')
+    imgui_dep = dependency('imgui', default_options: ['default_library=static'])
 
     subdir('example')
 endif
