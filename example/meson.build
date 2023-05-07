@@ -14,6 +14,7 @@ if host_machine.system() == 'windows'
     subdir('dx11')
 endif
 
+subdir('glfw_platform')
 subdir('gl3')
 subdir('pbr')
 subdir('normalmap')

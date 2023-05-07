@@ -12,5 +12,6 @@ executable(
         grapho_dep,
         imgui_dep,
         directxmath_dep,
+        platform_dep,
     ],
 )

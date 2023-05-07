@@ -52,5 +52,13 @@
             "environment": [],
             "console": "integratedTerminal"
         },
+        {
+            "name": "normalmap(lldb)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/prefix/bin/normalmap",
+            "args": ["subprojects/logl"],
+            "cwd": "${workspaceFolder}"
+        },
     ]
 }
