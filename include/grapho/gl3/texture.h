@@ -1,5 +1,5 @@
 #pragma once
-#include "../pixelformat.h"
+#include "../image.h"
 #include <assert.h>
 #include <expected>
 #include <memory>
@@ -10,21 +10,33 @@ namespace grapho {
 namespace gl3 {
 
 inline std::expected<uint32_t, std::string>
-GLImageFormat(PixelFormat format)
+GLImageFormat(PixelFormat format, ColorSpace colorspace)
 {
-  switch (format) {
-    case PixelFormat::f32_RGB:
-      return GL_RGB32F;
-    case PixelFormat::f16_RGB:
-      return GL_RGB16F;
-    case PixelFormat::u8_RGBA:
-      return GL_RGBA;
-    case PixelFormat::u8_RGB:
-      return GL_RGB;
-    case PixelFormat::u8_R:
-      return GL_RED;
-    defualt:
-      break;
+  if (colorspace == ColorSpace::Linear) {
+    switch (format) {
+      case PixelFormat::f32_RGB:
+        return GL_RGB32F;
+      case PixelFormat::f16_RGB:
+        return GL_RGB16F;
+      case PixelFormat::u8_RGBA:
+        return GL_RGBA;
+      case PixelFormat::u8_RGB:
+        return GL_RGB;
+      case PixelFormat::u8_R:
+        return GL_RED;
+      default:
+        break;
+    }
+  } else {
+    switch (format) {
+      case PixelFormat::u8_RGBA:
+        return GL_SRGB8_ALPHA8;
+      case PixelFormat::u8_RGB:
+        return GL_SRGB8;
+      default:
+        assert(false);
+        break;
+    }
   }
 
   return std::unexpected{ "unknown PixelFormat" };
@@ -57,39 +69,32 @@ struct Texture
   }
 
 public:
-  static std::shared_ptr<Texture> Create(int width,
-                                         int height,
-                                         PixelFormat format,
-                                         const uint8_t* pixels = nullptr,
+  static std::shared_ptr<Texture> Create(const Image& data,
                                          bool useFloat = false)
   {
     uint32_t texture;
     glGenTextures(1, &texture);
     auto ptr = std::shared_ptr<Texture>(new Texture(texture));
-    ptr->Upload(width, height, format, pixels, useFloat);
+    ptr->Upload(data, useFloat);
     return ptr;
   }
 
-  void Upload(int width,
-              int height,
-              PixelFormat format,
-              const uint8_t* pixels,
-              bool useFloat)
+  void Upload(const Image& data, bool useFloat)
   {
-    width_ = width;
-    height_ = height;
+    width_ = data.Width;
+    height_ = data.Height;
     SamplingLinear();
     WrapClamp();
     Bind();
     glTexImage2D(GL_TEXTURE_2D,
                  0,
-                 *GLImageFormat(format),
-                 width,
-                 height,
+                 *GLImageFormat(data.Format, data.ColorSpace),
+                 width_,
+                 height_,
                  0,
-                 GLInternalFormat(format),
+                 GLInternalFormat(data.Format),
                  useFloat ? GL_FLOAT : GL_UNSIGNED_BYTE,
-                 pixels);
+                 data.Pixels);
     glGenerateMipmap(GL_TEXTURE_2D);
     UnBind();
   }
@@ -151,25 +156,23 @@ struct Cubemap
   {
   }
 
-  static std::shared_ptr<Cubemap> Create(int width,
-                                         int height,
-                                         PixelFormat format,
+  static std::shared_ptr<Cubemap> Create(const Image& data,
                                          bool useFloat = false)
   {
     uint32_t texture;
     glGenTextures(1, &texture);
     auto ptr = std::shared_ptr<Cubemap>(new Cubemap(texture));
-    ptr->width_ = width;
-    ptr->height_ = height;
+    ptr->width_ = data.Width;
+    ptr->height_ = data.Height;
     ptr->Bind();
     for (unsigned int i = 0; i < 6; ++i) {
       glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
                    0,
-                   *GLImageFormat(format),
-                   width,
-                   height,
+                   *GLImageFormat(data.Format, data.ColorSpace),
+                   ptr->width_,
+                   ptr->height_,
                    0,
-                   GLInternalFormat(format),
+                   GLInternalFormat(data.Format),
                    useFloat ? GL_FLOAT : GL_UNSIGNED_BYTE,
                    nullptr);
     }

@@ -16,8 +16,12 @@ GenerateBrdfLUTTexture()
 #include "shaders/brdf_fs.h"
 #include "shaders/brdf_vs.h"
 
-  auto brdfLUTTexture = grapho::gl3::Texture::Create(
-    512, 512, grapho::PixelFormat::f16_RGB, nullptr, true);
+  auto brdfLUTTexture =
+    grapho::gl3::Texture::Create({ .Width = 512,
+                                   .Height = 512,
+                                   .Format = grapho::PixelFormat::f16_RGB,
+                                   .ColorSpace = grapho::ColorSpace::Linear },
+                                 true);
 
   // then re-configure capture framebuffer object and render screen-space quad
   // with BRDF shader.
@@ -153,7 +157,13 @@ struct PbrEnv
   PbrEnv(const std::shared_ptr<Texture>& hdrTexture)
   {
     EnvCubemap = grapho::gl3::Cubemap::Create(
-      512, 512, grapho::PixelFormat::f16_RGB, true);
+      {
+        512,
+        512,
+        grapho::PixelFormat::f16_RGB,
+        grapho::ColorSpace::Linear,
+      },
+      true);
     EnvCubemap->SamplingLinear(true);
 
     // hdr to cuemap
@@ -164,14 +174,26 @@ struct PbrEnv
     EnvCubemap->UnBind();
 
     // irradianceMap
-    IrradianceMap =
-      grapho::gl3::Cubemap::Create(32, 32, grapho::PixelFormat::f16_RGB, true);
+    IrradianceMap = grapho::gl3::Cubemap::Create(
+      {
+        32,
+        32,
+        grapho::PixelFormat::f16_RGB,
+        grapho::ColorSpace::Linear,
+      },
+      true);
     EnvCubemap->Activate(0);
     grapho::gl3::GenerateIrradianceMap(cubeRenderer, IrradianceMap->texture_);
 
     // prefilterMap
     PrefilterMap = grapho::gl3::Cubemap::Create(
-      128, 128, grapho::PixelFormat::f16_RGB, true);
+      {
+        128,
+        128,
+        grapho::PixelFormat::f16_RGB,
+        grapho::ColorSpace::Linear,
+      },
+      true);
     PrefilterMap->SamplingLinear(true);
     EnvCubemap->Activate(0);
     grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->texture_);
@@ -216,11 +238,10 @@ struct PbrEnv
                   const DirectX::XMFLOAT4X4& view)
   {
     auto isCull = glIsEnabled(GL_CULL_FACE);
-    if(isCull)
-    {
+    if (isCull) {
       glDisable(GL_CULL_FACE);
     }
-    
+
     EnvCubemap->Activate(0);
     // skybox.Draw(projection, view);
 
@@ -236,8 +257,7 @@ struct PbrEnv
     // render BRDF map to screen
     // brdfShader.Use();
     // renderQuad();
-    if(isCull)
-    {
+    if (isCull) {
       glEnable(GL_CULL_FACE);
     }
   }
