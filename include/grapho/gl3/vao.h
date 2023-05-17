@@ -32,6 +32,8 @@ GLType(ValueType type)
     case ValueType::UInt32:
       return GL_UNSIGNED_INT;
   }
+
+  return {};
 }
 
 inline std::expected<uint32_t, std::string>
