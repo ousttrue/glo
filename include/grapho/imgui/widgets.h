@@ -62,5 +62,31 @@ Splitter(bool split_vertically,
                           0.0f);
 }
 
+template<typename T, size_t N>
+static void
+EnumCombo(const char* label,
+          T* value,
+          const std::tuple<T, const char*> (&list)[N])
+{
+  using TUPLE = std::tuple<T, const char*>;
+  int i = 0;
+  for (; i < N; ++i) {
+    if (std::get<0>(list[i]) == *value) {
+      break;
+    }
+  }
+
+  auto callback = [](void* data, int n, const char** out_str) -> bool {
+    if (n < N) {
+      *out_str = std::get<1>(((const TUPLE*)data)[n]);
+      return true;
+    }
+    return false;
+  };
+  if (ImGui::Combo(label, &i, callback, (void*)list, N)) {
+    *value = std::get<0>(list[i]);
+  }
+}
+
 }
 }
