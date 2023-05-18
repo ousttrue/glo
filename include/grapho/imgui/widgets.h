@@ -71,7 +71,7 @@ class TreeSplitter
     std::function<void()> Show;
     std::list<UI> Children;
 
-    UI* ShowSelector(const UI* selected)
+    void ShowSelector(const UI* selected, UI** clicked)
     {
       static ImGuiTreeNodeFlags base_flags =
         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -88,22 +88,15 @@ class TreeSplitter
       bool node_open =
         ImGui::TreeNodeEx((void*)this, node_flags, "%s", Label.c_str());
 
-      UI* clicked = nullptr;
-      if (node_open) {
-        for (auto& child : Children) {
-          if (child.ShowSelector(selected)) {
-            clicked = &child;
-          }
-        }
-        ImGui::TreePop();
+      if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
+        *clicked = this;
       }
 
-      if (clicked) {
-        return clicked;
-      } else if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        return this;
-      } else {
-        return nullptr;
+      if (node_open) {
+        for (auto& child : Children) {
+          child.ShowSelector(selected, clicked);
+        }
+        ImGui::TreePop();
       }
     }
   };
@@ -148,14 +141,12 @@ private:
     ImGui::BeginChild("left pane", ImVec2(w, 0), true);
 
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0);
-    UI* node_clicked = nullptr;
+    UI* clicked = nullptr;
     for (auto& ui : m_list) {
-      if (auto current = ui.ShowSelector(m_selected)) {
-        node_clicked = current;
-      }
+      ui.ShowSelector(m_selected, &clicked);
     }
-    if (node_clicked) {
-      m_selected = node_clicked;
+    if (clicked) {
+      m_selected = clicked;
     }
     ImGui::PopStyleVar();
 
