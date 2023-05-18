@@ -195,7 +195,7 @@ template<typename T>
 static void
 GenericCombo(const char* label,
              T* value,
-             std::span<std::tuple<T, std::string>> span)
+             std::span<const std::tuple<T, std::string>> span)
 {
   using TUPLE = std::tuple<T, std::string>;
   using SPAN = std::span<const TUPLE>;
