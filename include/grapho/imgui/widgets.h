@@ -2,6 +2,7 @@
 #include <functional>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <span>
 
 namespace grapho {
 namespace imgui {
@@ -190,6 +191,35 @@ EnumCombo(const char* label,
   };
   if (ImGui::Combo(label, &i, callback, (void*)list, N)) {
     *value = std::get<0>(list[i]);
+  }
+}
+
+template<typename T>
+static void
+GenericCombo(const char* label,
+             T* value,
+             std::span<std::tuple<T, std::string>> span)
+{
+  using TUPLE = std::tuple<T, std::string>;
+  using SPAN = std::span<const TUPLE>;
+  int i = 0;
+  for (; i < span.size(); ++i) {
+    if (std::get<0>(span[i]) == *value) {
+      break;
+    }
+  }
+
+  auto callback = [](void* data, int n, const char** out_str) -> bool {
+    auto span = (const SPAN*)data;
+    if (n < span->size()) {
+      auto& tuple = (*span)[n];
+      *out_str = std::get<1>(tuple).c_str();
+      return true;
+    }
+    return false;
+  };
+  if (ImGui::Combo(label, &i, callback, (void*)&span, span.size())) {
+    *value = std::get<0>(span[i]);
   }
 }
 
