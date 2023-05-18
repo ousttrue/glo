@@ -157,10 +157,7 @@ private:
   void ShowGuiRight()
   {
     ImGui::SameLine();
-
-    // Leave room for 1 line below us
-    ImGui::BeginChild("item view",
-                      ImVec2(0, -ImGui::GetFrameHeightWithSpacing()));
+    ImGui::BeginChild("item view", ImVec2(0, 0));
     if (m_selected && m_selected->Show) {
       m_selected->Show();
     }
