@@ -82,8 +82,8 @@ struct FboHolder
     requires(sizeof(T) == sizeof(float) * 4)
   uint32_t Bind(int width, int height, const T& color)
   {
-    if (!FboTexture || FboTexture->width_ != width ||
-        FboTexture->height_ != height) {
+    if (!FboTexture || FboTexture->Width() != width ||
+        FboTexture->Height() != height) {
       FboTexture = grapho::gl3::Texture::Create({
         width,
         height,
@@ -91,7 +91,7 @@ struct FboHolder
 
       });
       Fbo.AttachDepth(width, height);
-      Fbo.AttachTexture2D(FboTexture->texture_);
+      Fbo.AttachTexture2D(FboTexture->Handle());
     }
 
     Fbo.Bind();
@@ -101,7 +101,7 @@ struct FboHolder
       .Color = *((const std::array<float, 4>*)&color),
     });
 
-    return FboTexture->texture_;
+    return FboTexture->Handle();
   }
 
   void Unbind() { Fbo.Unbind(); }

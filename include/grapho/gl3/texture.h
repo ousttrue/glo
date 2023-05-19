@@ -8,7 +8,7 @@
 namespace grapho {
 namespace gl3 {
 
-inline uint32_t
+inline std::optional<uint32_t>
 GLImageFormat(PixelFormat format, ColorSpace colorspace)
 {
   if (colorspace == ColorSpace::Linear) {
@@ -38,7 +38,7 @@ GLImageFormat(PixelFormat format, ColorSpace colorspace)
   }
 
   assert(false);
-  return {};
+  return std::nullopt;
 }
 
 inline uint32_t
@@ -57,45 +57,54 @@ GLInternalFormat(PixelFormat format)
   return GL_RGB;
 }
 
-struct Texture
+class Texture
 {
-  uint32_t texture_;
-  int width_ = 0;
-  int height_ = 0;
-  Texture(uint32_t texture)
-    : texture_(texture)
-  {
-  }
+  uint32_t m_handle;
+  int m_width = 0;
+  int m_height = 0;
 
 public:
+  Texture() { glGenTextures(1, &m_handle); }
+  ~Texture() { glDeleteTextures(1, &m_handle); }
+  void Bind() const { glBindTexture(GL_TEXTURE_2D, m_handle); }
+  void Unbind() const { glBindTexture(GL_TEXTURE_2D, 0); }
+  void Activate(uint32_t unit) const
+  {
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, m_handle);
+  }
+  uint32_t Handle() const { return m_handle; }
+  int Width() const { return m_width; }
+  int Height() const { return m_height; }
+
   static std::shared_ptr<Texture> Create(const Image& data,
                                          bool useFloat = false)
   {
-    uint32_t texture;
-    glGenTextures(1, &texture);
-    auto ptr = std::shared_ptr<Texture>(new Texture(texture));
+    auto ptr = std::shared_ptr<Texture>(new Texture());
     ptr->Upload(data, useFloat);
     return ptr;
   }
 
   void Upload(const Image& data, bool useFloat)
   {
-    width_ = data.Width;
-    height_ = data.Height;
     SamplingLinear();
     WrapClamp();
     Bind();
-    glTexImage2D(GL_TEXTURE_2D,
-                 0,
-                 GLImageFormat(data.Format, data.ColorSpace),
-                 width_,
-                 height_,
-                 0,
-                 GLInternalFormat(data.Format),
-                 useFloat ? GL_FLOAT : GL_UNSIGNED_BYTE,
-                 data.Pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    UnBind();
+    if (auto format = GLImageFormat(data.Format, data.ColorSpace)) {
+      glTexImage2D(GL_TEXTURE_2D,
+                   0,
+                   *format,
+                   data.Width,
+                   data.Height,
+                   0,
+                   GLInternalFormat(data.Format),
+                   useFloat ? GL_FLOAT : GL_UNSIGNED_BYTE,
+                   data.Pixels);
+      glGenerateMipmap(GL_TEXTURE_2D);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &m_width);
+      glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &m_height);
+    }
+    Unbind();
   }
 
   void WrapClamp()
@@ -103,7 +112,7 @@ public:
     Bind();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    UnBind();
+    Unbind();
   }
 
   void WrapRepeat()
@@ -111,7 +120,7 @@ public:
     Bind();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    UnBind();
+    Unbind();
   }
 
   void SamplingPoint()
@@ -119,7 +128,7 @@ public:
     Bind();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    UnBind();
+    Unbind();
   }
 
   void SamplingLinear(bool mip = false)
@@ -133,87 +142,7 @@ public:
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
-    UnBind();
-  }
-
-  void Activate(uint32_t unit)
-  {
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, texture_);
-  }
-  void Bind() { glBindTexture(GL_TEXTURE_2D, texture_); }
-  void UnBind() { glBindTexture(GL_TEXTURE_2D, 0); }
-};
-
-struct Cubemap
-{
-  uint32_t texture_;
-  int width_ = 0;
-  int height_ = 0;
-  Cubemap(uint32_t texture)
-    : texture_(texture)
-  {
-  }
-
-  static std::shared_ptr<Cubemap> Create(const Image& data,
-                                         bool useFloat = false)
-  {
-    uint32_t texture;
-    glGenTextures(1, &texture);
-    auto ptr = std::shared_ptr<Cubemap>(new Cubemap(texture));
-    ptr->width_ = data.Width;
-    ptr->height_ = data.Height;
-    ptr->Bind();
-    for (unsigned int i = 0; i < 6; ++i) {
-      glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                   0,
-                   GLImageFormat(data.Format, data.ColorSpace),
-                   ptr->width_,
-                   ptr->height_,
-                   0,
-                   GLInternalFormat(data.Format),
-                   useFloat ? GL_FLOAT : GL_UNSIGNED_BYTE,
-                   nullptr);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    ptr->UnBind();
-    ptr->SamplingLinear();
-
-    return ptr;
-  }
-
-  void GenerateMipmap()
-  {
-    // then let OpenGL generate mipmaps from first mip face (combatting visible
-    // dots artifact)
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texture_);
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-  }
-
-  void Bind() { glBindTexture(GL_TEXTURE_CUBE_MAP, texture_); }
-  void UnBind() { glBindTexture(GL_TEXTURE_CUBE_MAP, 0); }
-
-  void SamplingLinear(bool mip = false)
-  {
-    Bind();
-    if (mip) {
-      // enable pre-filter mipmap sampling (combatting visible dots artifact)
-      glTexParameteri(
-        GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    } else {
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-    UnBind();
-  }
-
-  void Activate(uint32_t unit)
-  {
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texture_);
+    Unbind();
   }
 };
 

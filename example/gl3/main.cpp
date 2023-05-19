@@ -191,7 +191,7 @@ main(void)
     ubo->SetBindingPoint(ubo_binding_point);
 
     {
-      fbo->AttachTexture2D(fboTexture->texture_);
+      fbo->AttachTexture2D(fboTexture->Handle());
       grapho::Viewport fboViewport{
         .Width = 512,
         .Height = 512,

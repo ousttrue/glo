@@ -1,4 +1,5 @@
 #pragma once
+#include "cubemap.h"
 #include "cuberenderer.h"
 #include "fbo.h"
 #include "shader.h"
@@ -26,7 +27,7 @@ GenerateBrdfLUTTexture()
   // then re-configure capture framebuffer object and render screen-space quad
   // with BRDF shader.
   grapho::gl3::Fbo fbo;
-  fbo.AttachTexture2D(brdfLUTTexture->texture_);
+  fbo.AttachTexture2D(brdfLUTTexture->Handle());
   grapho::gl3::ClearViewport(grapho::Viewport{ 512, 512 });
   auto brdfShader = *grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
   brdfShader->Use();
@@ -169,7 +170,7 @@ struct PbrEnv
     // hdr to cuemap
     hdrTexture->Activate(0);
     grapho::gl3::CubeRenderer cubeRenderer;
-    grapho::gl3::GenerateEnvCubeMap(cubeRenderer, EnvCubemap->texture_);
+    grapho::gl3::GenerateEnvCubeMap(cubeRenderer, EnvCubemap->Handle());
     EnvCubemap->GenerateMipmap();
     EnvCubemap->UnBind();
 
@@ -183,7 +184,7 @@ struct PbrEnv
       },
       true);
     EnvCubemap->Activate(0);
-    grapho::gl3::GenerateIrradianceMap(cubeRenderer, IrradianceMap->texture_);
+    grapho::gl3::GenerateIrradianceMap(cubeRenderer, IrradianceMap->Handle());
 
     // prefilterMap
     PrefilterMap = grapho::gl3::Cubemap::Create(
@@ -196,7 +197,7 @@ struct PbrEnv
       true);
     PrefilterMap->SamplingLinear(true);
     EnvCubemap->Activate(0);
-    grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->texture_);
+    grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->Handle());
     PrefilterMap->GenerateMipmap();
 
     // brdefLUT
