@@ -83,7 +83,7 @@ struct OrbitView
     }
     auto distance = height * 0.5f / std::atan(FovY * 0.5f);
     shift_[0] = 0;
-    shift_[1] = -height * 0.5f;
+    shift_[1] = -(max.y + min.y) * 0.5f;
     shift_[2] = -distance * 1.2f;
     auto r =
       DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(
