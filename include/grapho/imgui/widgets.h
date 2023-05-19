@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
+#ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
+#endif
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <span>
@@ -73,7 +75,7 @@ class TreeSplitter
     std::function<void()> Show;
     std::list<UI> Children;
 
-    void ShowSelector(const UI* selected, UI** clicked)
+    void ShowSelector(const UI* selected, UI** clicked, int level = 0)
     {
       static ImGuiTreeNodeFlags base_flags =
         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -83,7 +85,8 @@ class TreeSplitter
       if (this == selected) {
         node_flags |= ImGuiTreeNodeFlags_Selected;
       }
-      if (Children.empty()) {
+      bool is_leaf = level > 0 && Children.empty();
+      if (is_leaf) {
         node_flags |= ImGuiTreeNodeFlags_Leaf;
       }
 
@@ -96,7 +99,7 @@ class TreeSplitter
 
       if (node_open) {
         for (auto& child : Children) {
-          child.ShowSelector(selected, clicked);
+          child.ShowSelector(selected, clicked, level + 1);
         }
         ImGui::TreePop();
       }
