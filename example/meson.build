@@ -9,6 +9,7 @@ glfw_dep = dependency(
 logl_dep = dependency('logl')
 imgui_dep = dependency('imgui', default_options: ['default_library=static'])
 directxmath_dep = dependency('directxmath', include_type: 'system')
+glm_dep = dependency('glm')
 
 if host_machine.system() == 'windows'
     subdir('dx11')

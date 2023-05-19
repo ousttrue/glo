@@ -14,5 +14,6 @@ executable(
         imgui_dep,
         directxmath_dep,
         platform_dep,
+        glm_dep,
     ],
 )

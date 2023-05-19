@@ -1,3 +1,4 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
@@ -108,23 +109,27 @@ main(int argc, char** argv)
 
             // get and update fbo size
             auto size = ImGui::GetContentRegionAvail();
-            auto texture = fbo.Bind(size.x, size.y, clearColor);
+            auto texture = fbo.Bind(
+              static_cast<int>(size.x), static_cast<int>(size.y), clearColor);
             auto [isActive, isHovered] = grapho::imgui::DraggableImage(
               (ImTextureID)(uint64_t)texture, size);
 
             // update camera from mouse
             ImGuiIO& io = ImGui::GetIO();
-            camera.SetSize(io.DisplaySize.x, io.DisplaySize.y);
+            camera.SetSize(static_cast<int>(io.DisplaySize.x),
+                           static_cast<int>(io.DisplaySize.y));
             if (isActive) {
               if (io.MouseDown[ImGuiMouseButton_Right]) {
-                camera.YawPitch(io.MouseDelta.x, io.MouseDelta.y);
+                camera.YawPitch(static_cast<int>(io.MouseDelta.x),
+                                static_cast<int>(io.MouseDelta.y));
               }
               if (io.MouseDown[ImGuiMouseButton_Middle]) {
-                camera.Shift(io.MouseDelta.x, io.MouseDelta.y);
+                camera.Shift(static_cast<int>(io.MouseDelta.x),
+                             static_cast<int>(io.MouseDelta.y));
               }
             }
             if (isHovered) {
-              camera.Dolly(io.MouseWheel);
+              camera.Dolly(static_cast<int>(io.MouseWheel));
             }
 
             // render to fbo

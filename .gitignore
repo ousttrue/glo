@@ -7,4 +7,5 @@
 !/subprojects/imgui.wrap
 !/subprojects/logl.wrap
 !/subprojects/DirectXMath.wrap
+!/subprojects/glm.wrap
 imgui.ini
