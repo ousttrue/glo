@@ -284,11 +284,17 @@ struct PbrMaterial
   std::shared_ptr<grapho::gl3::Texture> RoughnessMap;
   std::shared_ptr<grapho::gl3::Texture> AOMap;
 
-  PbrMaterial()
+  PbrMaterial(std::u8string_view vs = {}, std::u8string_view fs = {})
   {
 #include "shaders/pbr_fs.h"
 #include "shaders/pbr_vs.h"
-    auto shader = grapho::gl3::ShaderProgram::Create(PBR_VS, PBR_FS);
+    if (vs.empty()) {
+      vs = { PBR_VS };
+    }
+    if (fs.empty()) {
+      fs = { PBR_FS };
+    }
+    auto shader = grapho::gl3::ShaderProgram::Create(vs, fs);
     if (!shader) {
       throw std::runtime_error(shader.error());
     }
@@ -313,9 +319,11 @@ struct PbrMaterial
     const std::shared_ptr<grapho::gl3::Texture>& normal,
     const std::shared_ptr<grapho::gl3::Texture>& metallic,
     const std::shared_ptr<grapho::gl3::Texture>& roughness,
-    const std::shared_ptr<grapho::gl3::Texture>& ao)
+    const std::shared_ptr<grapho::gl3::Texture>& ao,
+    std::u8string_view vs = {},
+    std::u8string_view fs = {})
   {
-    auto ptr = std::make_shared<PbrMaterial>();
+    auto ptr = std::make_shared<PbrMaterial>(vs, fs);
     ptr->AlbedoMap = albedo;
     ptr->NormalMap = normal;
     ptr->MetallicMap = metallic;
