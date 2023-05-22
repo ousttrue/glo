@@ -23,6 +23,11 @@ struct Ubo
 
     return ptr;
   }
+  template<typename T>
+  static std::shared_ptr<Ubo> Create()
+  {
+    return Create(sizeof(T), nullptr);
+  }
 
   void Bind() { glBindBuffer(GL_UNIFORM_BUFFER, ubo_); }
   void Unbind() { glBindBuffer(GL_UNIFORM_BUFFER, 0); }

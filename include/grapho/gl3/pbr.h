@@ -2,8 +2,7 @@
 #include "cubemap.h"
 #include "cuberenderer.h"
 #include "fbo.h"
-#include "shader.h"
-#include "texture.h"
+#include "material.h"
 #include "ubo.h"
 #include "vao.h"
 
@@ -264,114 +263,45 @@ struct PbrEnv
   }
 };
 
-inline DirectX::XMFLOAT3X3
-TransposeInv(const DirectX::XMFLOAT4X4& _m)
+inline std::expected<std::shared_ptr<Material>, std::string>
+CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
+                  const std::shared_ptr<grapho::gl3::Texture>& normal,
+                  const std::shared_ptr<grapho::gl3::Texture>& metallic,
+                  const std::shared_ptr<grapho::gl3::Texture>& roughness,
+                  const std::shared_ptr<grapho::gl3::Texture>& ao,
+                  std::u8string_view vs = {},
+                  std::u8string_view fs = {})
 {
-  auto m = DirectX::XMLoadFloat4x4(&_m);
-  DirectX::XMVECTOR det;
-  auto ti = DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, m));
-  DirectX::XMFLOAT3X3 mat3;
-  DirectX::XMStoreFloat3x3(&mat3, ti);
-  return mat3;
-}
-
-struct PbrMaterial
-{
-  std::shared_ptr<grapho::gl3::ShaderProgram> Shader;
-  std::shared_ptr<grapho::gl3::Texture> AlbedoMap;
-  std::shared_ptr<grapho::gl3::Texture> NormalMap;
-  std::shared_ptr<grapho::gl3::Texture> MetallicMap;
-  std::shared_ptr<grapho::gl3::Texture> RoughnessMap;
-  std::shared_ptr<grapho::gl3::Texture> AOMap;
-
-  PbrMaterial(std::u8string_view vs = {}, std::u8string_view fs = {})
-  {
 #include "shaders/pbr_fs.h"
 #include "shaders/pbr_vs.h"
-    if (vs.empty()) {
-      vs = { PBR_VS };
-    }
-    if (fs.empty()) {
-      fs = { PBR_FS };
-    }
-    auto shader = grapho::gl3::ShaderProgram::Create(vs, fs);
-    if (!shader) {
-      throw std::runtime_error(shader.error());
-    }
-    Shader = *shader;
-    Shader->Use();
-    Shader->Uniform("irradianceMap")->SetInt(0);
-    Shader->Uniform("prefilterMap")->SetInt(1);
-    Shader->Uniform("brdfLUT")->SetInt(2);
-    Shader->Uniform("albedoMap")->SetInt(3);
-    Shader->Uniform("normalMap")->SetInt(4);
-    Shader->Uniform("metallicMap")->SetInt(5);
-    Shader->Uniform("roughnessMap")->SetInt(6);
-    Shader->Uniform("aoMap")->SetInt(7);
+  if (vs.empty()) {
+    vs = { PBR_VS };
   }
-
-  ~PbrMaterial() {}
-  PbrMaterial(const PbrMaterial&) = delete;
-  PbrMaterial& operator=(const PbrMaterial&) = delete;
-
-  static std::shared_ptr<PbrMaterial> Create(
-    const std::shared_ptr<grapho::gl3::Texture>& albedo,
-    const std::shared_ptr<grapho::gl3::Texture>& normal,
-    const std::shared_ptr<grapho::gl3::Texture>& metallic,
-    const std::shared_ptr<grapho::gl3::Texture>& roughness,
-    const std::shared_ptr<grapho::gl3::Texture>& ao,
-    std::u8string_view vs = {},
-    std::u8string_view fs = {})
-  {
-    auto ptr = std::make_shared<PbrMaterial>(vs, fs);
-    ptr->AlbedoMap = albedo;
-    ptr->NormalMap = normal;
-    ptr->MetallicMap = metallic;
-    ptr->RoughnessMap = roughness;
-    ptr->AOMap = ao;
-    return ptr;
+  if (fs.empty()) {
+    fs = { PBR_FS };
   }
-
-  void Activate(const DirectX::XMFLOAT4X4& projection,
-                const DirectX::XMFLOAT4X4& view,
-                const DirectX::XMFLOAT4X4& model,
-                const DirectX::XMFLOAT3& cameraPos,
-                uint32_t UBO_LIGHTS_BINDING)
-  {
-    if (AlbedoMap) {
-      AlbedoMap->Activate(3);
-    }
-    if (NormalMap) {
-      NormalMap->Activate(4);
-    }
-    if (MetallicMap) {
-      MetallicMap->Activate(5);
-    }
-    if (RoughnessMap) {
-      RoughnessMap->Activate(6);
-    }
-    if (AOMap) {
-      AOMap->Activate(7);
-    }
-
-    Shader->Use();
-    // auto view = cameraViewMatrix();
-    Shader->Uniform("view")->SetMat4(view);
-    // auto cameraPos = cameraPosition();
-    Shader->Uniform("camPos")->SetFloat3(cameraPos);
-    // initialize static shader uniforms before rendering
-    Shader->Uniform("projection")->SetMat4(projection);
-
-    auto uboBlock = Shader->UboBlockIndex("lights");
-    Shader->UboBind(*uboBlock, UBO_LIGHTS_BINDING);
-
-    // DirectX::XMFLOAT4X4 model;
-    // DirectX::XMStoreFloat4x4(
-    //   &model, DirectX::XMMatrixTranslation(position.x, position.y,
-    //   position.z));
-    Shader->Uniform("model")->SetMat4(model);
-    Shader->Uniform("normalMatrix")->SetMat3(TransposeInv(model));
+  auto shader = grapho::gl3::ShaderProgram::Create(vs, fs);
+  if (!shader) {
+    return std::unexpected{ shader.error() };
   }
-};
+  auto ptr = std::make_shared<Material>();
+  ptr->Shader = *shader;
+  ptr->Shader->Use();
+  ptr->Shader->Uniform("irradianceMap")->SetInt(0);
+  ptr->Shader->Uniform("prefilterMap")->SetInt(1);
+  ptr->Shader->Uniform("brdfLUT")->SetInt(2);
+  ptr->Shader->Uniform("albedoMap")->SetInt(3);
+  ptr->Textures.push_back({ 3, albedo });
+  ptr->Shader->Uniform("normalMap")->SetInt(4);
+  ptr->Textures.push_back({ 4, normal });
+  ptr->Shader->Uniform("metallicMap")->SetInt(5);
+  ptr->Textures.push_back({ 5, metallic });
+  ptr->Shader->Uniform("roughnessMap")->SetInt(6);
+  ptr->Textures.push_back({ 6, roughness });
+  ptr->Shader->Uniform("aoMap")->SetInt(7);
+  ptr->Textures.push_back({ 7, ao });
+  return ptr;
+}
+
 }
 }
