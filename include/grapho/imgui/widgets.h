@@ -85,7 +85,7 @@ class TreeSplitter
       if (this == selected) {
         node_flags |= ImGuiTreeNodeFlags_Selected;
       }
-      bool is_leaf = level > 0 && Children.empty();
+      bool is_leaf = Children.empty();
       if (is_leaf) {
         node_flags |= ImGuiTreeNodeFlags_Leaf;
       }
