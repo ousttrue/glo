@@ -69,6 +69,7 @@ Splitter(bool split_vertically,
 
 class TreeSplitter
 {
+public:
   struct UI
   {
     std::string Label;
@@ -105,6 +106,8 @@ class TreeSplitter
       }
     }
   };
+
+private:
   std::list<UI> m_list;
   UI* m_selected = nullptr;
   float m_splitter = 200.0f;
@@ -136,16 +139,19 @@ public:
     // ImGui::Text("%f, %f: %f; %f", size.x, size.y, f, s);
     grapho::imgui::Splitter(true, 5, &m_splitter, &s, 8, 8);
 
-    ShowGuiLeft(m_splitter);
-    ShowGuiRight();
+    ImGui::BeginChild("left pane", ImVec2(m_splitter, 0), true);
+    ShowSelector();
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("item view", ImVec2(0, 0));
+    ShowSelected();
+    ImGui::EndChild();
   }
 
-private:
-  void ShowGuiLeft(float w)
+  void ShowSelector()
   {
-    ImGui::BeginChild("left pane", ImVec2(w, 0), true);
-
-    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 5);
     UI* clicked = nullptr;
     for (auto& ui : m_list) {
       ui.ShowSelector(m_selected, &clicked);
@@ -154,18 +160,13 @@ private:
       m_selected = clicked;
     }
     ImGui::PopStyleVar();
-
-    ImGui::EndChild();
   }
 
-  void ShowGuiRight()
+  void ShowSelected()
   {
-    ImGui::SameLine();
-    ImGui::BeginChild("item view", ImVec2(0, 0));
     if (m_selected && m_selected->Show) {
       m_selected->Show();
     }
-    ImGui::EndChild();
   }
 };
 
