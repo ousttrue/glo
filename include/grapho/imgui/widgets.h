@@ -74,6 +74,7 @@ public:
   {
     std::string Label;
     std::function<void()> Show;
+    std::function<void()> Text;
     std::list<UI> Children;
 
     void ShowSelector(const UI* selected, UI** clicked, int level = 0)
@@ -121,12 +122,14 @@ public:
 
   UI* Push(const char* label,
            UI* parent = nullptr,
-           const std::function<void()>& callback = {})
+           const std::function<void()>& callback = {},
+           const std::function<void()>& text = {})
   {
     auto& list = parent ? parent->Children : m_list;
     list.push_back({
       .Label = label,
       .Show = callback,
+      .Text = text,
     });
     return &list.back();
   }
@@ -166,6 +169,13 @@ public:
   {
     if (m_selected && m_selected->Show) {
       m_selected->Show();
+    }
+  }
+
+  void ShowText()
+  {
+    if (m_selected && m_selected->Text) {
+      m_selected->Text();
     }
   }
 };
