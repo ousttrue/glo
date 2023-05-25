@@ -15,6 +15,7 @@ struct Dock
   DockShow OnShow;
   bool UseWindow = true;
   bool IsOpen = true;
+  bool NoPadding = false;
 
   Dock(std::string_view name, const DockShow& show)
     : Name(name)
@@ -22,9 +23,12 @@ struct Dock
     , UseWindow(false)
   {
   }
-  Dock(std::string_view name, const std::function<void()>& show)
+  Dock(std::string_view name,
+       const std::function<void()>& show,
+       bool noPadding = false)
     : Name(name)
     , UseWindow(true)
+    , NoPadding(noPadding)
   {
     OnShow = [show](const char* title, bool*) { show(); };
   }
@@ -36,7 +40,14 @@ struct Dock
       if (UseWindow) {
         // ImGui::SetNextWindowPos({ 300, 200 }, ImGuiCond_FirstUseEver);
         ImGui::SetNextWindowSize({ 300, 200 }, ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(Name.c_str(), &IsOpen)) {
+        if (NoPadding) {
+          ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        }
+        auto isOpen = ImGui::Begin(Name.c_str(), &IsOpen);
+        if (NoPadding) {
+          ImGui::PopStyleVar();
+        }
+        if (isOpen) {
           OnShow(Name.c_str(), &IsOpen);
         }
       } else {
