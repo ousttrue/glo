@@ -180,34 +180,38 @@ public:
   }
 };
 
-template<typename T, size_t N>
-static void
+template<typename T>
+static bool
 EnumCombo(const char* label,
           T* value,
-          const std::tuple<T, const char*> (&list)[N])
+          std::span<const std::tuple<T, const char*>> span)
 {
   using TUPLE = std::tuple<T, const char*>;
   int i = 0;
-  for (; i < N; ++i) {
-    if (std::get<0>(list[i]) == *value) {
+  for (; i < span.size(); ++i) {
+    if (std::get<0>(span[i]) == *value) {
       break;
     }
   }
 
   auto callback = [](void* data, int n, const char** out_str) -> bool {
-    if (n < N) {
-      *out_str = std::get<1>(((const TUPLE*)data)[n]);
+    auto span = (std::span<const TUPLE>*)data;
+    if (n < (*span).size()) {
+      *out_str = std::get<1>((*span)[n]);
       return true;
     }
     return false;
   };
-  if (ImGui::Combo(label, &i, callback, (void*)list, N)) {
-    *value = std::get<0>(list[i]);
+
+  bool updated = ImGui::Combo(label, &i, callback, (void*)&span, span.size());
+  if (updated) {
+    *value = std::get<0>(span[i]);
   }
+  return updated;
 }
 
 template<typename T>
-static void
+static bool
 GenericCombo(const char* label,
              T* value,
              std::span<const std::tuple<T, std::string>> span)
@@ -232,7 +236,9 @@ GenericCombo(const char* label,
   };
   if (ImGui::Combo(label, &i, callback, (void*)&span, span.size())) {
     *value = std::get<0>(span[i]);
+    return true;
   }
+  return false;
 }
 
 }
