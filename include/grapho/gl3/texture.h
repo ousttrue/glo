@@ -2,6 +2,7 @@
 #include "../image.h"
 #include <assert.h>
 #include <memory>
+#include <optional>
 #include <stdint.h>
 #include <string>
 
