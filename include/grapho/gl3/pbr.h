@@ -269,16 +269,18 @@ CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
                   const std::shared_ptr<grapho::gl3::Texture>& metallic,
                   const std::shared_ptr<grapho::gl3::Texture>& roughness,
                   const std::shared_ptr<grapho::gl3::Texture>& ao,
-                  std::u8string_view vs = {},
-                  std::u8string_view fs = {})
+                  std::span<std::u8string_view> _vs = {},
+                  std::span<std::u8string_view> _fs = {})
 {
 #include "shaders/pbr_fs.h"
 #include "shaders/pbr_vs.h"
+  std::vector<std::u8string_view> vs = { _vs.begin(), _vs.end() };
+  std::vector<std::u8string_view> fs = { _fs.begin(), _fs.end() };
   if (vs.empty()) {
-    vs = { PBR_VS };
+    vs.push_back(PBR_VS);
   }
   if (fs.empty()) {
-    fs = { PBR_FS };
+    fs.push_back(PBR_FS);
   }
   auto shader = grapho::gl3::ShaderProgram::Create(vs, fs);
   if (!shader) {
@@ -287,19 +289,42 @@ CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
   auto ptr = std::make_shared<Material>();
   ptr->Shader = *shader;
   ptr->Shader->Use();
-  ptr->Shader->Uniform("irradianceMap")->SetInt(0);
-  ptr->Shader->Uniform("prefilterMap")->SetInt(1);
-  ptr->Shader->Uniform("brdfLUT")->SetInt(2);
-  ptr->Shader->Uniform("albedoMap")->SetInt(3);
+
+  if (auto var = ptr->Shader->Uniform("irradianceMap")) {
+    var->SetInt(0);
+  }
+  if (auto var = ptr->Shader->Uniform("prefilterMap")) {
+    var->SetInt(1);
+  }
+  if (auto var = ptr->Shader->Uniform("brdfLUT")) {
+    var->SetInt(2);
+  }
+
+  if (auto var = ptr->Shader->Uniform("albedoMap")) {
+    var->SetInt(3);
+  }
   ptr->Textures.push_back({ 3, albedo });
-  ptr->Shader->Uniform("normalMap")->SetInt(4);
+
+  if (auto var = ptr->Shader->Uniform("normalMap")) {
+    var->SetInt(4);
+  }
   ptr->Textures.push_back({ 4, normal });
-  ptr->Shader->Uniform("metallicMap")->SetInt(5);
+
+  if (auto var = ptr->Shader->Uniform("metallicMap")) {
+    var->SetInt(5);
+  };
   ptr->Textures.push_back({ 5, metallic });
-  ptr->Shader->Uniform("roughnessMap")->SetInt(6);
+
+  if (auto var = ptr->Shader->Uniform("roughnessMap")) {
+    var->SetInt(6);
+  }
   ptr->Textures.push_back({ 6, roughness });
-  ptr->Shader->Uniform("aoMap")->SetInt(7);
+
+  if (auto var = ptr->Shader->Uniform("aoMap")) {
+    var->SetInt(7);
+  }
   ptr->Textures.push_back({ 7, ao });
+
   return ptr;
 }
 
