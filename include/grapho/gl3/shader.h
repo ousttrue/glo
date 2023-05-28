@@ -1,6 +1,7 @@
 #pragma once
 #include "../fileutil.h"
 #include <expected>
+#include <fstream>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -114,6 +115,19 @@ struct UniformVariable
   }
 };
 
+inline void
+DebugWrite(const std::string& path, std::span<std::u8string_view> srcs)
+{
+#ifndef NDEBUG
+  std::stringstream ss;
+  for (auto src : srcs) {
+    ss << std::string_view((const char*)src.data(), src.size());
+  }
+  std::ofstream os(path);
+  os << ss.str();
+#endif
+}
+
 class ShaderProgram
 {
   uint32_t program_ = 0;
@@ -131,10 +145,12 @@ public:
   {
     auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
     if (!vs) {
+      DebugWrite("debug.vert", vs_srcs);
       return std::unexpected{ std::string("vs: ") + vs.error() };
     }
     auto fs = compile(GL_FRAGMENT_SHADER, fs_srcs);
     if (!fs) {
+      DebugWrite("debug.frag", fs_srcs);
       return std::unexpected{ std::string("fs: ") + fs.error() };
     }
 
