@@ -31,6 +31,14 @@ struct Material
     DirectX::XMFLOAT4 lightPositions[4];
     DirectX::XMFLOAT4 lightColors[4];
     DirectX::XMFLOAT4 camPos;
+
+    DirectX::XMFLOAT4X4 viewprojection() const
+    {
+      DirectX::XMFLOAT4X4 m;
+      DirectX::XMStoreFloat4x4(
+        &m, DirectX::XMLoadFloat4x4(&view) * DirectX::XMLoadFloat4x4(&projection));
+      return m;
+    }
   };
 
   struct DrawVars

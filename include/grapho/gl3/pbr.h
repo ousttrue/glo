@@ -54,15 +54,14 @@ GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer,
   auto equirectangularToCubemapShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, EQUIRECTANGULAR_FS);
   equirectangularToCubemapShader->Use();
-  equirectangularToCubemapShader->Uniform("equirectangularMap")->SetInt(0);
+  equirectangularToCubemapShader->SetUniform("equirectangularMap", 0);
 
   cubeRenderer.Render(
     512,
     envCubemap,
     [equirectangularToCubemapShader](const auto& projection, const auto& view) {
-      equirectangularToCubemapShader->Uniform("projection")
-        ->SetMat4(projection);
-      equirectangularToCubemapShader->Uniform("view")->SetMat4(view);
+      equirectangularToCubemapShader->SetUniform("projection", projection);
+      equirectangularToCubemapShader->SetUniform("view", view);
     });
 }
 
@@ -77,14 +76,14 @@ GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
   auto irradianceShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, IRRADIANCE_CONVOLUTION_FS);
   irradianceShader->Use();
-  irradianceShader->Uniform("environmentMap")->SetInt(0);
+  irradianceShader->SetUniform("environmentMap", 0);
 
   cubeRenderer.Render(
     32,
     irradianceMap,
     [irradianceShader](const auto& projection, const auto& view) {
-      irradianceShader->Uniform("projection")->SetMat4(projection);
-      irradianceShader->Uniform("view")->SetMat4(view);
+      irradianceShader->SetUniform("projection", projection);
+      irradianceShader->SetUniform("view", view);
     });
 }
 
@@ -99,21 +98,21 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
   auto prefilterShader =
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
   prefilterShader->Use();
-  prefilterShader->Uniform("environmentMap")->SetInt(0);
+  prefilterShader->SetUniform("environmentMap", 0);
 
   unsigned int maxMipLevels = 5;
   for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
     // reisze framebuffer according to mip-level size.
     auto mipSize = static_cast<int>(128 * std::pow(0.5, mip));
     float roughness = (float)mip / (float)(maxMipLevels - 1);
-    prefilterShader->Uniform("roughness")->SetFloat(roughness);
+    prefilterShader->SetUniform("roughness", roughness);
 
     cubeRenderer.Render(
       mipSize,
       prefilterMap,
       [prefilterShader](const auto& projection, const auto& view) {
-        prefilterShader->Uniform("projection")->SetMat4(projection);
-        prefilterShader->Uniform("view")->SetMat4(view);
+        prefilterShader->SetUniform("projection", projection);
+        prefilterShader->SetUniform("view", view);
       },
       mip);
 
@@ -222,7 +221,7 @@ struct PbrEnv
     }
     BackgroundShader = *backgroundShader;
     BackgroundShader->Use();
-    BackgroundShader->Uniform("environmentMap")->SetInt(0);
+    BackgroundShader->SetUniform("environmentMap", 0);
   }
 
   void Activate()
@@ -247,8 +246,8 @@ struct PbrEnv
 
     // render skybox (render as last to prevent overdraw)
     BackgroundShader->Use();
-    BackgroundShader->Uniform("projection")->SetMat4(projection);
-    BackgroundShader->Uniform("view")->SetMat4(view);
+    BackgroundShader->SetUniform("projection", projection);
+    BackgroundShader->SetUniform("view", view);
     // glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap); // display irradiance
     // map glBindTexture(GL_TEXTURE_CUBE_MAP, prefilterMap); // display
     // prefilter map
@@ -290,41 +289,19 @@ CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
   ptr->Shader = *shader;
   ptr->Shader->Use();
 
-  if (auto var = ptr->Shader->Uniform("irradianceMap")) {
-    var->SetInt(0);
-  }
-  if (auto var = ptr->Shader->Uniform("prefilterMap")) {
-    var->SetInt(1);
-  }
-  if (auto var = ptr->Shader->Uniform("brdfLUT")) {
-    var->SetInt(2);
-  }
-
-  if (auto var = ptr->Shader->Uniform("albedoMap")) {
-    var->SetInt(3);
-  }
+  ptr->Shader->SetUniform("irradianceMap", 0);
+  ptr->Shader->SetUniform("prefilterMap", 1);
+  ptr->Shader->SetUniform("brdfLUT", 2);
+  ptr->Shader->SetUniform("albedoMap", 3);
   ptr->Textures.push_back({ 3, albedo });
-
-  if (auto var = ptr->Shader->Uniform("normalMap")) {
-    var->SetInt(4);
-  }
+  ptr->Shader->SetUniform("normalMap", 4);
   ptr->Textures.push_back({ 4, normal });
-
-  if (auto var = ptr->Shader->Uniform("metallicMap")) {
-    var->SetInt(5);
-  };
+  ptr->Shader->SetUniform("metallicMap", 5);
   ptr->Textures.push_back({ 5, metallic });
-
-  if (auto var = ptr->Shader->Uniform("roughnessMap")) {
-    var->SetInt(6);
-  }
+  ptr->Shader->SetUniform("roughnessMap", 6);
   ptr->Textures.push_back({ 6, roughness });
-
-  if (auto var = ptr->Shader->Uniform("aoMap")) {
-    var->SetInt(7);
-  }
+  ptr->Shader->SetUniform("aoMap", 7);
   ptr->Textures.push_back({ 7, ao });
-
   return ptr;
 }
 

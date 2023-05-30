@@ -93,23 +93,27 @@ struct UniformVariable
 
   void SetFloat(float value) { glUniform1f(Location, value); }
 
+  // 12 byte
   template<Float3 T>
-  void SetFloat3(const T& t)
+  void Set(const T& t)
   {
     glUniform3fv(Location, 1, (const float*)&t);
   }
+  // 16 byte
   template<Float4 T>
-  void SetFloat4(const T& t)
+  void Set(const T& t)
   {
     glUniform4fv(Location, 1, (const float*)&t);
   }
+  // 36 byte
   template<Mat3 T>
-  void SetMat3(const T& t)
+  void Set(const T& t)
   {
     glUniformMatrix3fv(Location, 1, GL_FALSE, (const float*)&t);
   }
+  // 64 byte
   template<Mat4 T>
-  void SetMat4(const T& t)
+  void Set(const T& t)
   {
     glUniformMatrix4fv(Location, 1, GL_FALSE, (const float*)&t);
   }
@@ -206,6 +210,28 @@ public:
       return std::nullopt;
     }
     return UniformVariable{ static_cast<uint32_t>(location) };
+  }
+
+  template<typename T>
+  void SetUniform(const std::string& name, const T& value)
+  {
+    if (auto var = Uniform(name)) {
+      var->Set(value);
+    }
+  }
+
+  void SetUniform(const std::string& name, int value)
+  {
+    if (auto var = Uniform(name)) {
+      var->SetInt(value);
+    }
+  }
+
+  void SetUniform(const std::string& name, float value)
+  {
+    if (auto var = Uniform(name)) {
+      var->SetFloat(value);
+    }
   }
 
   std::optional<uint32_t> UboBlockIndex(const char* name)
