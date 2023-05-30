@@ -35,8 +35,15 @@ struct Material
     DirectX::XMFLOAT4X4 viewprojection() const
     {
       DirectX::XMFLOAT4X4 m;
-      DirectX::XMStoreFloat4x4(
-        &m, DirectX::XMLoadFloat4x4(&view) * DirectX::XMLoadFloat4x4(&projection));
+      DirectX::XMStoreFloat4x4(&m,
+                               DirectX::XMLoadFloat4x4(&view) *
+                                 DirectX::XMLoadFloat4x4(&projection));
+      return m;
+    }
+    DirectX::XMFLOAT3X3 uvTransform() const
+    {
+      DirectX::XMFLOAT3X3 m;
+      DirectX::XMStoreFloat3x3(&m, DirectX::XMMatrixIdentity());
       return m;
     }
   };
@@ -47,6 +54,12 @@ struct Material
     DirectX::XMFLOAT4 color;
     DirectX::XMFLOAT4 cutoff;
     DirectX::XMFLOAT4X4 normalMatrix;
+    DirectX::XMFLOAT3X3 normalMatrix3() const
+    {
+      DirectX::XMFLOAT3X3 m;
+      DirectX::XMStoreFloat3x3(&m, DirectX::XMLoadFloat4x4(&normalMatrix));
+      return m;
+    }
 
     void CalcNormalMatrix()
     {
