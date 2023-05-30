@@ -33,7 +33,7 @@ struct Material
     DirectX::XMFLOAT4 camPos;
   };
 
-  struct NodeVars
+  struct DrawVars
   {
     DirectX::XMFLOAT4X4 model;
     DirectX::XMFLOAT4 color;
