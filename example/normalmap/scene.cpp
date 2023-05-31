@@ -130,16 +130,10 @@ Scene::Render(float deltaTime,
 {
   glEnable(GL_DEPTH_TEST);
   Shader->Use();
-  Shader->Uniform("projection")->SetMat4(projection);
-  Shader->Uniform("view")->SetMat4(view);
-  Shader->Uniform("viewPos").and_then([&](auto u) {
-    u.SetFloat3(cameraPosition);
-    return NOP;
-  });
-  Shader->Uniform("lightPos").and_then([&](auto u) {
-    u.SetFloat3(LightPos);
-    return NOP;
-  });
+  Shader->SetUniform("projection", projection);
+  Shader->SetUniform("view", view);
+  Shader->SetUniform("viewPos", cameraPosition);
+  Shader->SetUniform("lightPos", LightPos);
 
   {
     Time += deltaTime;
@@ -151,7 +145,7 @@ Scene::Render(float deltaTime,
                           1.0, 0.0, 1.0))); // rotate the quad to show normal
                                             // mapping from multiple directions
 
-    Shader->Uniform("model")->SetMat4(model);
+    Shader->SetUniform("model", model);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, DiffuseMap);
     glActiveTexture(GL_TEXTURE1);
@@ -165,7 +159,7 @@ Scene::Render(float deltaTime,
     auto model = glm::mat4(1.0f);
     model = glm::translate(model, LightPos);
     model = glm::scale(model, glm::vec3(0.1f));
-    Shader->Uniform("model")->SetMat4(model);
+    Shader->SetUniform("model", model);
     renderQuad();
   }
 }
