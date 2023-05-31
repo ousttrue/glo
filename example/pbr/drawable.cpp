@@ -21,6 +21,7 @@ Drawable::Draw(uint32_t world_ubo_binding)
   DirectX::XMStoreFloat4x4(
     &Vars.model,
     DirectX::XMMatrixTranslation(Position.x, Position.y, Position.z));
+  Vars.CalcNormalMatrix();
   Ubo->Upload(Vars);
   Ubo->Bind();
   Ubo->SetBindingPoint(1);
