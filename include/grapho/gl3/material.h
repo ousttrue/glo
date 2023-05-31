@@ -24,7 +24,7 @@ struct Material
   std::shared_ptr<ShaderProgram> Shader;
   std::list<TextureSlot> Textures;
 
-  struct EnvVars
+  struct WorldVars
   {
     DirectX::XMFLOAT4X4 projection;
     DirectX::XMFLOAT4X4 view;
@@ -40,24 +40,25 @@ struct Material
                                  DirectX::XMLoadFloat4x4(&projection));
       return m;
     }
-    DirectX::XMFLOAT3X3 uvTransform() const
-    {
-      DirectX::XMFLOAT3X3 m;
-      DirectX::XMStoreFloat3x3(&m, DirectX::XMMatrixIdentity());
-      return m;
-    }
   };
 
-  struct DrawVars
+  struct LocalVars
   {
     DirectX::XMFLOAT4X4 model;
     DirectX::XMFLOAT4 color;
     DirectX::XMFLOAT4 cutoff;
     DirectX::XMFLOAT4X4 normalMatrix;
+    DirectX::XMFLOAT3 emissiveColor;
     DirectX::XMFLOAT3X3 normalMatrix3() const
     {
       DirectX::XMFLOAT3X3 m;
       DirectX::XMStoreFloat3x3(&m, DirectX::XMLoadFloat4x4(&normalMatrix));
+      return m;
+    }
+    DirectX::XMFLOAT3X3 uvTransform() const
+    {
+      DirectX::XMFLOAT3X3 m;
+      DirectX::XMStoreFloat3x3(&m, DirectX::XMMatrixIdentity());
       return m;
     }
 
