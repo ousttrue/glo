@@ -120,33 +120,12 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
   }
 }
 
-struct Lights
-{
-  DirectX::XMFLOAT4 Positions[4] = {
-    { -10.0f, 10.0f, 10.0f, 0 },
-    { 10.0f, 10.0f, 10.0f, 0 },
-    { -10.0f, -10.0f, 10.0f, 0 },
-    { 10.0f, -10.0f, 10.0f, 0 },
-  };
-  DirectX::XMFLOAT4 Colors[4] = {
-    { 300.0f, 300.0f, 300.0f, 0 },
-    { 300.0f, 300.0f, 300.0f, 0 },
-    { 300.0f, 300.0f, 300.0f, 0 },
-    { 300.0f, 300.0f, 300.0f, 0 },
-  };
-};
-
 struct PbrEnv
 {
   std::shared_ptr<Cubemap> EnvCubemap;
   std::shared_ptr<Cubemap> IrradianceMap;
   std::shared_ptr<Cubemap> PrefilterMap;
   std::shared_ptr<Texture> BrdfLUTTexture;
-
-  // light ubo
-  Lights lights{};
-  std::shared_ptr<grapho::gl3::Ubo> LightsUbo;
-  static const uint32_t UBO_LIGHTS_BINDING = 0;
 
   // Skybox skybox;
   std::shared_ptr<grapho::gl3::Vao> Cube;
@@ -201,9 +180,6 @@ struct PbrEnv
     // brdefLUT
     BrdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
 
-    // ubo
-    LightsUbo = grapho::gl3::Ubo::Create(sizeof(Lights), nullptr);
-
     // skybox
     auto cube = grapho::mesh::Cube();
     auto vbo =
@@ -229,8 +205,6 @@ struct PbrEnv
     IrradianceMap->Activate(0);
     PrefilterMap->Activate(1);
     BrdfLUTTexture->Activate(2);
-    LightsUbo->Upload(lights);
-    LightsUbo->SetBindingPoint(UBO_LIGHTS_BINDING);
   }
 
   void DrawSkybox(const DirectX::XMFLOAT4X4& projection,

@@ -146,6 +146,25 @@ main(int argc, char** argv)
   }
   auto pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
 
+  grapho::gl3::Material::WorldVars world
+  {
+    .lightPositions = {
+      { -10.0f, 10.0f, 10.0f, 0 },
+      { 10.0f, 10.0f, 10.0f, 0 },
+      { -10.0f, -10.0f, 10.0f, 0 },
+      { 10.0f, -10.0f, 10.0f, 0 },
+    },
+    .lightColors = {
+      { 300.0f, 300.0f, 300.0f, 0 },
+      { 300.0f, 300.0f, 300.0f, 0 },
+      { 300.0f, 300.0f, 300.0f, 0 },
+      { 300.0f, 300.0f, 300.0f, 0 },
+    }
+  };
+  auto worldUbo = grapho::gl3::Ubo::Create(sizeof(world), nullptr);
+  worldUbo->Bind();
+  worldUbo->SetBindingPoint(0);
+
   //
   // PbrMaterial objects
   //
@@ -163,9 +182,11 @@ main(int argc, char** argv)
 
     // update camera
     g_camera.SetSize(scrWidth, scrHeight);
-    DirectX::XMFLOAT4X4 projection;
-    DirectX::XMFLOAT4X4 view;
-    g_camera.Update(&projection._11, &view._11);
+    g_camera.Update(&world.projection._11, &world.view._11);
+    world.camPos = {
+      g_camera.Position.x, g_camera.Position.y, g_camera.Position.z, 1
+    };
+    worldUbo->Upload(world);
 
     // render
     glViewport(0, 0, scrWidth, scrHeight);
@@ -176,13 +197,10 @@ main(int argc, char** argv)
       pbrEnv->Activate();
       // OBJECTS
       for (auto& drawable : scene.Drawables) {
-        drawable->Draw(projection,
-                       view,
-                       g_camera.Position,
-                       grapho::gl3::PbrEnv::UBO_LIGHTS_BINDING);
+        drawable->Draw(0);
       }
       // skybox
-      pbrEnv->DrawSkybox(projection, view);
+      pbrEnv->DrawSkybox(world.projection, world.view);
     }
     glfwSwapBuffers(window);
   }
