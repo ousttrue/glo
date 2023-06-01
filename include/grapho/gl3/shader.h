@@ -88,6 +88,8 @@ concept Mat4 = sizeof(T) == sizeof(float) * 16;
 struct UniformVariable
 {
   uint32_t Location;
+  std::string Name;
+  GLenum Type;
 
   void SetInt(int value) { glUniform1i(Location, value); }
 
@@ -139,9 +141,37 @@ class ShaderProgram
   ShaderProgram(uint32_t program)
     : program_(program)
   {
+    // https://stackoverflow.com/questions/440144/in-opengl-is-there-a-way-to-get-a-list-of-all-uniforms-attribs-used-by-a-shade
+    int count;
+    glGetProgramiv(program_, GL_ACTIVE_UNIFORMS, &count);
+    // printf("Active Uniforms: %d\n", count);
+    Uniforms.reserve(count);
+
+    for (GLuint i = 0; i < count; i++) {
+      // maximum name length
+      const GLsizei bufSize = 64;
+      // variable name in GLSL
+      GLchar name[bufSize];
+      // size of the variable
+      GLint size;
+      // type of the variable (float, vec3 or mat4, etc)
+      GLenum type;
+      // name length
+      GLsizei length;
+      glGetActiveUniform(program_, i, bufSize, &length, &size, &type, name);
+
+      Uniforms.push_back({
+        .Location = i,
+        .Name = std::string{ name, length },
+        .Type = type,
+      });
+      //
+      // printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+    }
   }
 
 public:
+  std::vector<UniformVariable> Uniforms;
   ~ShaderProgram() { glDeleteProgram(program_); }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
     std::span<std::u8string_view> vs_srcs,

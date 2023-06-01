@@ -11,6 +11,7 @@
 #include "glfw_platform.h"
 #include "imageloader.h"
 #include <grapho/gl3/pbr.h>
+#include <grapho/gl3/shader_type_name.h>
 #include <grapho/imgui/dockspace.h>
 #include <grapho/imgui/widgets.h>
 #include <grapho/orbitview.h>
@@ -126,8 +127,14 @@ public:
     // if (!m_scene.Initialize(dir)) {
     //   return false;
     // }
+    docks.push_back({ "pbr", std::bind(&Gui::ShowGui, this), true });
+
     docks.push_back(
-      grapho::imgui::Dock("pbr", std::bind(&Gui::ShowGui, this), true));
+      { "objects", std::bind(&Gui::ShowObjectList, this), false });
+
+    docks.push_back(
+      { "uniforms", std::bind(&Gui::ShowUniformList, this), false });
+
     return true;
   }
 
@@ -192,6 +199,37 @@ public:
     m_pbrEnv->DrawSkybox(m_world.projection, m_world.view);
 
     m_fbo.Unbind();
+  }
+
+  int m_selected = 0;
+
+  void ShowObjectList()
+  {
+    int i = 0;
+    for (auto d : m_scene.Drawables) {
+      char buf[64];
+      snprintf(buf, sizeof(buf), "%d", i);
+      if (ImGui::Selectable(buf, i == m_selected)) {
+        m_selected = i;
+      }
+      ++i;
+    }
+  }
+
+  void ShowUniformList()
+  {
+    ImGui::Text("%d", m_selected);
+    if (m_selected < 0 || m_selected >= m_scene.Drawables.size()) {
+      return;
+    }
+    auto d = m_scene.Drawables[m_selected];
+
+    for (auto& var : d->Material->Shader->Uniforms) {
+      ImGui::Text("#%d: %s %s",
+                  var.Location,
+                  grapho::gl3::ShaderTypeName(var.Type),
+                  var.Name.c_str());
+    }
   }
 
   void Update()
