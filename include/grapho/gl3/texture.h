@@ -148,5 +148,19 @@ public:
   }
 };
 
+struct TextureSlot
+{
+  uint32_t Unit;
+  std::shared_ptr<Texture> m_texture;
+  void Activate()
+  {
+    if (m_texture) {
+      m_texture->Activate(Unit);
+    } else {
+      Texture::Deactivate(Unit);
+    }
+  }
+};
+
 }
 }

@@ -91,31 +91,35 @@ struct UniformVariable
   std::string Name;
   GLenum Type;
 
-  void SetInt(int value) { glUniform1i(Location, value); }
+  void Set(int value) const
+  {
+    //
+    glUniform1i(Location, value);
+  }
 
-  void SetFloat(float value) { glUniform1f(Location, value); }
+  void Set(float value) const { glUniform1f(Location, value); }
 
   // 12 byte
   template<Float3 T>
-  void Set(const T& t)
+  void Set(const T& t) const
   {
     glUniform3fv(Location, 1, (const float*)&t);
   }
   // 16 byte
   template<Float4 T>
-  void Set(const T& t)
+  void Set(const T& t) const
   {
     glUniform4fv(Location, 1, (const float*)&t);
   }
   // 36 byte
   template<Mat3 T>
-  void Set(const T& t)
+  void Set(const T& t) const
   {
     glUniformMatrix3fv(Location, 1, GL_FALSE, (const float*)&t);
   }
   // 64 byte
   template<Mat4 T>
-  void Set(const T& t)
+  void Set(const T& t) const
   {
     glUniformMatrix4fv(Location, 1, GL_FALSE, (const float*)&t);
   }
@@ -160,13 +164,22 @@ class ShaderProgram
       GLsizei length;
       glGetActiveUniform(program_, i, bufSize, &length, &size, &type, name);
 
+      auto location = glGetUniformLocation(program_, name);
+      // assert(location != -1);
+
       Uniforms.push_back({
-        .Location = i,
-        .Name = std::string{ name, length },
+        .Location = (uint32_t)location,
+        .Name = name,
         .Type = type,
       });
       //
-      // printf("Uniform #%d Type: %u Name: %s\n", i, type, name);
+      if (location == -1) {
+        printf("Uniform #%d Location: %d, Type: %u Name: %s\n",
+               i,
+               location,
+               type,
+               name);
+      }
     }
   }
 
@@ -224,7 +237,7 @@ public:
   void Use() { glUseProgram(program_); }
   void UnUse() { glUseProgram(0); }
 
-  std::optional<uint32_t> Attribute(const char* name)
+  std::optional<uint32_t> Attribute(const char* name) const
   {
     auto location = glGetAttribLocation(program_, name);
     if (location < 0) {
@@ -233,7 +246,7 @@ public:
     return static_cast<uint32_t>(location);
   }
 
-  std::optional<UniformVariable> Uniform(const std::string& name)
+  std::optional<UniformVariable> Uniform(const std::string& name) const
   {
     auto location = glGetUniformLocation(program_, name.c_str());
     if (location < 0) {
@@ -243,24 +256,24 @@ public:
   }
 
   template<typename T>
-  void SetUniform(const std::string& name, const T& value)
+  void SetUniform(const std::string& name, const T& value) const
   {
     if (auto var = Uniform(name)) {
       var->Set(value);
     }
   }
 
-  void SetUniform(const std::string& name, int value)
+  void SetUniform(const std::string& name, int value) const
   {
     if (auto var = Uniform(name)) {
-      var->SetInt(value);
+      var->Set(value);
     }
   }
 
-  void SetUniform(const std::string& name, float value)
+  void SetUniform(const std::string& name, float value) const
   {
     if (auto var = Uniform(name)) {
-      var->SetFloat(value);
+      var->Set(value);
     }
   }
 

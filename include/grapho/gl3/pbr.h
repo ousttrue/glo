@@ -2,7 +2,7 @@
 #include "cubemap.h"
 #include "cuberenderer.h"
 #include "fbo.h"
-#include "material.h"
+#include "shader.h"
 #include "ubo.h"
 #include "vao.h"
 
@@ -236,14 +236,9 @@ struct PbrEnv
   }
 };
 
-inline std::expected<std::shared_ptr<Material>, std::string>
-CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
-                  const std::shared_ptr<grapho::gl3::Texture>& normal,
-                  const std::shared_ptr<grapho::gl3::Texture>& metallic,
-                  const std::shared_ptr<grapho::gl3::Texture>& roughness,
-                  const std::shared_ptr<grapho::gl3::Texture>& ao,
-                  std::span<std::u8string_view> _vs = {},
-                  std::span<std::u8string_view> _fs = {})
+inline std::expected<std::shared_ptr<ShaderProgram>, std::string>
+CreatePbrShader(std::span<std::u8string_view> _vs = {},
+                std::span<std::u8string_view> _fs = {})
 {
 #include "shaders/pbr_fs.h"
 #include "shaders/pbr_vs.h"
@@ -255,28 +250,7 @@ CreatePbrMaterial(const std::shared_ptr<grapho::gl3::Texture>& albedo,
   if (fs.empty()) {
     fs.push_back(PBR_FS);
   }
-  auto shader = grapho::gl3::ShaderProgram::Create(vs, fs);
-  if (!shader) {
-    return std::unexpected{ shader.error() };
-  }
-  auto ptr = std::make_shared<Material>();
-  ptr->Shader = *shader;
-  ptr->Shader->Use();
-
-  ptr->Shader->SetUniform("irradianceMap", 0);
-  ptr->Shader->SetUniform("prefilterMap", 1);
-  ptr->Shader->SetUniform("brdfLUT", 2);
-  ptr->Shader->SetUniform("albedoMap", 3);
-  ptr->Textures.push_back({ 3, albedo });
-  ptr->Shader->SetUniform("normalMap", 4);
-  ptr->Textures.push_back({ 4, normal });
-  ptr->Shader->SetUniform("metallicMap", 5);
-  ptr->Textures.push_back({ 5, metallic });
-  ptr->Shader->SetUniform("roughnessMap", 6);
-  ptr->Textures.push_back({ 6, roughness });
-  ptr->Shader->SetUniform("aoMap", 7);
-  ptr->Textures.push_back({ 7, ao });
-  return ptr;
+  return grapho::gl3::ShaderProgram::Create(vs, fs);
 }
 
 }
