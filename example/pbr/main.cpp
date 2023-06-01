@@ -1,9 +1,18 @@
 #include <GL/glew.h>
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include <functional>
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+#include <imgui_internal.h>
+
 #include "drawable.h"
+#include "glfw_platform.h"
 #include "imageloader.h"
-#include <GLFW/glfw3.h>
 #include <grapho/gl3/pbr.h>
+#include <grapho/imgui/dockspace.h>
+#include <grapho/imgui/widgets.h>
 #include <grapho/orbitview.h>
 #include <iostream>
 #include <vector>
@@ -12,200 +21,246 @@
 const auto SCR_WIDTH = 1600;
 const auto SCR_HEIGHT = 1200;
 
-grapho::OrbitView g_camera;
-
-// process all input: query GLFW whether relevant keys are pressed/released this
-// frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
-static void
-processInput(GLFWwindow* window)
+class Gui
 {
-  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    glfwSetWindowShouldClose(window, true);
+  std::vector<grapho::imgui::Dock> docks;
+  bool resetLayout = false;
 
-  // if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-  //   camera.ProcessKeyboard(FORWARD, deltaTime);
-  // if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-  //   camera.ProcessKeyboard(BACKWARD, deltaTime);
-  // if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-  //   camera.ProcessKeyboard(LEFT, deltaTime);
-  // if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-  //   camera.ProcessKeyboard(RIGHT, deltaTime);
-}
+public:
+  Gui(GLFWwindow* window)
+  {
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |=
+      ImGuiConfigFlags_NavEnableGamepad;              // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport
+                                                        // / Platform Windows
+    // io.ConfigViewportsNoAutoMerge = true;
+    // io.ConfigViewportsNoTaskBarIcon = true;
 
-bool g_mouseRight = false;
-bool g_mouseMiddle = false;
-static void
-mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-  switch (button) {
-    case GLFW_MOUSE_BUTTON_RIGHT:
-      if (action == GLFW_PRESS) {
-        g_mouseRight = true;
-      } else if (action == GLFW_RELEASE) {
-        g_mouseRight = false;
-      }
-      break;
-    case GLFW_MOUSE_BUTTON_MIDDLE:
-      if (action == GLFW_PRESS) {
-        g_mouseMiddle = true;
-      } else if (action == GLFW_RELEASE) {
-        g_mouseMiddle = false;
-      }
-      break;
-  }
-}
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
 
-static void
-mouse_cursor_callback(GLFWwindow* window, double xposIn, double yposIn)
-{
-  static float lastX = 800.0f / 2.0;
-  static float lastY = 600.0 / 2.0;
-  static bool firstMouse = true;
-  float xpos = static_cast<float>(xposIn);
-  float ypos = static_cast<float>(yposIn);
-  if (firstMouse) {
-    firstMouse = false;
-  } else {
-    auto xoffset = static_cast<int>(xpos - lastX);
-    auto yoffset = static_cast<int>(ypos - lastY);
-    if (g_mouseRight) {
-      g_camera.YawPitch(xoffset, yoffset);
-    } else if (g_mouseMiddle) {
-      g_camera.Shift(xoffset, yoffset);
+    // When viewports are enabled we tweak WindowRounding/WindowBg so platform
+    // windows can look identical to regular ones.
+    ImGuiStyle& style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+      style.WindowRounding = 0.0f;
+      style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
-  }
-  lastX = xpos;
-  lastY = ypos;
-}
 
-static void
-scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-  g_camera.Dolly(static_cast<int>(yoffset));
-}
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+    docks.push_back(
+      grapho::imgui::Dock("demo", [](const char* title, bool* popen) {
+        ImGui::ShowDemoWindow(popen);
+      }));
+    docks.back().IsOpen = false;
+  }
+
+  ~Gui()
+  {
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+  }
+
+  grapho::gl3::FboHolder m_fbo;
+  grapho::OrbitView m_camera;
+  DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
+  Scene m_scene;
+  std::shared_ptr<grapho::gl3::PbrEnv> m_pbrEnv;
+  std::shared_ptr<grapho::gl3::Ubo> m_worldUbo;
+  grapho::gl3::Material::WorldVars m_world;
+
+  bool InitializeScene(const std::filesystem::path& dir)
+  {
+    m_camera.shift_[2] = -10;
+
+    //
+    // PbrEnv
+    //
+    ImageLoader hdr;
+    if (!hdr.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
+      std::cout << "Failed to load HDR image." << std::endl;
+      return false;
+    }
+
+    auto hdrTexture = grapho::gl3::Texture::Create(hdr.Image, true);
+    if (!hdrTexture) {
+      return false;
+    }
+    m_pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
+
+    m_world = 
+    {
+      .lightPositions = {
+        { -10.0f, 10.0f, 10.0f, 0 },
+        { 10.0f, 10.0f, 10.0f, 0 },
+        { -10.0f, -10.0f, 10.0f, 0 },
+        { 10.0f, -10.0f, 10.0f, 0 },
+      },
+      .lightColors = {
+        { 300.0f, 300.0f, 300.0f, 0 },
+        { 300.0f, 300.0f, 300.0f, 0 },
+        { 300.0f, 300.0f, 300.0f, 0 },
+        { 300.0f, 300.0f, 300.0f, 0 },
+      }
+    };
+    m_worldUbo = grapho::gl3::Ubo::Create(sizeof(m_world), nullptr);
+
+    //
+    // PbrMaterial objects
+    //
+    m_scene.Load(dir);
+
+    // if (!m_scene.Initialize(dir)) {
+    //   return false;
+    // }
+    docks.push_back(
+      grapho::imgui::Dock("pbr", std::bind(&Gui::ShowGui, this), true));
+    return true;
+  }
+
+  void ShowGui()
+  {
+    // get and update fbo size
+    auto size = ImGui::GetContentRegionAvail();
+    auto texture = m_fbo.Bind(
+      static_cast<int>(size.x), static_cast<int>(size.y), m_clearColor);
+    auto [isActive, isHovered] =
+      grapho::imgui::DraggableImage((ImTextureID)(uint64_t)texture, size);
+
+    // update camera from mouse
+    ImGuiIO& io = ImGui::GetIO();
+    m_camera.SetSize(static_cast<int>(size.x), static_cast<int>(size.y));
+    if (isActive) {
+      if (io.MouseDown[ImGuiMouseButton_Right]) {
+        m_camera.YawPitch(static_cast<int>(io.MouseDelta.x),
+                          static_cast<int>(io.MouseDelta.y));
+      }
+      if (io.MouseDown[ImGuiMouseButton_Middle]) {
+        m_camera.Shift(static_cast<int>(io.MouseDelta.x),
+                       static_cast<int>(io.MouseDelta.y));
+      }
+    }
+    if (isHovered) {
+      m_camera.Dolly(static_cast<int>(io.MouseWheel));
+    }
+
+    // render to fbo
+    m_camera.Update(&m_world.projection._11, &m_world.view._11);
+    m_world.camPos = {
+      m_camera.Position.x, m_camera.Position.y, m_camera.Position.z, 1
+    };
+
+    // configure global opengl state
+    // -----------------------------
+    glEnable(GL_DEPTH_TEST);
+    // set depth function to less than AND equal for skybox depth trick.
+    glDepthFunc(GL_LEQUAL);
+    // enable seamless cubemap sampling for lower mip levels in the pre-filter
+    // map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+    m_worldUbo->Upload(m_world);
+    m_worldUbo->Bind();
+    m_worldUbo->SetBindingPoint(0);
+
+    // glViewport(0,
+    //            0,
+    //            static_cast<int>(io.DisplaySize.x),
+    //            static_cast<int>(io.DisplaySize.y));
+    // glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // ENV
+    m_pbrEnv->Activate();
+    // OBJECTS
+    for (auto& drawable : m_scene.Drawables) {
+      drawable->Draw(0);
+    }
+    m_pbrEnv->DrawSkybox(m_world.projection, m_world.view);
+
+    m_fbo.Unbind();
+  }
+
+  void Update()
+  {
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // update imgui
+    grapho::imgui::DockSpace("dock_space", docks, &resetLayout);
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+  }
+};
 
 int
 main(int argc, char** argv)
 {
-  g_camera.shift_[2] = -10;
-
-  // glfw: initialize and configure
-  // ------------------------------
-  glfwInit();
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_SAMPLES, 4);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#ifdef __APPLE__
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-  // glfw window creation
-  // --------------------
-  GLFWwindow* window =
-    glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", nullptr, nullptr);
-  if (window == nullptr) {
-    std::cout << "Failed to create GLFW window" << std::endl;
-    glfwTerminate();
+  if (argc < 2) {
+    std::cout << "usage: " << argv[0] << " {path to LearnOpenGL dir}"
+              << std::endl;
     return 1;
   }
+  std::filesystem::path dir(argv[1]);
 
-  glfwMakeContextCurrent(window);
-  if (glewInit() != GLEW_OK) {
-    std::cout << "Failed to initialize GLEW" << std::endl;
+  GlfwPlatform platform;
+  auto window = platform.CreateWindow("LearnOpenGL", SCR_WIDTH, SCR_HEIGHT);
+  if (!window) {
     return 2;
   }
 
-  glfwSetMouseButtonCallback(window, mouse_button_callback);
-  glfwSetCursorPosCallback(window, mouse_cursor_callback);
-  glfwSetScrollCallback(window, scroll_callback);
-
-  // configure global opengl state
-  // -----------------------------
-  glEnable(GL_DEPTH_TEST);
-  // set depth function to less than AND equal for skybox depth trick.
-  glDepthFunc(GL_LEQUAL);
-  // enable seamless cubemap sampling for lower mip levels in the pre-filter
-  // map.
-  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-
-  //
-  // PbrEnv
-  //
-  std::filesystem::path dir(argv[1]);
-  ImageLoader hdr;
-  if (!hdr.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
-    std::cout << "Failed to load HDR image." << std::endl;
+  if (glewInit() != GLEW_OK) {
+    std::cout << "Failed to initialize GLEW" << std::endl;
     return 3;
   }
 
-  auto hdrTexture = grapho::gl3::Texture::Create(hdr.Image, true);
-  if (!hdrTexture) {
+  Gui gui(window);
+  if (!gui.InitializeScene(dir)) {
     return 4;
   }
-  auto pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
 
-  grapho::gl3::Material::WorldVars world
-  {
-    .lightPositions = {
-      { -10.0f, 10.0f, 10.0f, 0 },
-      { 10.0f, 10.0f, 10.0f, 0 },
-      { -10.0f, -10.0f, 10.0f, 0 },
-      { 10.0f, -10.0f, 10.0f, 0 },
-    },
-    .lightColors = {
-      { 300.0f, 300.0f, 300.0f, 0 },
-      { 300.0f, 300.0f, 300.0f, 0 },
-      { 300.0f, 300.0f, 300.0f, 0 },
-      { 300.0f, 300.0f, 300.0f, 0 },
-    }
-  };
-  auto worldUbo = grapho::gl3::Ubo::Create(sizeof(world), nullptr);
-  worldUbo->Bind();
-  worldUbo->SetBindingPoint(0);
-
-  //
-  // PbrMaterial objects
-  //
-  Scene scene;
-  scene.Load(dir);
-
-  while (!glfwWindowShouldClose(window)) {
-    //
-    // update
-    //
-    glfwPollEvents();
-    processInput(window);
-    int scrWidth, scrHeight;
-    glfwGetFramebufferSize(window, &scrWidth, &scrHeight);
-
-    // update camera
-    g_camera.SetSize(scrWidth, scrHeight);
-    g_camera.Update(&world.projection._11, &world.view._11);
-    world.camPos = {
-      g_camera.Position.x, g_camera.Position.y, g_camera.Position.z, 1
-    };
-    worldUbo->Upload(world);
+  // render loop
+  // -----------
+  while (platform.BeginFrame()) {
+    ImGuiIO& io = ImGui::GetIO();
 
     // render
-    glViewport(0, 0, scrWidth, scrHeight);
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glViewport(0,
+               0,
+               static_cast<int>(io.DisplaySize.x),
+               static_cast<int>(io.DisplaySize.y));
+    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    {
-      // ENV
-      pbrEnv->Activate();
-      // OBJECTS
-      for (auto& drawable : scene.Drawables) {
-        drawable->Draw(0);
-      }
-      // skybox
-      pbrEnv->DrawSkybox(world.projection, world.view);
-    }
-    glfwSwapBuffers(window);
-  }
 
-  glfwTerminate();
+    gui.Update();
+
+    platform.EndFrame([]() {
+      // Update and Render additional Platform Windows
+      // (Platform functions may change the current OpenGL context, so we
+      // save/restore it to make it easier to paste this code elsewhere.
+      //  For this specific demo app we could also call
+      //  glfwMakeContextCurrent(window) directly)
+      if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+      }
+    });
+  }
 
   return 0;
 }
