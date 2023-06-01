@@ -25,7 +25,12 @@ Drawable::Draw(uint32_t world_ubo_binding)
   Ubo->Upload(Vars);
   Ubo->Bind();
   Ubo->SetBindingPoint(1);
-  Material->Activate(world_ubo_binding, 1);
+  Shader->Use();
+  Shader->UboBind(0, world_ubo_binding);
+  Shader->UboBind(1, 1);
+  for (uint32_t i = 0; i < Textures.size(); ++i) {
+    Textures[i]->Activate(i + 3);
+  }
   Mesh->Draw(MeshDrawMode, MeshDrawCount);
 }
 
@@ -46,92 +51,23 @@ loadTexture(const std::filesystem::path& path, grapho::ColorSpace colorspace)
   return texture;
 }
 
-void
-Scene::Load(const std::filesystem::path& baseDir)
+std::shared_ptr<Drawable>
+Drawable::Load(const std::filesystem::path& baseDir,
+               const DirectX::XMFLOAT3& position)
 {
-  if (auto material = grapho::gl3::CreatePbrMaterial(
-        loadTexture(baseDir / "resources/textures/pbr/rusted_iron/albedo.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/rusted_iron/normal.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/rusted_iron/metallic.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir /
-                      "resources/textures/pbr/rusted_iron/roughness.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/rusted_iron/ao.png",
-                    grapho::ColorSpace::Linear))) {
-    auto iron = std::make_shared<Drawable>();
-    iron->Material = *material;
-    iron->Position = { -5.0, 0.0, 2.0 };
-    Drawables.push_back(iron);
+  auto shader = grapho::gl3::CreatePbrShader();
+  if (!shader) {
+    return {};
   }
-
-  if (auto material = grapho::gl3::CreatePbrMaterial(
-        loadTexture(baseDir / "resources/textures/pbr/gold/albedo.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/gold/normal.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/gold/metallic.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/gold/roughness.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/gold/ao.png",
-                    grapho::ColorSpace::Linear))) {
-    auto gold = std::make_shared<Drawable>();
-    gold->Material = *material;
-    gold->Position = { -3.0, 0.0, 2.0 };
-    Drawables.push_back(gold);
-  }
-
-  if (auto material = grapho::gl3::CreatePbrMaterial(
-        loadTexture(baseDir / "resources/textures/pbr/grass/albedo.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/grass/normal.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/grass/metallic.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/grass/roughness.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/grass/ao.png",
-                    grapho::ColorSpace::Linear))) {
-    auto grass = std::make_shared<Drawable>();
-    grass->Material = *material;
-    grass->Position = { -1.0, 0.0, 2.0 };
-    Drawables.push_back(grass);
-  }
-
-  if (auto material = grapho::gl3::CreatePbrMaterial(
-        loadTexture(baseDir / "resources/textures/pbr/plastic/albedo.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/plastic/normal.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/plastic/metallic.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/plastic/roughness.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/plastic/ao.png",
-                    grapho::ColorSpace::Linear))) {
-    auto plastic = std::make_shared<Drawable>();
-    plastic->Material = *material;
-    plastic->Position = { 1.0, 0.0, 2.0 };
-    Drawables.push_back(plastic);
-  }
-
-  if (auto material = grapho::gl3::CreatePbrMaterial(
-        loadTexture(baseDir / "resources/textures/pbr/wall/albedo.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/wall/normal.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/wall/metallic.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/wall/roughness.png",
-                    grapho::ColorSpace::Linear),
-        loadTexture(baseDir / "resources/textures/pbr/wall/ao.png",
-                    grapho::ColorSpace::Linear))) {
-    auto wall = std::make_shared<Drawable>();
-    wall->Material = *material;
-    wall->Position = { 3.0, 0.0, 2.0 };
-    Drawables.push_back(wall);
-  }
+  auto drawable = std::make_shared<Drawable>();
+  drawable->Shader = *shader;
+  drawable->Position = position;
+  drawable->Textures = {
+    loadTexture(baseDir / "albedo.png", grapho::ColorSpace::Linear),
+    loadTexture(baseDir / "normal.png", grapho::ColorSpace::Linear),
+    loadTexture(baseDir / "metallic.png", grapho::ColorSpace::Linear),
+    loadTexture(baseDir / "roughness.png", grapho::ColorSpace::Linear),
+    loadTexture(baseDir / "ao.png", grapho::ColorSpace::Linear),
+  };
+  return drawable;
 }

@@ -5,16 +5,16 @@ layout(location = 2) in vec3 WorldPos;
 layout(location = 0) out vec4 FragColor;
 
 // IBL 0-2
-uniform samplerCube irradianceMap;
-uniform samplerCube prefilterMap;
-uniform sampler2D brdfLUT;
+layout(binding = 0) uniform samplerCube irradianceMap;
+layout(binding = 1) uniform samplerCube prefilterMap;
+layout(binding = 2) uniform sampler2D brdfLUT;
 
 // material parameters 3-7
-uniform sampler2D albedoMap;
-uniform sampler2D normalMap;
-uniform sampler2D metallicMap;
-uniform sampler2D roughnessMap;
-uniform sampler2D aoMap;
+layout(binding = 3) uniform sampler2D albedoMap;
+layout(binding = 4) uniform sampler2D normalMap;
+layout(binding = 5) uniform sampler2D metallicMap;
+layout(binding = 6) uniform sampler2D roughnessMap;
+layout(binding = 7) uniform sampler2D aoMap;
 
 layout(binding = 0, std140) uniform EnvVars
 {

@@ -78,10 +78,10 @@ public:
   grapho::gl3::FboHolder m_fbo;
   grapho::OrbitView m_camera;
   DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
-  Scene m_scene;
+  std::vector<std::shared_ptr<Drawable>> m_drawables;
   std::shared_ptr<grapho::gl3::PbrEnv> m_pbrEnv;
   std::shared_ptr<grapho::gl3::Ubo> m_worldUbo;
-  grapho::gl3::Material::WorldVars m_world;
+  grapho::WorldVars m_world;
 
   bool InitializeScene(const std::filesystem::path& dir)
   {
@@ -119,14 +119,27 @@ public:
     };
     m_worldUbo = grapho::gl3::Ubo::Create(sizeof(m_world), nullptr);
 
-    //
-    // PbrMaterial objects
-    //
-    m_scene.Load(dir);
+    if (auto drawable = Drawable::Load(
+          dir / "resources/textures/pbr/rusted_iron", { -4.0, 0.0, 2.0 })) {
+      m_drawables.push_back(drawable);
+    }
+    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/gold",
+                                       { -2.0, 0.0, 2.0 })) {
+      m_drawables.push_back(drawable);
+    }
+    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/grass",
+                                       { -0.0, 0.0, 2.0 })) {
+      m_drawables.push_back(drawable);
+    }
+    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/plastic",
+                                       { 2.0, 0.0, 2.0 })) {
+      m_drawables.push_back(drawable);
+    }
+    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/wall",
+                                       { 4.0, 0.0, 2.0 })) {
+      m_drawables.push_back(drawable);
+    }
 
-    // if (!m_scene.Initialize(dir)) {
-    //   return false;
-    // }
     docks.push_back({ "pbr", std::bind(&Gui::ShowGui, this), true });
 
     docks.push_back(
@@ -183,17 +196,10 @@ public:
     m_worldUbo->Bind();
     m_worldUbo->SetBindingPoint(0);
 
-    // glViewport(0,
-    //            0,
-    //            static_cast<int>(io.DisplaySize.x),
-    //            static_cast<int>(io.DisplaySize.y));
-    // glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     // ENV
     m_pbrEnv->Activate();
     // OBJECTS
-    for (auto& drawable : m_scene.Drawables) {
+    for (auto& drawable : m_drawables) {
       drawable->Draw(0);
     }
     m_pbrEnv->DrawSkybox(m_world.projection, m_world.view);
@@ -206,7 +212,7 @@ public:
   void ShowObjectList()
   {
     int i = 0;
-    for (auto d : m_scene.Drawables) {
+    for (auto d : m_drawables) {
       char buf[64];
       snprintf(buf, sizeof(buf), "%d", i);
       if (ImGui::Selectable(buf, i == m_selected)) {
@@ -219,16 +225,31 @@ public:
   void ShowUniformList()
   {
     ImGui::Text("%d", m_selected);
-    if (m_selected < 0 || m_selected >= m_scene.Drawables.size()) {
+    if (m_selected < 0 || m_selected >= m_drawables.size()) {
       return;
     }
-    auto d = m_scene.Drawables[m_selected];
+    auto d = m_drawables[m_selected];
 
-    for (auto& var : d->Material->Shader->Uniforms) {
-      ImGui::Text("#%d: %s %s",
-                  var.Location,
-                  grapho::gl3::ShaderTypeName(var.Type),
-                  var.Name.c_str());
+    std::array<const char*, 4> cols = {
+      "index",
+      "location",
+      "type",
+      "name",
+    };
+    if (grapho::imgui::BeginTableColumns("uniforms", cols)) {
+      for (uint32_t i = 0; i < d->Shader->Uniforms.size(); ++i) {
+        auto& u = d->Shader->Uniforms[i];
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::Text("%d", i);
+        ImGui::TableNextColumn();
+        ImGui::Text("%d", u.Location);
+        ImGui::TableNextColumn();
+        ImGui::Text("%s", grapho::gl3::ShaderTypeName(u.Type));
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(u.Name.c_str());
+      }
+      ImGui::EndTable();
     }
   }
 

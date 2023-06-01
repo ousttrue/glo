@@ -173,13 +173,14 @@ class ShaderProgram
         .Type = type,
       });
       //
-      if (location == -1) {
-        printf("Uniform #%d Location: %d, Type: %u Name: %s\n",
-               i,
-               location,
-               type,
-               name);
-      }
+      // if (location == -1) {
+      // // UBO
+      //   printf("Uniform #%d Location: %d, Type: %u Name: %s\n",
+      //          i,
+      //          location,
+      //          type,
+      //          name);
+      // }
     }
   }
 

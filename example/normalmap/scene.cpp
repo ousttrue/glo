@@ -110,14 +110,8 @@ void main()
   // shader configuration
   // --------------------
   Shader->Use();
-  Shader->Uniform("diffuseMap").and_then([&](auto u) {
-    u.SetInt(0);
-    return NOP;
-  });
-  Shader->Uniform("normalMap").and_then([&](auto u) {
-    u.SetInt(1);
-    return NOP;
-  });
+  Shader->SetUniform("diffuseMap", 0);
+  Shader->SetUniform("normalMap", 1);
 
   return true;
 }
