@@ -1,4 +1,9 @@
-project('grapho', 'cpp')
+project(
+    'grapho',
+    'cpp',
+    version: '1.0.0',
+    license: 'MIT',
+)
 
 grapho_inc = include_directories('include')
 grapho_dep = declare_dependency(
