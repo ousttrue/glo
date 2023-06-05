@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <span>
+#include <string>
 
 namespace grapho {
 namespace imgui {
