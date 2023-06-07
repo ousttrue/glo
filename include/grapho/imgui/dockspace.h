@@ -58,10 +58,28 @@ struct Dock
 };
 
 inline void
-DockSpace(const char* dock_space,
-          std::span<Dock> docks,
-          bool* resetLayout = nullptr,
-          const std::function<void()>& additionalMenu = {})
+DockSpaceLayout(const char* dock_space,
+                const std::function<void()>& layout = {})
+{
+  ImGuiIO& io = ImGui::GetIO();
+  assert(io.ConfigFlags & ImGuiConfigFlags_DockingEnable);
+  ImGuiID dockspace_id = ImGui::GetID(dock_space);
+
+  // remove root
+  ImGui::DockBuilderRemoveNode(dockspace_id);
+  // add root
+  ImGui::DockBuilderAddNode(dockspace_id);
+
+  // Build dockspace...
+  if (layout) {
+    layout();
+  }
+
+  ImGui::DockBuilderFinish(dockspace_id);
+}
+
+inline void
+BeginDockSpace(const char* dock_space)
 {
   // If you strip some features of, this demo is pretty much equivalent to
   // calling DockSpaceOverViewport()! In most cases you should be able to just
@@ -128,102 +146,11 @@ DockSpace(const char* dock_space,
 
   // Submit the DockSpace
   ImGuiIO& io = ImGui::GetIO();
-  if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-    ImGuiID dockspace_id = ImGui::GetID(dock_space);
+  assert(io.ConfigFlags & ImGuiConfigFlags_DockingEnable);
+  ImGuiID dockspace_id = ImGui::GetID(dock_space);
 
-    if (!ImGui::DockBuilderGetNode(dockspace_id) ||
-        (resetLayout && *resetLayout)) {
-      ImGui::DockBuilderRemoveNode(dockspace_id);
-      ImGui::DockBuilderAddNode(dockspace_id);
-
-      // Build dockspace...
-
-      ImGui::DockBuilderFinish(dockspace_id);
-    }
-
-    ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-  } else {
-    assert(false);
-  }
-
-  if (ImGui::BeginMenuBar()) {
-
-    if (additionalMenu) {
-      additionalMenu();
-    }
-
-    if (ImGui::BeginMenu("Options")) {
-      // Disabling fullscreen would allow the window to be moved to the front of
-      // other windows, which we can't undo at the moment without finer window
-      // depth/z control.
-      ImGui::MenuItem("Fullscreen", nullptr, &opt_fullscreen);
-      ImGui::MenuItem("Padding", nullptr, &opt_padding);
-      ImGui::Separator();
-
-      if (ImGui::MenuItem("Flag: NoSplit",
-                          "",
-                          (dockspace_flags & ImGuiDockNodeFlags_NoSplit) !=
-                            0)) {
-        dockspace_flags ^= ImGuiDockNodeFlags_NoSplit;
-      }
-      if (ImGui::MenuItem("Flag: NoResize",
-                          "",
-                          (dockspace_flags & ImGuiDockNodeFlags_NoResize) !=
-                            0)) {
-        dockspace_flags ^= ImGuiDockNodeFlags_NoResize;
-      }
-      if (ImGui::MenuItem("Flag: NoDockingInCentralNode",
-                          "",
-                          (dockspace_flags &
-                           ImGuiDockNodeFlags_NoDockingInCentralNode) != 0)) {
-        dockspace_flags ^= ImGuiDockNodeFlags_NoDockingInCentralNode;
-      }
-      if (ImGui::MenuItem(
-            "Flag: AutoHideTabBar",
-            "",
-            (dockspace_flags & ImGuiDockNodeFlags_AutoHideTabBar) != 0)) {
-        dockspace_flags ^= ImGuiDockNodeFlags_AutoHideTabBar;
-      }
-      if (ImGui::MenuItem(
-            "Flag: PassthruCentralNode",
-            "",
-            (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode) != 0,
-            opt_fullscreen)) {
-        dockspace_flags ^= ImGuiDockNodeFlags_PassthruCentralNode;
-      }
-      ImGui::Separator();
-
-      // if (ImGui::MenuItem("Close", nullptr, false, p_open != nullptr)){
-      //   *p_open = false;
-      // }
-      ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("Docks")) {
-      if (ImGui::MenuItem("Reset", "")) {
-        if (resetLayout) {
-          *resetLayout = true;
-        }
-      }
-      ImGui::Separator();
-      // Disabling fullscreen would allow the window to be moved to the front of
-      // other windows, which we can't undo at the moment without finer window
-      // depth/z control.
-      for (auto& dock : docks) {
-        ImGui::MenuItem(dock.Name.c_str(), nullptr, &dock.IsOpen);
-      }
-      ImGui::EndMenu();
-    }
-
-    ImGui::EndMenuBar();
-  }
-
-  ImGui::End();
-
-  for (auto& dock : docks) {
-    dock.Show();
-  }
+  ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 }
 
-}
-}
+} // namespace
+} // namespace
