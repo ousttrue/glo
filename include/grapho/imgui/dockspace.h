@@ -3,58 +3,55 @@
 #include <imgui_internal.h>
 #include <span>
 #include <string>
+#include <variant>
 
 namespace grapho {
 namespace imgui {
 
-using DockShow = std::function<void(const char* title, bool* popen)>;
+struct NextWindowFlag
+{
+  ImVec2 Value;
+  int Flag;
+};
+struct GuiStyleVar
+{
+  ImGuiStyleVar Flag;
+  ImVec2 Value;
+};
 
 struct Dock
 {
   std::string Name;
-  DockShow OnShow;
-  bool UseWindow = true;
+  std::function<void()> OnShow;
+  ImGuiWindowFlags Flags = 0;
+  std::function<bool(const char*, bool*, ImGuiWindowFlags)> Begin =
+    [](auto title, auto popen, auto flags) {
+      return ImGui::Begin(title, popen, flags);
+    };
+  std::function<void()> End = []() { ImGui::End(); };
   bool IsOpen = true;
-  bool NoPadding = false;
-
-  Dock(std::string_view name, const DockShow& show)
-    : Name(name)
-    , OnShow(show)
-    , UseWindow(false)
-  {
-  }
-  Dock(std::string_view name,
-       const std::function<void()>& show,
-       bool noPadding = false)
-    : Name(name)
-    , UseWindow(true)
-    , NoPadding(noPadding)
-  {
-    OnShow = [show](const char* title, bool*) { show(); };
-  }
+  // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  std::vector<GuiStyleVar> StyleVars;
+  // ImGui::SetNextWindowSize({ 300, 200 }, ImGuiCond_FirstUseEver);
+  std::optional<NextWindowFlag> NextWindowSize;
 
   void Show()
   {
     if (IsOpen) {
       // begin
-      if (UseWindow) {
-        // ImGui::SetNextWindowPos({ 300, 200 }, ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize({ 300, 200 }, ImGuiCond_FirstUseEver);
-        if (NoPadding) {
-          ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        }
-        auto isOpen = ImGui::Begin(Name.c_str(), &IsOpen);
-        if (NoPadding) {
-          ImGui::PopStyleVar();
-        }
-        if (isOpen) {
-          OnShow(Name.c_str(), &IsOpen);
-        }
-      } else {
-        OnShow(Name.c_str(), &IsOpen);
+      for (auto& style : StyleVars) {
+        ImGui::PushStyleVar(style.Flag, style.Value);
       }
-      if (UseWindow) {
-        ImGui::End();
+      auto isOpen = false;
+      if (Begin) {
+        isOpen = Begin(Name.c_str(), &IsOpen, Flags);
+      }
+      ImGui::PopStyleVar(StyleVars.size());
+      if (isOpen && OnShow) {
+        OnShow();
+      }
+      if (End) {
+        End();
       }
     }
   }
