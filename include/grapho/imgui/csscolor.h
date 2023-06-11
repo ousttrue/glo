@@ -2,7 +2,7 @@
 #include <imgui.h>
 
 namespace grapho {
-namespace imgui {
+namespace imcolor {
 
 // css3 147 colors
 // https://www.w3.org/TR/css-color-3/#svg-color
