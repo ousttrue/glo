@@ -44,6 +44,11 @@ struct Dock
       }
       auto isOpen = false;
       if (Begin) {
+        if (NextWindowSize) {
+          ImGui::SetNextWindowSize(NextWindowSize->Value, NextWindowSize->Flag);
+        } else {
+          ImGui::SetNextWindowSize({ 200.0f, 200.0f }, ImGuiCond_FirstUseEver);
+        }
         isOpen = Begin(Name.c_str(), &IsOpen, Flags);
       }
       ImGui::PopStyleVar(StyleVars.size());
