@@ -1,10 +1,12 @@
 #pragma once
 #include "cubemap.h"
 #include "cuberenderer.h"
+#include "error.h"
 #include "fbo.h"
 #include "shader.h"
 #include "ubo.h"
 #include "vao.h"
+#include <assert.h>
 
 namespace grapho {
 namespace gl3 {
@@ -99,6 +101,7 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
     *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
   prefilterShader->Use();
   prefilterShader->SetUniform("environmentMap", 0);
+  assert(!TryGetError());
 
   unsigned int maxMipLevels = 5;
   for (unsigned int mip = 0; mip < maxMipLevels; ++mip) {
@@ -107,6 +110,7 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
     float roughness = (float)mip / (float)(maxMipLevels - 1);
     prefilterShader->SetUniform("roughness", roughness);
 
+    assert(!TryGetError());
     cubeRenderer.Render(
       mipSize,
       prefilterMap,
@@ -115,6 +119,7 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
         prefilterShader->SetUniform("view", view);
       },
       mip);
+    assert(!TryGetError());
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
@@ -143,6 +148,7 @@ struct PbrEnv
       },
       true);
     EnvCubemap->SamplingLinear(true);
+    assert(!TryGetError());
 
     // hdr to cuemap
     hdrTexture->Activate(0);
@@ -150,6 +156,7 @@ struct PbrEnv
     grapho::gl3::GenerateEnvCubeMap(cubeRenderer, EnvCubemap->Handle());
     EnvCubemap->GenerateMipmap();
     EnvCubemap->UnBind();
+    assert(!TryGetError());
 
     // irradianceMap
     IrradianceMap = grapho::gl3::Cubemap::Create(
@@ -162,6 +169,7 @@ struct PbrEnv
       true);
     EnvCubemap->Activate(0);
     grapho::gl3::GenerateIrradianceMap(cubeRenderer, IrradianceMap->Handle());
+    assert(!TryGetError());
 
     // prefilterMap
     PrefilterMap = grapho::gl3::Cubemap::Create(
@@ -173,12 +181,16 @@ struct PbrEnv
       },
       true);
     PrefilterMap->SamplingLinear(true);
-    EnvCubemap->Activate(0);
-    grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->Handle());
     PrefilterMap->GenerateMipmap();
+    EnvCubemap->Activate(0);
+    assert(!TryGetError());
+    grapho::gl3::GeneratePrefilterMap(cubeRenderer, PrefilterMap->Handle());
+    assert(!TryGetError());
+    assert(!TryGetError());
 
     // brdefLUT
     BrdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
+    assert(!TryGetError());
 
     // skybox
     auto cube = grapho::mesh::Cube();
@@ -187,6 +199,7 @@ struct PbrEnv
     std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
     Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
     CubeDrawCount = cube->Vertices.Count;
+    assert(!TryGetError());
 
 #include "shaders/background_fs.h"
 #include "shaders/background_vs.h"
@@ -198,6 +211,7 @@ struct PbrEnv
     BackgroundShader = *backgroundShader;
     BackgroundShader->Use();
     BackgroundShader->SetUniform("environmentMap", 0);
+    assert(!TryGetError());
   }
 
   void Activate()

@@ -1,7 +1,9 @@
 #pragma once
 #include "../mesh.h"
+#include "error.h"
 #include "fbo.h"
 #include "vao.h"
+#include <assert.h>
 #include <functional>
 
 namespace grapho {
@@ -68,9 +70,9 @@ public:
   using CallbackFunc = std::function<void(const DirectX::XMFLOAT4X4& projection,
                                           const DirectX::XMFLOAT4X4& view)>;
   void Render(int size,
-           uint32_t dst,
-           const CallbackFunc& callback,
-           int mipLevel = 0) const
+              uint32_t dst,
+              const CallbackFunc& callback,
+              int mipLevel = 0) const
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
     grapho::Viewport fboViewport{
@@ -80,8 +82,11 @@ public:
     for (unsigned int i = 0; i < 6; ++i) {
       callback(m_captureProjection, m_captureViews[i]);
       fbo->AttachCubeMap(i, dst, mipLevel);
-      grapho::gl3::ClearViewport(fboViewport);
+      assert(!TryGetError());
+      grapho::gl3::ClearViewport(fboViewport, { .Depth = false });
+      assert(!TryGetError());
       m_cube->Draw(m_mode, m_cubeDrawCount);
+      assert(!TryGetError());
     }
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }

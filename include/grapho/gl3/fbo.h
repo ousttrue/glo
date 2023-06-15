@@ -1,16 +1,25 @@
 #pragma once
 #include "../viewport.h"
+#include "error.h"
 #include "texture.h"
 #include <assert.h>
 
 namespace grapho::gl3 {
 
+struct ClearParam
+{
+  bool Depth = true;
+  bool ApplyAlpha = false;
+};
+
 inline void
-ClearViewport(const Viewport& vp, bool applyAlpha = false)
+ClearViewport(const Viewport& vp, const ClearParam& param = {})
 {
   glViewport(0, 0, vp.Width, vp.Height);
+  assert(!TryGetError());
   glScissor(0, 0, vp.Width, vp.Height);
-  if (applyAlpha) {
+  assert(!TryGetError());
+  if (param.ApplyAlpha) {
     glClearColor(vp.Color[0] * vp.Color[3],
                  vp.Color[1] * vp.Color[3],
                  vp.Color[2] * vp.Color[3],
@@ -18,8 +27,14 @@ ClearViewport(const Viewport& vp, bool applyAlpha = false)
   } else {
     glClearColor(vp.Color[0], vp.Color[1], vp.Color[2], vp.Color[3]);
   }
-  glClearDepth(vp.Depth);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  assert(!TryGetError());
+  if (param.Depth) {
+    glClearDepth(vp.Depth);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  } else {
+    glClear(GL_COLOR_BUFFER_BIT);
+  }
+  assert(!TryGetError());
 }
 
 struct Fbo

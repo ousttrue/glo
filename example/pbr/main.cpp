@@ -101,6 +101,8 @@ public:
       return false;
     }
     m_pbrEnv = std::make_shared<grapho::gl3::PbrEnv>(hdrTexture);
+    grapho::gl3::CheckAndPrintError(
+      [](const char* msg) { std::cerr << "PbrEnv: " << msg << std::endl; });
 
     m_world = 
     {
@@ -253,7 +255,7 @@ public:
     }
   }
 
-  void Update()
+  void Begin()
   {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -261,11 +263,23 @@ public:
 
     // update imgui
     grapho::imgui::BeginDockSpace("dock_space");
+    if (ImGui::BeginMenuBar()) {
+      if (ImGui::BeginMenu("docks")) {
+        for (auto& d : docks) {
+          ImGui::MenuItem(d.Name.c_str(), "", &d.IsOpen);
+        }
+        ImGui::EndMenu();
+      }
+      ImGui::EndMenuBar();
+    }
     ImGui::End();
     for (auto& d : docks) {
       d.Show();
     }
+  }
 
+  void End()
+  {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   }
@@ -308,17 +322,21 @@ main(int argc, char** argv)
   // render loop
   // -----------
   while (platform.BeginFrame()) {
-    ImGuiIO& io = ImGui::GetIO();
+    grapho::gl3::CheckAndPrintError(&print);
 
-    // render
+    gui.Begin();
+
+    ImGuiIO& io = ImGui::GetIO();
     glViewport(0,
                0,
                static_cast<int>(io.DisplaySize.x),
                static_cast<int>(io.DisplaySize.y));
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+    grapho::gl3::CheckAndPrintError(&print);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    grapho::gl3::CheckAndPrintError(&print);
 
-    gui.Update();
+    gui.End();
 
     platform.EndFrame([]() {
       // Update and Render additional Platform Windows
