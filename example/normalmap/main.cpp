@@ -30,7 +30,6 @@ auto DOCK_SPACE = "DOCK_SPACE";
 class Gui
 {
   std::vector<grapho::imgui::Dock> docks;
-  bool resetLayout = false;
 
 public:
   Gui(GLFWwindow* window)
@@ -66,11 +65,11 @@ public:
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
-    docks.push_back(
-      grapho::imgui::Dock("demo", [](const char* title, bool* popen) {
-        ImGui::ShowDemoWindow(popen);
-      }));
-    docks.back().IsOpen = false;
+    // docks.push_back(
+    //   grapho::imgui::Dock("demo", [](const char* title, bool* popen) {
+    //     ImGui::ShowDemoWindow(popen);
+    //   }));
+    // docks.back().IsOpen = false;
   }
 
   ~Gui()
@@ -140,7 +139,11 @@ public:
     ImGui::NewFrame();
 
     // update imgui
-    grapho::imgui::DockSpace("dock_space", docks, &resetLayout);
+    grapho::imgui::BeginDockSpace("dock_space");
+    ImGui::End();
+    for (auto& d : docks) {
+      d.Show();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

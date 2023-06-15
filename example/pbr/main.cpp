@@ -10,8 +10,8 @@
 #include "drawable.h"
 #include "glfw_platform.h"
 #include "imageloader.h"
+#include <grapho/gl3/glsl_type_name.h>
 #include <grapho/gl3/pbr.h>
-#include <grapho/gl3/shader_type_name.h>
 #include <grapho/imgui/dockspace.h>
 #include <grapho/imgui/widgets.h>
 #include <grapho/orbitview.h>
@@ -25,7 +25,6 @@ const auto SCR_HEIGHT = 1200;
 class Gui
 {
   std::vector<grapho::imgui::Dock> docks;
-  bool resetLayout = false;
 
 public:
   Gui(GLFWwindow* window)
@@ -61,11 +60,11 @@ public:
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 130");
 
-    docks.push_back(
-      grapho::imgui::Dock("demo", [](const char* title, bool* popen) {
-        ImGui::ShowDemoWindow(popen);
-      }));
-    docks.back().IsOpen = false;
+    // docks.push_back(
+    //   grapho::imgui::Dock("demo", [](const char* title, bool* popen) {
+    //     ImGui::ShowDemoWindow(popen);
+    //   }));
+    // docks.back().IsOpen = false;
   }
 
   ~Gui()
@@ -260,7 +259,12 @@ public:
     ImGui::NewFrame();
 
     // update imgui
-    grapho::imgui::DockSpace("dock_space", docks, &resetLayout);
+    grapho::imgui::BeginDockSpace("dock_space");
+    ImGui::End();
+    for(auto &d: docks)
+    {
+      d.Show();
+    }
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
