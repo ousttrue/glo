@@ -139,6 +139,14 @@ struct PbrEnv
 
   PbrEnv(const std::shared_ptr<Texture>& hdrTexture)
   {
+    glDisable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    // set depth function to less than AND equal for skybox depth trick.
+    glDepthFunc(GL_LEQUAL);
+    // enable seamless cubemap sampling for lower mip levels in the pre-filter
+    // map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     EnvCubemap = grapho::gl3::Cubemap::Create(
       {
         512,
@@ -158,6 +166,7 @@ struct PbrEnv
     EnvCubemap->UnBind();
     assert(!TryGetError());
 
+#if 0
     // irradianceMap
     IrradianceMap = grapho::gl3::Cubemap::Create(
       {
@@ -191,6 +200,7 @@ struct PbrEnv
     // brdefLUT
     BrdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
     assert(!TryGetError());
+#endif
 
     // skybox
     auto cube = grapho::mesh::Cube();
@@ -224,6 +234,13 @@ struct PbrEnv
   void DrawSkybox(const DirectX::XMFLOAT4X4& projection,
                   const DirectX::XMFLOAT4X4& view)
   {
+    glEnable(GL_DEPTH_TEST);
+    // set depth function to less than AND equal for skybox depth trick.
+    glDepthFunc(GL_LEQUAL);
+    // enable seamless cubemap sampling for lower mip levels in the pre-filter
+    // map.
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
     auto isCull = glIsEnabled(GL_CULL_FACE);
     if (isCull) {
       glDisable(GL_CULL_FACE);

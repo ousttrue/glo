@@ -243,7 +243,9 @@ GenericCombo(const char* label,
 }
 
 inline bool
-BeginTableColumns(const char* title, std::span<const char*> cols)
+BeginTableColumns(const char* title,
+                  std::span<const char*> cols,
+                  const ImVec2& size = { 0, 0 })
 {
   static ImGuiTableFlags flags =
     ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
@@ -251,7 +253,7 @@ BeginTableColumns(const char* title, std::span<const char*> cols)
     ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY |
     ImGuiTableFlags_SizingFixedFit;
 
-  if (ImGui::BeginTable(title, cols.size(), flags)) {
+  if (ImGui::BeginTable(title, cols.size(), flags, size)) {
     for (auto col : cols) {
       ImGui::TableSetupColumn(col);
     }
