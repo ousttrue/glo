@@ -10,6 +10,7 @@
 #include "drawable.h"
 #include "glfw_platform.h"
 #include "imageloader.h"
+#include <grapho/gl3/error.h>
 #include <grapho/gl3/glsl_type_name.h>
 #include <grapho/gl3/pbr.h>
 #include <grapho/imgui/dockspace.h>
@@ -261,8 +262,7 @@ public:
     // update imgui
     grapho::imgui::BeginDockSpace("dock_space");
     ImGui::End();
-    for(auto &d: docks)
-    {
+    for (auto& d : docks) {
       d.Show();
     }
 
@@ -270,6 +270,12 @@ public:
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   }
 };
+
+static void
+print(const char* msg)
+{
+  std::cerr << msg << std::endl;
+}
 
 int
 main(int argc, char** argv)
@@ -291,11 +297,13 @@ main(int argc, char** argv)
     std::cout << "Failed to initialize GLEW" << std::endl;
     return 3;
   }
+  grapho::gl3::CheckAndPrintError(&print);
 
   Gui gui(window);
   if (!gui.InitializeScene(dir)) {
     return 4;
   }
+  grapho::gl3::CheckAndPrintError(&print);
 
   // render loop
   // -----------
