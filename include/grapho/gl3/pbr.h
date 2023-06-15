@@ -166,7 +166,6 @@ struct PbrEnv
     EnvCubemap->UnBind();
     assert(!TryGetError());
 
-#if 0
     // irradianceMap
     IrradianceMap = grapho::gl3::Cubemap::Create(
       {
@@ -200,7 +199,6 @@ struct PbrEnv
     // brdefLUT
     BrdfLUTTexture = grapho::gl3::GenerateBrdfLUTTexture();
     assert(!TryGetError());
-#endif
 
     // skybox
     auto cube = grapho::mesh::Cube();
