@@ -1,6 +1,6 @@
 #pragma once
 #include "../mesh.h"
-#include "error.h"
+#include "error_check.h"
 #include "fbo.h"
 #include "vao.h"
 #include <assert.h>

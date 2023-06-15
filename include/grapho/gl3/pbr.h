@@ -1,7 +1,7 @@
 #pragma once
 #include "cubemap.h"
 #include "cuberenderer.h"
-#include "error.h"
+#include "error_check.h"
 #include "fbo.h"
 #include "shader.h"
 #include "ubo.h"

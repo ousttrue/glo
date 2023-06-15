@@ -1,6 +1,6 @@
 #pragma once
 #include "../viewport.h"
-#include "error.h"
+#include "error_check.h"
 #include "texture.h"
 #include <assert.h>
 

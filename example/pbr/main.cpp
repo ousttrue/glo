@@ -10,7 +10,7 @@
 #include "drawable.h"
 #include "glfw_platform.h"
 #include "imageloader.h"
-#include <grapho/gl3/error.h>
+#include <grapho/gl3/error_check.h>
 #include <grapho/gl3/glsl_type_name.h>
 #include <grapho/gl3/pbr.h>
 #include <grapho/imgui/dockspace.h>
