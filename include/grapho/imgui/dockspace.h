@@ -60,12 +60,6 @@ struct Dock
       }
     }
   }
-
-  Dock& SetVisible(bool visible)
-  {
-    IsOpen = visible;
-    return *this;
-  }
 };
 
 inline void
