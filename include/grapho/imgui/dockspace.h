@@ -4,6 +4,7 @@
 #include <span>
 #include <string>
 #include <variant>
+#include <vector>
 
 namespace grapho {
 namespace imgui {
@@ -30,10 +31,21 @@ struct Dock
     };
   std::function<void()> End = []() { ImGui::End(); };
   bool IsOpen = true;
-  // ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   std::vector<GuiStyleVar> StyleVars;
-  // ImGui::SetNextWindowSize({ 300, 200 }, ImGuiCond_FirstUseEver);
   std::optional<NextWindowFlag> NextWindowSize;
+
+  void NoPadding()
+  {
+    StyleVars.push_back({ ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f) });
+  }
+
+  void DefaultSize(int w, int h)
+  {
+    NextWindowSize = NextWindowFlag{
+      ImVec2{ (float)300, (float)200 },
+      ImGuiCond_FirstUseEver,
+    };
+  }
 
   void Show()
   {
