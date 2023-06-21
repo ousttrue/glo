@@ -39,12 +39,19 @@ struct Dock
     StyleVars.push_back({ ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f) });
   }
 
-  void DefaultSize(int w, int h)
+  Dock& NoScrollBar()
+  {
+    Flags |= ImGuiWindowFlags_NoScrollbar;
+    return *this;
+  }
+
+  Dock& DefaultSize(int w, int h)
   {
     NextWindowSize = NextWindowFlag{
       ImVec2{ (float)300, (float)200 },
       ImGuiCond_FirstUseEver,
     };
+    return *this;
   }
 
   void Show()
