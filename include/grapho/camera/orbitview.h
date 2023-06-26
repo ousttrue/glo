@@ -5,6 +5,7 @@
 #include <cmath>
 
 namespace grapho {
+namespace camera {
 
 struct OrbitView
 {
@@ -92,4 +93,6 @@ struct OrbitView
     FarZ = r * 100.0f;
   }
 };
-}
+
+} // namespace
+} // namespace

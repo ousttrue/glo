@@ -2,6 +2,7 @@
 #include <array>
 
 namespace grapho {
+namespace camera {
 struct Viewport
 {
   int Width = 0;
@@ -11,4 +12,6 @@ struct Viewport
 
   float AspectRatio() const { return (float)Width / (float)Height; }
 };
-}
+
+} // namespace
+} // namespace

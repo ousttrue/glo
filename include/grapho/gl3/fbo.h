@@ -1,5 +1,5 @@
 #pragma once
-#include "../viewport.h"
+#include "../camera/viewport.h"
 #include "error_check.h"
 #include "texture.h"
 #include <assert.h>
@@ -13,7 +13,7 @@ struct ClearParam
 };
 
 inline void
-ClearViewport(const Viewport& vp, const ClearParam& param = {})
+ClearViewport(const camera::Viewport& vp, const ClearParam& param = {})
 {
   glViewport(0, 0, vp.Width, vp.Height);
   assert(!TryGetError());

@@ -75,7 +75,7 @@ public:
               int mipLevel = 0) const
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
-    grapho::Viewport fboViewport{
+    grapho::camera::Viewport fboViewport{
       .Width = size, .Height = size,
       // .Color = { 0, 0, 0, 0 },
     };

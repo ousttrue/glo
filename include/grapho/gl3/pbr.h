@@ -29,7 +29,7 @@ GenerateBrdfLUTTexture()
   // with BRDF shader.
   grapho::gl3::Fbo fbo;
   fbo.AttachTexture2D(brdfLUTTexture->Handle());
-  grapho::gl3::ClearViewport(grapho::Viewport{ 512, 512 });
+  grapho::gl3::ClearViewport(grapho::camera::Viewport{ 512, 512 });
   auto brdfShader = *grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
   brdfShader->Use();
 
