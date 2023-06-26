@@ -1,3 +1,4 @@
+#pragma once
 #include <DirectXMath.h>
 
 namespace grapho {
@@ -33,6 +34,15 @@ struct EuclideanTransform
     auto t =
       DirectX::XMMatrixTranslation(Translation.x, Translation.y, Translation.z);
     return DirectX::XMMatrixMultiply(r, t);
+  }
+
+  DirectX::XMMATRIX InversedMatrix() const
+  {
+    auto r = DirectX::XMMatrixRotationQuaternion(
+      DirectX::XMQuaternionInverse(DirectX::XMLoadFloat4(&Rotation)));
+    auto t = DirectX::XMMatrixTranslation(
+      -Translation.x, -Translation.y, -Translation.z);
+    return DirectX::XMMatrixMultiply(t, r);
   }
 };
 
