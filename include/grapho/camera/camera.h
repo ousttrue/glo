@@ -45,15 +45,21 @@ struct Camera
 
   void YawPitch(int dx, int dy)
   {
-    // Yaw += DirectX::XMConvertToRadians(static_cast<float>(dx));
-    // Pitch += DirectX::XMConvertToRadians(static_cast<float>(dy));
+    auto yaw = DirectX::XMQuaternionRotationAxis(
+      DirectX::XMVectorSet(0, 1, 0, 0),
+      DirectX::XMConvertToRadians(static_cast<float>(dx)));
+    auto pitch = DirectX::XMQuaternionRotationAxis(
+      DirectX::XMVectorSet(1, 0, 0, 0),
+      DirectX::XMConvertToRadians(static_cast<float>(dy)));
+    auto r = DirectX::XMQuaternionMultiply(yaw, pitch);
+
+    Transform = Transform.Invrsed().Rotate(r).Invrsed();
   }
 
   void Shift(int dx, int dy)
   {
-    // auto factor = std::tan(FovY * 0.5f) * 2.0f * shift_[2] / Viewport.Height;
-    // shift_[0] -= dx * factor;
-    // shift_[1] += dy * factor;
+    // auto factor = std::tan(FovY * 0.5f) * 2.0f * shift_[2] /
+    // Viewport.Height; shift_[0] -= dx * factor; shift_[1] += dy * factor;
   }
 
   void Dolly(int d)
@@ -80,7 +86,8 @@ struct Camera
     // DirectX::XMVECTOR det;
     // auto inv = DirectX::XMMatrixInverse(&det, v);
     // DirectX::XMStoreFloat3(
-    //   &Position, DirectX::XMVector3Transform(DirectX::XMVectorZero(), inv));
+    //   &Position, DirectX::XMVector3Transform(DirectX::XMVectorZero(),
+    //   inv));
   }
 
   void Fit(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max)
