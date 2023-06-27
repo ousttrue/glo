@@ -45,15 +45,35 @@ struct Camera
 
   void YawPitch(int dx, int dy)
   {
-    auto yaw = DirectX::XMQuaternionRotationAxis(
-      DirectX::XMVectorSet(0, 1, 0, 0),
-      DirectX::XMConvertToRadians(static_cast<float>(dx)));
-    auto pitch = DirectX::XMQuaternionRotationAxis(
-      DirectX::XMVectorSet(1, 0, 0, 0),
-      DirectX::XMConvertToRadians(static_cast<float>(dy)));
-    auto r = DirectX::XMQuaternionMultiply(yaw, pitch);
+    // auto yaw = DirectX::XMQuaternionRotationAxis(
+    //   DirectX::XMVectorSet(0, 1, 0, 0),
+    //   DirectX::XMConvertToRadians(static_cast<float>(dx)));
+    // auto pitch = DirectX::XMQuaternionRotationAxis(
+    //   DirectX::XMVectorSet(1, 0, 0, 0),
+    //   DirectX::XMConvertToRadians(static_cast<float>(dy)));
+    // auto r = DirectX::XMQuaternionMultiply(yaw, pitch);
 
-    Transform = Transform.Invrsed().Rotate(r).Invrsed();
+    auto inv = Transform.Invrsed();
+
+    auto _m =
+      DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&inv.Rotation));
+    DirectX::XMFLOAT4X4 m;
+    DirectX::XMStoreFloat4x4(&m, _m);
+
+    auto x = m._31;
+    auto y = m._32;
+    auto z = m._33;
+    auto yaw = atan2(x, z);
+    auto pitch = atan2(y, sqrt(x * x + z * z));
+    auto qYaw = DirectX::XMQuaternionRotationAxis(
+      DirectX::XMVectorSet(0, 1, 0, 0), yaw + DirectX::XMConvertToRadians(dx));
+    auto qPitch = DirectX::XMQuaternionRotationAxis(
+      DirectX::XMVectorSet(-1, 0, 0, 0),
+      pitch - DirectX::XMConvertToRadians(dy));
+    auto q = DirectX::XMQuaternionMultiply(qPitch, qYaw);
+    auto et =
+      EuclideanTransform::Store(q, DirectX::XMLoadFloat3(&inv.Translation));
+    Transform = et.Invrsed();
   }
 
   void Shift(int dx, int dy)
