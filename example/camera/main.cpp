@@ -107,6 +107,8 @@ public:
     ImGui::InputFloat3("T", &m_camera.Transform.Translation.x);
     ImGui::InputFloat4("R", &m_camera.Transform.Rotation.x);
     ImGui::InputFloat("Gaze", &m_camera.GazeDistance);
+    ImGui::InputFloat("Yaw", &m_camera.TmpYaw);
+    ImGui::InputFloat("Pitch", &m_camera.TmpPitch);
   }
 
   bool InitializeScene()
