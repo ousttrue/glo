@@ -181,7 +181,7 @@ main(void)
       0, 0, 0, 1, //
     }, };
   const uint32_t ubo_binding_point = 1;
-  grapho::Viewport viewport;
+  grapho::camera::Viewport viewport;
   while (auto frame = platform.BeginFrame()) {
     // update
     viewport.Width = frame->Width;
@@ -192,7 +192,7 @@ main(void)
 
     {
       fbo->AttachTexture2D(fboTexture->Handle());
-      grapho::Viewport fboViewport{
+      grapho::camera::Viewport fboViewport{
         .Width = 512,
         .Height = 512,
         .Color = { 0, 0.2f, 0, 1.0f },

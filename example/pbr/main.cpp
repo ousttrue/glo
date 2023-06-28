@@ -10,12 +10,12 @@
 #include "drawable.h"
 #include "glfw_platform.h"
 #include "imageloader.h"
+#include <grapho/camera/camera.h>
 #include <grapho/gl3/error_check.h>
 #include <grapho/gl3/glsl_type_name.h>
 #include <grapho/gl3/pbr.h>
 #include <grapho/imgui/dockspace.h>
 #include <grapho/imgui/widgets.h>
-#include <grapho/orbitview.h>
 #include <iostream>
 #include <vector>
 
@@ -76,7 +76,7 @@ public:
   }
 
   grapho::gl3::FboHolder m_fbo;
-  grapho::OrbitView m_camera;
+  grapho::camera::Camera m_camera;
   DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   std::vector<std::shared_ptr<Drawable>> m_drawables;
   std::shared_ptr<grapho::gl3::PbrEnv> m_pbrEnv;
@@ -85,7 +85,7 @@ public:
 
   bool InitializeScene(const std::filesystem::path& dir)
   {
-    m_camera.shift_[2] = -10;
+    m_camera.Transform.Translation.z = 10;
 
     //
     // PbrEnv
@@ -164,7 +164,8 @@ public:
 
     // update camera from mouse
     ImGuiIO& io = ImGui::GetIO();
-    m_camera.SetSize(static_cast<int>(size.x), static_cast<int>(size.y));
+    m_camera.Projection.SetSize(static_cast<int>(size.x),
+                                static_cast<int>(size.y));
     if (isActive) {
       if (io.MouseDown[ImGuiMouseButton_Right]) {
         m_camera.YawPitch(static_cast<int>(io.MouseDelta.x),
@@ -180,10 +181,7 @@ public:
     }
 
     // render to fbo
-    m_camera.Update(&m_world.projection._11, &m_world.view._11);
-    m_world.camPos = {
-      m_camera.Position.x, m_camera.Position.y, m_camera.Position.z, 1
-    };
+    m_camera.Update();
 
     // configure global opengl state
     // -----------------------------
@@ -204,7 +202,7 @@ public:
     for (auto& drawable : m_drawables) {
       drawable->Draw(0);
     }
-    m_pbrEnv->DrawSkybox(m_world.projection, m_world.view);
+    m_pbrEnv->DrawSkybox(m_camera.ProjectionMatrix, m_camera.ViewMatrix);
 
     m_fbo.Unbind();
   }

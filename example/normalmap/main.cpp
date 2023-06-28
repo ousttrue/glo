@@ -12,12 +12,12 @@
 #include <chrono>
 #include <filesystem>
 #include <functional>
+#include <grapho/camera/camera.h>
 #include <grapho/gl3/fbo.h>
 #include <grapho/gl3/shader.h>
 #include <grapho/gl3/shadergenerator.h>
 #include <grapho/imgui/dockspace.h>
 #include <grapho/imgui/widgets.h>
-#include <grapho/orbitview.h>
 #include <grapho/shadersnippet.h>
 #include <iostream>
 #include <memory>
@@ -80,7 +80,7 @@ public:
   }
 
   grapho::gl3::FboHolder m_fbo;
-  grapho::OrbitView m_camera;
+  grapho::camera::Camera m_camera;
   DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   Scene m_scene;
 
@@ -108,7 +108,8 @@ public:
 
     // update camera from mouse
     ImGuiIO& io = ImGui::GetIO();
-    m_camera.SetSize(static_cast<int>(size.x), static_cast<int>(size.y));
+    m_camera.Projection.SetSize(static_cast<int>(size.x),
+                                static_cast<int>(size.y));
     if (isActive) {
       if (io.MouseDown[ImGuiMouseButton_Right]) {
         m_camera.YawPitch(static_cast<int>(io.MouseDelta.x),
@@ -124,10 +125,11 @@ public:
     }
 
     // render to fbo
-    DirectX::XMFLOAT4X4 projection;
-    DirectX::XMFLOAT4X4 view;
-    m_camera.Update(&projection._11, &view._11);
-    m_scene.Render(io.DeltaTime, projection, view, m_camera.Position);
+    m_camera.Update();
+    m_scene.Render(io.DeltaTime,
+                   m_camera.ProjectionMatrix,
+                   m_camera.ViewMatrix,
+                   m_camera.Transform.Translation);
 
     m_fbo.Unbind();
   }

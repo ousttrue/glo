@@ -58,10 +58,11 @@ struct Camera
     auto yaw = atan2(x, z);
     auto pitch = atan2(y, sqrt(x * x + z * z));
     auto qYaw = DirectX::XMQuaternionRotationAxis(
-      DirectX::XMVectorSet(0, 1, 0, 0), yaw + DirectX::XMConvertToRadians(dx));
+      DirectX::XMVectorSet(0, 1, 0, 0),
+      yaw + DirectX::XMConvertToRadians(static_cast<float>(dx)));
     auto qPitch = DirectX::XMQuaternionRotationAxis(
       DirectX::XMVectorSet(-1, 0, 0, 0),
-      pitch - DirectX::XMConvertToRadians(dy));
+      pitch - DirectX::XMConvertToRadians(static_cast<float>(dy)));
     auto q = DirectX::XMQuaternionMultiply(qPitch, qYaw);
     auto et =
       EuclideanTransform::Store(q, DirectX::XMLoadFloat3(&inv.Translation));
@@ -100,6 +101,15 @@ struct Camera
     // DirectX::XMStoreFloat3(
     //   &Position, DirectX::XMVector3Transform(DirectX::XMVectorZero(),
     //   inv));
+  }
+
+  DirectX::XMFLOAT4X4 viewprojection() const
+  {
+    DirectX::XMFLOAT4X4 m;
+    DirectX::XMStoreFloat4x4(&m,
+                             DirectX::XMLoadFloat4x4(&ViewMatrix) *
+                               DirectX::XMLoadFloat4x4(&ProjectionMatrix));
+    return m;
   }
 
   void Fit(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max)
