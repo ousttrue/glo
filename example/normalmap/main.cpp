@@ -134,7 +134,7 @@ public:
     m_fbo.Unbind();
   }
 
-  void Update()
+  void Begin()
   {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -146,7 +146,10 @@ public:
     for (auto& d : docks) {
       d.Show();
     }
+  }
 
+  void End()
+  {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
   }
@@ -184,17 +187,19 @@ main(int argc, char** argv)
   // -----------
   while (platform.BeginFrame()) {
 
-    ImGuiIO& io = ImGui::GetIO();
+    gui.Begin();
+    {
+      ImGuiIO& io = ImGui::GetIO();
 
-    // render
-    glViewport(0,
-               0,
-               static_cast<int>(io.DisplaySize.x),
-               static_cast<int>(io.DisplaySize.y));
-    glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    gui.Update();
+      // render
+      glViewport(0,
+                 0,
+                 static_cast<int>(io.DisplaySize.x),
+                 static_cast<int>(io.DisplaySize.y));
+      glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+    gui.End();
 
     platform.EndFrame([]() {
       // Update and Render additional Platform Windows
