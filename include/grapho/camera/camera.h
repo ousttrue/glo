@@ -45,14 +45,6 @@ struct Camera
 
   void YawPitch(int dx, int dy)
   {
-    // auto yaw = DirectX::XMQuaternionRotationAxis(
-    //   DirectX::XMVectorSet(0, 1, 0, 0),
-    //   DirectX::XMConvertToRadians(static_cast<float>(dx)));
-    // auto pitch = DirectX::XMQuaternionRotationAxis(
-    //   DirectX::XMVectorSet(1, 0, 0, 0),
-    //   DirectX::XMConvertToRadians(static_cast<float>(dy)));
-    // auto r = DirectX::XMQuaternionMultiply(yaw, pitch);
-
     auto inv = Transform.Invrsed();
 
     auto _m =
