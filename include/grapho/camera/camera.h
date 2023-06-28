@@ -4,6 +4,7 @@
 #include <DirectXMath.h>
 #include <array>
 #include <cmath>
+#include <numbers>
 
 namespace grapho {
 namespace camera {
@@ -63,8 +64,12 @@ struct Camera
     auto qYaw =
       DirectX::XMQuaternionRotationAxis(DirectX::XMVectorSet(0, 1, 0, 0), yaw);
 
-    auto pitch = atan2(y, sqrt(x * x + z * z)) -
-                 DirectX::XMConvertToRadians(static_cast<float>(dy));
+    auto half_pi = static_cast<float>(std::numbers::pi / 2) - 0.01f;
+    auto pitch =
+      std::clamp(atan2(y, sqrt(x * x + z * z)) -
+                   DirectX::XMConvertToRadians(static_cast<float>(dy)),
+                 -half_pi,
+                 half_pi);
     TmpPitch = pitch;
     auto qPitch = DirectX::XMQuaternionRotationAxis(
       DirectX::XMVectorSet(-1, 0, 0, 0), pitch);
