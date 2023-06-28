@@ -41,12 +41,11 @@ struct Camera
   DirectX::XMFLOAT4X4 ViewMatrix;
   DirectX::XMFLOAT4X4 ProjectionMatrix;
 
-  float OrbitDistance = 5;
+  float GazeDistance = 5;
 
   void YawPitch(int dx, int dy)
   {
     auto inv = Transform.Invrsed();
-
     auto _m =
       DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&inv.Rotation));
     DirectX::XMFLOAT4X4 m;
@@ -77,11 +76,30 @@ struct Camera
 
   void Dolly(int d)
   {
-    // if (d > 0) {
-    //   shift_[2] *= 0.9f;
-    // } else if (d < 0) {
-    //   shift_[2] *= 1.1f;
-    // }
+    if (d == 0) {
+      return;
+    }
+
+    auto _m = DirectX::XMMatrixRotationQuaternion(
+      DirectX::XMLoadFloat4(&Transform.Rotation));
+    DirectX::XMFLOAT4X4 m;
+    DirectX::XMStoreFloat4x4(&m, _m);
+    auto x = m._31;
+    auto y = m._32;
+    auto z = m._33;
+    DirectX::XMFLOAT3 Gaze{
+      Transform.Translation.x - x * GazeDistance,
+      Transform.Translation.y - y * GazeDistance,
+      Transform.Translation.z - z * GazeDistance,
+    };
+    if (d > 0) {
+      GazeDistance *= 0.9f;
+    } else {
+      GazeDistance *= 1.1f;
+    }
+    Transform.Translation.x = Gaze.x + x * GazeDistance;
+    Transform.Translation.y = Gaze.y + y * GazeDistance;
+    Transform.Translation.z = Gaze.z + z * GazeDistance;
   }
 
   void Update()
@@ -125,7 +143,7 @@ struct Camera
     Transform.Translation.x = 0;
     Transform.Translation.y = (max.y + min.y) * 0.5f;
     Transform.Translation.z = distance * 1.2f;
-    OrbitDistance = Transform.Translation.z;
+    GazeDistance = Transform.Translation.z;
     auto r =
       DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(
         DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat3(&max))));

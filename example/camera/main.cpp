@@ -61,7 +61,7 @@ class Gui
 public:
   Gui(GLFWwindow* window)
   {
-    m_camera.Transform.Translation = { 0, 0, 10 };
+    m_camera.Transform.Translation = { 0, 5, 20 };
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -102,9 +102,17 @@ public:
     ImGui::DestroyContext();
   }
 
+  void ShowCamera()
+  {
+    ImGui::InputFloat3("T", &m_camera.Transform.Translation.x);
+    ImGui::InputFloat4("R", &m_camera.Transform.Rotation.x);
+    ImGui::InputFloat("Gaze", &m_camera.GazeDistance);
+  }
+
   bool InitializeScene()
   {
     m_docks.push_back({ "view", [=]() { ShowGui(); } });
+    m_docks.push_back({ "camera", [=]() { ShowCamera(); } });
 
     if (auto shader = grapho::gl3::ShaderProgram::Create(VS, FS)) {
       m_shader = *shader;
@@ -113,12 +121,41 @@ public:
       return false;
     }
 
-    auto cube = grapho::mesh::Cube();
-    auto drawable = std::make_shared<Drawable>();
-    drawable->Vao = grapho::gl3::Vao::Create(cube);
-    DirectX::XMStoreFloat4x4(&drawable->Matrix, DirectX::XMMatrixIdentity());
+    auto cube = grapho::mesh::Cube(0.5f);
 
-    m_drawables.push_back(drawable);
+    auto d = 5.0f;
+    {
+      // 0
+      auto drawable = std::make_shared<Drawable>();
+      drawable->Vao = grapho::gl3::Vao::Create(cube);
+      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+                               DirectX::XMMatrixTranslation(-d, 0, -d));
+      m_drawables.push_back(drawable);
+    }
+    {
+      // 1
+      auto drawable = std::make_shared<Drawable>();
+      drawable->Vao = grapho::gl3::Vao::Create(cube);
+      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+                               DirectX::XMMatrixTranslation(d, 0, -d));
+      m_drawables.push_back(drawable);
+    }
+    {
+      // 2
+      auto drawable = std::make_shared<Drawable>();
+      drawable->Vao = grapho::gl3::Vao::Create(cube);
+      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+                               DirectX::XMMatrixTranslation(d, 0, d));
+      m_drawables.push_back(drawable);
+    }
+    {
+      // 3
+      auto drawable = std::make_shared<Drawable>();
+      drawable->Vao = grapho::gl3::Vao::Create(cube);
+      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+                               DirectX::XMMatrixTranslation(-d, 0, d));
+      m_drawables.push_back(drawable);
+    }
 
     return true;
   }
