@@ -70,8 +70,23 @@ struct Camera
 
   void Shift(int dx, int dy)
   {
-    // auto factor = std::tan(FovY * 0.5f) * 2.0f * shift_[2] /
-    // Viewport.Height; shift_[0] -= dx * factor; shift_[1] += dy * factor;
+    auto factor = std::tan(Projection.FovY * 0.5f) * 2.0f * GazeDistance /
+                  Projection.Viewport.Height;
+
+    auto _m = DirectX::XMMatrixRotationQuaternion(
+      DirectX::XMLoadFloat4(&Transform.Rotation));
+    DirectX::XMFLOAT4X4 m;
+    DirectX::XMStoreFloat4x4(&m, _m);
+
+    auto left_x = m._11;
+    auto left_y = m._12;
+    auto left_z = m._13;
+    auto up_x = m._21;
+    auto up_y = m._22;
+    auto up_z = m._23;
+    Transform.Translation.x += (-left_x * dx + up_x * dy) * factor;
+    Transform.Translation.y += (-left_y * dx + up_y * dy) * factor;
+    Transform.Translation.z += (-left_z * dx + up_z * dy) * factor;
   }
 
   void Dolly(int d)
