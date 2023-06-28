@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <imgui_internal.h>
+#include <optional>
 #include <span>
 #include <string>
 #include <variant>
