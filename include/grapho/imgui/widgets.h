@@ -5,8 +5,10 @@
 #endif
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <optional>
 #include <span>
 #include <string>
+#include <vector>
 
 namespace grapho {
 namespace imgui {
@@ -274,6 +276,31 @@ BeginTableColumns(const char* title,
   }
 
   return false;
+}
+
+template<typename T>
+std::optional<T>
+SelectVector(const std::vector<T>& nodes,
+             const T& current,
+             const std::function<const char*(const T&)>& toLabel)
+{
+  std::optional<T> selected;
+  ImGui::SetNextItemWidth(-1);
+  if (ImGui::BeginCombo("##_SelectNode", toLabel(current))) {
+    for (auto& node : nodes) {
+      bool is_selected = (current == node);
+      if (ImGui::Selectable(toLabel(node), is_selected)) {
+        selected = node;
+      }
+      if (is_selected) {
+        // Set the initial focus when opening the combo (scrolling + for
+        // keyboard navigation support in the upcoming navigation branch)
+        ImGui::SetItemDefaultFocus();
+      }
+    }
+    ImGui::EndCombo();
+  }
+  return selected;
 }
 
 }
