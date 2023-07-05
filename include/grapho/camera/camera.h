@@ -169,7 +169,7 @@ struct Camera
       return;
     }
     auto distance = height * 0.5f / std::atan(Projection.FovY * 0.5f);
-    Transform.Translation.x = 0;
+    Transform.Translation.x = (max.x + min.x) * 0.5f;;
     Transform.Translation.y = (max.y + min.y) * 0.5f;
     Transform.Translation.z = distance * 1.2f;
     GazeDistance = Transform.Translation.z;
