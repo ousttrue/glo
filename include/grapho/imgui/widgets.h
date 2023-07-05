@@ -37,6 +37,17 @@ DraggableImage(ImTextureID texture, const ImVec2& size)
 }
 
 // https://github.com/ocornut/imgui/issues/319
+//
+// [usage]
+// auto size = ImGui::GetContentRegionAvail();
+// static float sz1 = 300;
+// float sz2 = size.x - sz1 - 5;
+// grapho::imgui::Splitter(true, 5.0f, &sz1, &sz2, 100, 100);
+// ImGui::BeginChild("1", ImVec2(sz1, -1), true);
+// ImGui::EndChild();
+// ImGui::SameLine();
+// ImGui::BeginChild("2", ImVec2(sz2, -1), true);
+// ImGui::EndChild();
 inline bool
 Splitter(bool split_vertically,
          float thickness,
