@@ -5,6 +5,8 @@ namespace grapho {
 namespace camera {
 struct Viewport
 {
+  int Left = 0;
+  int Top = 0;
   int Width = 0;
   int Height = 0;
   std::array<float, 4> Color = { 1, 0, 1, 0 };

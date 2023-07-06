@@ -25,13 +25,12 @@ struct Projection
       DirectX::XMMatrixPerspectiveFovRH(FovY, aspectRatio, NearZ, FarZ));
   }
 
-  void SetSize(int w, int h)
+  void SetRect(int x, int y, int w, int h)
   {
     if (w == Viewport.Width && h == Viewport.Height) {
       return;
     }
-    Viewport.Width = w;
-    Viewport.Height = h;
+    Viewport = { x, y, w, h };
   }
 };
 
@@ -169,7 +168,8 @@ struct Camera
       return;
     }
     auto distance = height * 0.5f / std::atan(Projection.FovY * 0.5f);
-    Transform.Translation.x = (max.x + min.x) * 0.5f;;
+    Transform.Translation.x = (max.x + min.x) * 0.5f;
+    ;
     Transform.Translation.y = (max.y + min.y) * 0.5f;
     Transform.Translation.z = distance * 1.2f;
     GazeDistance = Transform.Translation.z;
