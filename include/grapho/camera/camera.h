@@ -32,6 +32,7 @@ struct Projection
     }
     Viewport = { x, y, w, h };
   }
+  void SetSize(int w, int h) { SetRect(0, 0, w, h); }
 };
 
 struct Camera
