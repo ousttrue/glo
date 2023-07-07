@@ -25,8 +25,11 @@ struct Projection
       DirectX::XMMatrixPerspectiveFovRH(FovY, aspectRatio, NearZ, FarZ));
   }
 
-  void SetRect(int x, int y, int w, int h) { Viewport = { x, y, w, h }; }
-  void SetSize(int w, int h) { SetRect(0, 0, w, h); }
+  void SetRect(float x, float y, float w, float h)
+  {
+    Viewport = { x, y, w, h };
+  }
+  void SetSize(float w, float h) { SetRect(0, 0, w, h); }
 };
 
 struct Camera

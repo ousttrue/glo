@@ -15,9 +15,9 @@ struct ClearParam
 inline void
 ClearViewport(const camera::Viewport& vp, const ClearParam& param = {})
 {
-  glViewport(0, 0, vp.Width, vp.Height);
+  glViewport(0, 0, static_cast<int>(vp.Width), static_cast<int>(vp.Height));
   assert(!TryGetError());
-  glScissor(0, 0, vp.Width, vp.Height);
+  glScissor(0, 0, static_cast<int>(vp.Width), static_cast<int>(vp.Height));
   assert(!TryGetError());
   if (param.ApplyAlpha) {
     glClearColor(vp.Color[0] * vp.Color[3],

@@ -76,7 +76,7 @@ public:
   {
     auto fbo = std::make_shared<grapho::gl3::Fbo>();
     grapho::camera::Viewport fboViewport{
-      .Width = size, .Height = size,
+      .Width = static_cast<float>(size), .Height = static_cast<float>(size),
       // .Color = { 0, 0, 0, 0 },
     };
     for (unsigned int i = 0; i < 6; ++i) {
