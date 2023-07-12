@@ -75,7 +75,7 @@ public:
     glBindTexture(GL_TEXTURE_2D, m_handle);
   }
   static void Deactivate(uint32_t unit) { glDisable(GL_TEXTURE0 + unit); }
-  uint32_t Handle() const { return m_handle; }
+  const uint32_t& Handle() const { return m_handle; }
   int Width() const { return m_width; }
   int Height() const { return m_height; }
 
