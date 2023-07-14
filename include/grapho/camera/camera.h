@@ -184,15 +184,28 @@ struct Camera
   // v
   //
   // Y
-  Ray GetRay(float ScreenPixelLeft, float ScreenPixelTop)
+  std::optional<Ray> GetRay(float PixelFromLeft, float PixelFromTop)
   {
-    auto q = DirectX::XMLoadFloat4(&Transform.Rotation);
-    DirectX::XMFLOAT4X4 r;
-    DirectX::XMStoreFloat4x4(&r, DirectX::XMMatrixRotationQuaternion(q));
-    return {
+    Ray ret{
       Transform.Translation,
-      { -r._31, -r._32, -r._33 },
     };
+
+    auto t = tan(Projection.FovY / 2);
+    auto h = Projection.Viewport.Height / 2;
+    auto y = t * (h - PixelFromTop) / h;
+    auto w = Projection.Viewport.Width / 2;
+    auto x = t * Projection.Viewport.AspectRatio() * (PixelFromLeft - w) / w;
+
+    auto q = DirectX::XMLoadFloat4(&Transform.Rotation);
+    DirectX::XMStoreFloat3(&ret.Direction,
+                           DirectX::XMVector3Normalize(DirectX::XMVector3Rotate(
+                             DirectX::XMVectorSet(x, y, -1, 0), q)));
+
+    if(!ret.IsValid())
+    {
+      return std::nullopt;
+    }
+    return ret;
   }
 };
 
