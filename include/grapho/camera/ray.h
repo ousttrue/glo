@@ -16,7 +16,8 @@ struct Ray
       DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&Origin), m));
     DirectX::XMStoreFloat3(
       &ray.Direction,
-      DirectX::XMVector3TransformNormal(DirectX::XMLoadFloat3(&Direction), m));
+      DirectX::XMVector3Normalize(DirectX::XMVector3TransformNormal(
+        DirectX::XMLoadFloat3(&Direction), m)));
     return ray;
   }
 };
