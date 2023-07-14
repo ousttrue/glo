@@ -1,5 +1,6 @@
 #pragma once
 #include "../euclidean_transform.h"
+#include "ray.h"
 #include "viewport.h"
 #include <DirectXMath.h>
 #include <algorithm>
@@ -147,7 +148,7 @@ struct Camera
     //   inv));
   }
 
-  DirectX::XMFLOAT4X4 viewprojection() const
+  DirectX::XMFLOAT4X4 ViewProjection() const
   {
     DirectX::XMFLOAT4X4 m;
     DirectX::XMStoreFloat4x4(&m,
@@ -176,6 +177,22 @@ struct Camera
         DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat3(&max))));
     Projection.NearZ = r * 0.01f;
     Projection.FarZ = r * 100.0f;
+  }
+
+  // 0-> X
+  // |
+  // v
+  //
+  // Y
+  Ray GetRay(float ScreenPixelLeft, float ScreenPixelTop)
+  {
+    auto q = DirectX::XMLoadFloat4(&Transform.Rotation);
+    DirectX::XMFLOAT4X4 r;
+    DirectX::XMStoreFloat4x4(&r, DirectX::XMMatrixRotationQuaternion(q));
+    return {
+      Transform.Translation,
+      { -r._31, -r._32, -r._33 },
+    };
   }
 };
 
