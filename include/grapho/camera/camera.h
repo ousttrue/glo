@@ -26,10 +26,13 @@ struct Projection
       DirectX::XMMatrixPerspectiveFovRH(FovY, aspectRatio, NearZ, FarZ));
   }
 
+  void SetViewport(const struct Viewport& viewport) { Viewport = viewport; }
+
   void SetRect(float x, float y, float w, float h)
   {
-    Viewport = { x, y, w, h };
+    SetViewport({ x, y, w, h });
   }
+
   void SetSize(float w, float h) { SetRect(0, 0, w, h); }
 };
 

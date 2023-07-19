@@ -122,4 +122,48 @@ struct FboHolder
   void Unbind() { Fbo.Unbind(); }
 };
 
+struct RenderTarget
+{
+  std::shared_ptr<Fbo> Fbo;
+  std::shared_ptr<Texture> FboTexture;
+
+  uint32_t Begin(float width, float height, const float color[4])
+  {
+    if (width == 0 || height == 0) {
+      return 0;
+    }
+    if (!Fbo) {
+      Fbo = std::make_shared<grapho::gl3::Fbo>();
+    }
+
+    if (FboTexture) {
+      if (FboTexture->Width() != width || FboTexture->Height() != height) {
+        FboTexture = nullptr;
+      }
+    }
+    if (!FboTexture) {
+      FboTexture = grapho::gl3::Texture::Create({
+        static_cast<int>(width),
+        static_cast<int>(height),
+        grapho::PixelFormat::u8_RGB,
+        grapho::ColorSpace::Linear,
+      });
+      Fbo->AttachTexture2D(FboTexture->Handle());
+      Fbo->AttachDepth(static_cast<int>(width), static_cast<int>(height));
+    }
+
+    Fbo->Bind();
+    grapho::gl3::ClearViewport({
+      .Width = width,
+      .Height = height,
+      .Color = { color[0], color[1], color[2], color[3] },
+      .Depth = 1.0f,
+    });
+
+    return FboTexture->Handle();
+  }
+
+  void End() { Fbo->Unbind(); }
+};
+
 }
