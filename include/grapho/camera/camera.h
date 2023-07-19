@@ -40,8 +40,8 @@ struct MouseState
 {
   float X;
   float Y;
-  float DeltaX;
-  float DeltaY;
+  float DeltaX = 0;
+  float DeltaY = 0;
   bool LeftDown = false;
   bool MiddleDown = false;
   bool RightDown = false;

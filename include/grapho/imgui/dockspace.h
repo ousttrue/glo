@@ -42,7 +42,8 @@ struct Dock
 
   Dock& NoScrollBar()
   {
-    Flags |= ImGuiWindowFlags_NoScrollbar;
+    Flags |=
+      (ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
     return *this;
   }
 
