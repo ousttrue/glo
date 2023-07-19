@@ -7,6 +7,7 @@
 #include <array>
 #include <cmath>
 #include <numbers>
+#include <optional>
 
 namespace grapho {
 namespace camera {
@@ -218,6 +219,11 @@ struct Camera
       return std::nullopt;
     }
     return ret;
+  }
+
+  std::optional<Ray> GetRay(const MouseState& mouse)
+  {
+    return GetRay(mouse.X, mouse.Y);
   }
 };
 
