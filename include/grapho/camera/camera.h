@@ -33,6 +33,18 @@ struct Projection
   void SetSize(float w, float h) { SetRect(0, 0, w, h); }
 };
 
+struct MouseState
+{
+  float X;
+  float Y;
+  float DeltaX;
+  float DeltaY;
+  bool LeftDown = false;
+  bool MiddleDown = false;
+  bool RightDown = false;
+  float Wheel = 0;
+};
+
 struct Camera
 {
   Projection Projection;
@@ -129,23 +141,21 @@ struct Camera
     Transform.Translation.z = Gaze.z + z * GazeDistance;
   }
 
+  void MouseInputTurntable(const MouseState& mouse)
+  {
+    if (mouse.RightDown) {
+      YawPitch(static_cast<int>(mouse.DeltaX), static_cast<int>(mouse.DeltaY));
+    }
+    if (mouse.MiddleDown) {
+      Shift(static_cast<int>(mouse.DeltaX), static_cast<int>(mouse.DeltaY));
+    }
+    Dolly(static_cast<int>(mouse.Wheel));
+  }
+
   void Update()
   {
     Projection.Update(&ProjectionMatrix);
-
-    // auto yaw = DirectX::XMMatrixRotationY(Yaw);
-    // auto pitch = DirectX::XMMatrixRotationX(Pitch);
-    // auto shift = DirectX::XMMatrixTranslation(shift_[0], shift_[1],
-    // shift_[2]); auto v = yaw * pitch * shift;
-    // DirectX::XMStoreFloat4x4((DirectX::XMFLOAT4X4*)view, v);
     DirectX::XMStoreFloat4x4(&ViewMatrix, Transform.InversedMatrix());
-
-    // // Pos
-    // DirectX::XMVECTOR det;
-    // auto inv = DirectX::XMMatrixInverse(&det, v);
-    // DirectX::XMStoreFloat3(
-    //   &Position, DirectX::XMVector3Transform(DirectX::XMVectorZero(),
-    //   inv));
   }
 
   DirectX::XMFLOAT4X4 ViewProjection() const
@@ -201,8 +211,7 @@ struct Camera
                            DirectX::XMVector3Normalize(DirectX::XMVector3Rotate(
                              DirectX::XMVectorSet(x, y, -1, 0), q)));
 
-    if(!ret.IsValid())
-    {
+    if (!ret.IsValid()) {
       return std::nullopt;
     }
     return ret;
