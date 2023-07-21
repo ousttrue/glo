@@ -198,7 +198,7 @@ struct Camera
   // v
   //
   // Y
-  std::optional<Ray> GetRay(float PixelFromLeft, float PixelFromTop)
+  std::optional<Ray> GetRay(float PixelFromLeft, float PixelFromTop) const
   {
     Ray ret{
       Transform.Translation,
@@ -221,9 +221,26 @@ struct Camera
     return ret;
   }
 
-  std::optional<Ray> GetRay(const MouseState& mouse)
+  std::optional<Ray> GetRay(const MouseState& mouse) const
   {
     return GetRay(mouse.X, mouse.Y);
+  }
+
+  bool InViewport(const MouseState& mouse) const
+  {
+    if (mouse.X < 0) {
+      return false;
+    }
+    if (mouse.X > Projection.Viewport.Width) {
+      return false;
+    }
+    if (mouse.Y < 0) {
+      return false;
+    }
+    if (mouse.Y > Projection.Viewport.Height) {
+      return false;
+    }
+    return true;
   }
 };
 

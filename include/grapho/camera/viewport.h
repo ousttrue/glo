@@ -13,6 +13,8 @@ struct Viewport
   float Depth = 1.0f;
 
   float AspectRatio() const { return Width / Height; }
+  float Right() const { return Left + Width; }
+  float Bottom() const { return Top + Height; }
 };
 
 } // namespace
