@@ -45,13 +45,16 @@ compile(GLenum shaderType, std::span<std::u8string_view> srcs)
 }
 
 inline std::expected<GLuint, std::string>
-link(GLuint vs, GLuint fs)
+link(GLuint vs, GLuint fs, GLuint gs = 0)
 {
   GLuint program = glCreateProgram();
 
   // Attach shaders as necessary.
   glAttachShader(program, vs);
   glAttachShader(program, fs);
+  if (gs) {
+    glAttachShader(program, gs);
+  }
 
   // Link the program.
   glLinkProgram(program);
@@ -189,7 +192,8 @@ public:
   ~ShaderProgram() { glDeleteProgram(program_); }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
     std::span<std::u8string_view> vs_srcs,
-    std::span<std::u8string_view> fs_srcs)
+    std::span<std::u8string_view> fs_srcs,
+    std::span<std::u8string_view> gs_srcs = {})
   {
     auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
     if (!vs) {
@@ -202,7 +206,17 @@ public:
       return std::unexpected{ std::string("fs: ") + fs.error() };
     }
 
-    auto program = link(*vs, *fs);
+    GLuint gs = 0;
+    if (!gs_srcs.empty()) {
+      auto _gs = compile(GL_GEOMETRY_SHADER, gs_srcs);
+      if (!_gs) {
+        DebugWrite("debug.geom", gs_srcs);
+        return std::unexpected{ std::string("gs: ") + _gs.error() };
+      }
+      gs = *_gs;
+    }
+
+    auto program = link(*vs, *fs, gs);
     if (!program) {
       return std::unexpected{ program.error() };
     }
@@ -211,29 +225,46 @@ public:
   }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
     std::u8string_view vs,
-    std::u8string_view fs)
+    std::u8string_view fs,
+    std::u8string_view gs = {})
   {
     std::u8string_view vss[] = { vs };
     std::u8string_view fss[] = { fs };
-    return Create(vss, fss);
+    if (gs.empty()) {
+      return Create(vss, fss);
+    } else {
+      std::u8string_view gss[] = { gs };
+      return Create(vss, fss, gss);
+    }
   }
-  static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
-    std::string_view vs,
-    std::string_view fs)
+  static std::expected<std::shared_ptr<ShaderProgram>, std::string>
+  Create(std::string_view vs, std::string_view fs, std::string_view gs = {})
   {
     std::u8string_view vss[] = { { (const char8_t*)vs.data(),
                                    (const char8_t*)vs.data() + vs.size() } };
     std::u8string_view fss[] = { { (const char8_t*)fs.data(),
                                    (const char8_t*)fs.data() + fs.size() } };
-    return Create(vss, fss);
+    if (gs.empty()) {
+      return Create(vss, fss);
+    } else {
+      std::u8string_view gss[] = { { (const char8_t*)gs.data(),
+                                     (const char8_t*)gs.data() + gs.size() } };
+      return Create(vss, fss, gss);
+    }
   }
   static std::expected<std::shared_ptr<ShaderProgram>, std::string>
   CreateFromPath(const std::filesystem::path& vs_path,
-                 const std::filesystem::path& fs_path)
+                 const std::filesystem::path& fs_path,
+                 const std::filesystem::path& gs_path = {})
   {
     auto vs = grapho::StringFromPath(vs_path);
     auto fs = grapho::StringFromPath(fs_path);
-    return Create(vs, fs);
+    if (gs_path.empty()) {
+      return Create(vs, fs);
+    } else {
+      auto gs = grapho::StringFromPath(gs_path);
+      return Create(vs, fs, gs);
+    }
   }
   void Use() { glUseProgram(program_); }
   void UnUse() { glUseProgram(0); }
