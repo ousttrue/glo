@@ -81,6 +81,41 @@ Splitter(bool split_vertically,
                           0.0f);
 }
 
+struct SplitterObject
+{
+  std::optional<float> Size;
+
+  // +-+
+  // +-+
+  // +-+
+  std::tuple<float, float> SplitHorizontal(const ImVec2& size,
+                                           float ratio = 0.5f)
+  {
+    if (!Size) {
+      Size = size.y * ratio;
+    }
+    float sz1 = *Size;
+    float sz2 = size.y - sz1 - 5;
+    grapho::imgui::Splitter(false, 5.0f, &sz1, &sz2, 100, 100);
+    Size = sz1;
+    return { sz1, sz2 };
+  }
+
+  // +-+-+
+  // +-+-+
+  std::tuple<float, float> SplitVertical(const ImVec2& size, float ratio = 0.5f)
+  {
+    if (!Size) {
+      Size = size.x * 0.5f;
+    }
+    float sz1 = *Size;
+    float sz2 = size.x - sz1 - 5;
+    grapho::imgui::Splitter(false, 5.0f, &sz1, &sz2, 100, 100);
+    Size = sz1;
+    return { sz1, sz2 };
+  }
+};
+
 class TreeSplitter
 {
 public:
