@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <sstream>
 #include <stdint.h>
 #include <string>
 #include <string_view>

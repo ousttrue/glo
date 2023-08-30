@@ -111,8 +111,8 @@ struct FboHolder
 
     Fbo.Bind();
     grapho::gl3::ClearViewport({
-      .Width = width,
-      .Height = height,
+      .Width = (float)width,
+      .Height = (float)height,
       .Color = *((const std::array<float, 4>*)&color),
     });
 
