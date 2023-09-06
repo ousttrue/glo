@@ -113,51 +113,54 @@ public:
 
   bool InitializeScene()
   {
-    m_docks.push_back({ "view", [=]() { ShowGui(); } });
-    m_docks.push_back({ "camera", [=]() { ShowCamera(); } });
+    //    m_docks.push_back({ "view", [=]() { ShowGui(); } });
+    //    m_docks.push_back({ "camera", [=]() { ShowCamera(); } });
 
-    if (auto shader = grapho::gl3::ShaderProgram::Create(VS, FS)) {
-      m_shader = *shader;
-    } else {
-      std::cerr << shader.error() << std::endl;
-      return false;
-    }
+    //
+    //    if (auto shader = grapho::gl3::ShaderProgram::Create(VS, FS)) {
+    //      m_shader = *shader;
+    //    } else {
+    //      std::cerr << shader.error() << std::endl;
+    //      return false;
+    //    }
 
-    auto cube = grapho::mesh::Cube(0.5f);
+    //
+    //    auto cube = grapho::mesh::Cube(0.5f);
 
-    auto d = 5.0f;
-    {
-      // 0
-      auto drawable = std::make_shared<Drawable>();
-      drawable->Vao = grapho::gl3::Vao::Create(cube);
-      DirectX::XMStoreFloat4x4(&drawable->Matrix,
-                               DirectX::XMMatrixTranslation(-d, 0, -d));
-      m_drawables.push_back(drawable);
-    }
-    {
-      // 1
-      auto drawable = std::make_shared<Drawable>();
-      drawable->Vao = grapho::gl3::Vao::Create(cube);
-      DirectX::XMStoreFloat4x4(&drawable->Matrix,
-                               DirectX::XMMatrixTranslation(d, 0, -d));
-      m_drawables.push_back(drawable);
-    }
-    {
-      // 2
-      auto drawable = std::make_shared<Drawable>();
-      drawable->Vao = grapho::gl3::Vao::Create(cube);
-      DirectX::XMStoreFloat4x4(&drawable->Matrix,
-                               DirectX::XMMatrixTranslation(d, 0, d));
-      m_drawables.push_back(drawable);
-    }
-    {
-      // 3
-      auto drawable = std::make_shared<Drawable>();
-      drawable->Vao = grapho::gl3::Vao::Create(cube);
-      DirectX::XMStoreFloat4x4(&drawable->Matrix,
-                               DirectX::XMMatrixTranslation(-d, 0, d));
-      m_drawables.push_back(drawable);
-    }
+    //
+    //    auto d = 5.0f;
+    //    {
+    //      // 0
+    //      auto drawable = std::make_shared<Drawable>();
+    //      drawable->Vao = grapho::gl3::Vao::Create(cube);
+    //      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+    //                               DirectX::XMMatrixTranslation(-d, 0, -d));
+    //      m_drawables.push_back(drawable);
+    //    }
+    //    {
+    //      // 1
+    //      auto drawable = std::make_shared<Drawable>();
+    //      drawable->Vao = grapho::gl3::Vao::Create(cube);
+    //      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+    //                               DirectX::XMMatrixTranslation(d, 0, -d));
+    //      m_drawables.push_back(drawable);
+    //    }
+    //    {
+    //      // 2
+    //      auto drawable = std::make_shared<Drawable>();
+    //      drawable->Vao = grapho::gl3::Vao::Create(cube);
+    //      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+    //                               DirectX::XMMatrixTranslation(d, 0, d));
+    //      m_drawables.push_back(drawable);
+    //    }
+    //    {
+    //      // 3
+    //      auto drawable = std::make_shared<Drawable>();
+    //      drawable->Vao = grapho::gl3::Vao::Create(cube);
+    //      DirectX::XMStoreFloat4x4(&drawable->Matrix,
+    //                               DirectX::XMMatrixTranslation(-d, 0, d));
+    //      m_drawables.push_back(drawable);
+    //    }
 
     return true;
   }
@@ -191,19 +194,19 @@ public:
       m_camera.Dolly(static_cast<int>(io.MouseWheel));
     }
 
-    // render to fbo
-    m_camera.Update();
-    m_shader->Use();
-    m_shader->Uniform("view")->Set(m_camera.ViewMatrix);
-    assert(!grapho::gl3::TryGetError());
-    m_shader->Uniform("projection")->Set(m_camera.ProjectionMatrix);
-    assert(!grapho::gl3::TryGetError());
-    for (auto& drawable : m_drawables) {
-      m_shader->Uniform("model")->Set(drawable->Matrix);
-      assert(!grapho::gl3::TryGetError());
-      drawable->Vao->Draw(GL_TRIANGLES, 36);
-      assert(!grapho::gl3::TryGetError());
-    }
+    // // render to fbo
+    // m_camera.Update();
+    // m_shader->Use();
+    // m_shader->Uniform("view")->Set(m_camera.ViewMatrix);
+    // assert(!grapho::gl3::TryGetError());
+    // m_shader->Uniform("projection")->Set(m_camera.ProjectionMatrix);
+    // assert(!grapho::gl3::TryGetError());
+    // for (auto& drawable : m_drawables) {
+    //   m_shader->Uniform("model")->Set(drawable->Matrix);
+    //   assert(!grapho::gl3::TryGetError());
+    //   drawable->Vao->Draw(GL_TRIANGLES, 36);
+    //   assert(!grapho::gl3::TryGetError());
+    // }
 
     m_fbo.Unbind();
   }
