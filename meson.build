@@ -5,10 +5,7 @@ project(
     license: 'MIT',
 )
 
-grapho_inc = include_directories('include')
-grapho_dep = declare_dependency(
-    include_directories: grapho_inc,
-)
+subdir('src')
 
 if get_option('example')
     subdir('example')

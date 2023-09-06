@@ -1,5 +1,6 @@
 #include <GL/glew.h>
 
+#include <DirectXMath.h>
 #include "drawable.h"
 #include "imageloader.h"
 #include <grapho/gl3/pbr.h>

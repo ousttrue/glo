@@ -1,3 +1,5 @@
+#include <DirectXMath.h>
+
 #include <GL/glew.h>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -175,8 +177,7 @@ public:
 
     // update camera from mouse
     ImGuiIO& io = ImGui::GetIO();
-    m_camera.Projection.SetSize(static_cast<int>(size.x),
-                                static_cast<int>(size.y));
+    m_camera.Projection.SetSize(size.x, size.y);
     if (isActive) {
       if (io.MouseDown[ImGuiMouseButton_Right]) {
         m_camera.YawPitch(static_cast<int>(io.MouseDelta.x),

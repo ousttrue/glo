@@ -184,8 +184,8 @@ main(void)
   grapho::camera::Viewport viewport;
   while (auto frame = platform.BeginFrame()) {
     // update
-    viewport.Width = frame->Width;
-    viewport.Height = frame->Height;
+    viewport.Width = (float)frame->Width;
+    viewport.Height = (float)frame->Height;
     ubo->Upload(data);
     (*program)->UboBind(*block_index, ubo_binding_point);
     ubo->SetBindingPoint(ubo_binding_point);

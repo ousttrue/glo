@@ -1,7 +1,3 @@
-glew_dep = dependency(
-    'glew',
-    default_options: ['default_library=static'],
-)
 glfw_dep = dependency(
     'glfw3',
     default_options: ['default_library=static'],

@@ -1,5 +1,5 @@
 #pragma once
-#include <DirectXMath.h>
+#include "dxmath_stub.h"
 #include <cmath>
 #include <expected>
 #include <memory>
