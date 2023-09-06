@@ -1,11 +1,11 @@
-#include <GL/GL.h>
+#include <gl/glew.h>
 
 #include "error_check.h"
 
 namespace grapho {
 namespace gl3 {
 
-inline std::optional<const char*>
+std::optional<const char*>
 TryGetError()
 {
   auto err = glGetError();

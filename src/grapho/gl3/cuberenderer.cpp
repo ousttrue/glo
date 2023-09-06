@@ -1,4 +1,5 @@
 #include <DirectXMath.h>
+#include <gl/glew.h>
 
 #include "cuberenderer.h"
 
@@ -47,6 +48,29 @@ CubeRenderer::CubeRenderer()
     DirectX::XMMatrixLookAtRH(DirectX::XMVectorZero(),
                               DirectX::XMVectorSet(0, 0, -1.0f, 0),
                               DirectX::XMVectorSet(0, -1.0f, 0, 0)));
+}
+
+void
+CubeRenderer::Render(int size,
+                     uint32_t dst,
+                     const CallbackFunc& callback,
+                     int mipLevel) const
+{
+  auto fbo = std::make_shared<grapho::gl3::Fbo>();
+  grapho::camera::Viewport fboViewport{
+    .Width = static_cast<float>(size), .Height = static_cast<float>(size),
+    // .Color = { 0, 0, 0, 0 },
+  };
+  for (unsigned int i = 0; i < 6; ++i) {
+    callback(m_captureProjection, m_captureViews[i]);
+    fbo->AttachCubeMap(i, dst, mipLevel);
+    assert(!TryGetError());
+    grapho::gl3::ClearViewport(fboViewport, { .Depth = false });
+    assert(!TryGetError());
+    m_cube->Draw(m_mode, m_cubeDrawCount);
+    assert(!TryGetError());
+  }
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 } // namespace

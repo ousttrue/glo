@@ -14,7 +14,7 @@ namespace camera {
 struct Projection
 {
   Viewport Viewport;
-  float FovY; // = DirectX::XMConvertToRadians(30.0f);
+  float FovY;
   float NearZ = 0.01f;
   float FarZ = 1000.0f;
 

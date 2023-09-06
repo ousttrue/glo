@@ -1,22 +1,8 @@
-#include <Windows.h>
+// #include <Windows.h>
+#include <gl/glew.h>
 
 #include "texture.h"
-#include <GL/GL.h>
 #include <assert.h>
-
-// https://registry.khronos.org/OpenGL/api/GL/glcorearb.h
-#define GL_RGB32F 0x8815
-#define GL_RGBA16F 0x881A
-#define GL_RGB16F 0x881B
-#define GL_SRGB8_ALPHA8 0x8C43
-#define GL_TEXTURE0 0x84C0
-#define GL_SRGB8 0x8C41
-#define GL_CLAMP_TO_EDGE 0x812F
-#define GLAPI
-GLAPI void APIENTRY
-glGenerateMipmap(GLenum target);
-GLAPI void APIENTRY
-glActiveTexture(GLenum texture);
 
 namespace grapho {
 namespace gl3 {
