@@ -56,7 +56,11 @@ __declspec(align(16))
   struct XMMATRIX
 {
   XMVECTOR r[4];
-};
+}
+#if !defined(_MSC_VER)
+__attribute__((aligned(16)))
+#endif
+;
 
 }
 #endif
