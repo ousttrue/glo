@@ -4,6 +4,7 @@ glew_dep = dependency(
     'glew',
     default_options: ['default_library=static'],
 )
+directxmath_dep = dependency('directxmath')
 
 grapho_inc = include_directories('.')
 
@@ -21,11 +22,11 @@ grapho_lib = static_library(
         'grapho/gl3/error_check.cpp',
     ],
     include_directories: grapho_inc,
-    dependencies: [gl_dep, glew_dep],
+    dependencies: [gl_dep, glew_dep, directxmath_dep],
 )
 
 grapho_dep = declare_dependency(
     include_directories: grapho_inc,
     link_with: grapho_lib,
-    dependencies: [glew_dep],
+    dependencies: [glew_dep, directxmath_dep],
 )

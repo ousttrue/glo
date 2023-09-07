@@ -6,7 +6,7 @@ namespace DirectX {
 
 struct XMFLOAT2
 {
-  float x, y, z;
+  float x, y;
 };
 
 struct XMFLOAT3
@@ -50,7 +50,10 @@ struct XMFLOAT4X4
 
 using XMVECTOR = __m128;
 
-__declspec(align(16)) struct XMMATRIX
+#if _MSC_VER
+__declspec(align(16))
+#endif
+  struct XMMATRIX
 {
   XMVECTOR r[4];
 };
