@@ -1,7 +1,6 @@
 #pragma once
 #include "dxmath_stub.h"
 #include <cmath>
-#include <expected>
 #include <memory>
 #include <string>
 #include <vector>

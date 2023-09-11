@@ -30,7 +30,7 @@ GenerateBrdfLUTTexture()
   grapho::gl3::Fbo fbo;
   fbo.AttachTexture2D(brdfLUTTexture->Handle());
   grapho::gl3::ClearViewport(grapho::camera::Viewport{ 512, 512 });
-  auto brdfShader = *grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
+  auto brdfShader = grapho::gl3::ShaderProgram::Create(BRDF_VS, BRDF_FS);
   brdfShader->Use();
 
   // renderQuad() renders a 1x1 XY quad in NDC
@@ -54,7 +54,7 @@ GenerateEnvCubeMap(const grapho::gl3::CubeRenderer& cubeRenderer,
 #include "shaders/equirectangular_to_cubemap_fs.h"
 
   auto equirectangularToCubemapShader =
-    *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, EQUIRECTANGULAR_FS);
+    grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, EQUIRECTANGULAR_FS);
   equirectangularToCubemapShader->Use();
   equirectangularToCubemapShader->SetUniform("equirectangularMap", 0);
 
@@ -76,7 +76,7 @@ GenerateIrradianceMap(const grapho::gl3::CubeRenderer& cubeRenderer,
 #include "shaders/cubemap_vs.h"
 #include "shaders/irradiance_convolution_fs.h"
   auto irradianceShader =
-    *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, IRRADIANCE_CONVOLUTION_FS);
+    grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, IRRADIANCE_CONVOLUTION_FS);
   irradianceShader->Use();
   irradianceShader->SetUniform("environmentMap", 0);
 
@@ -98,7 +98,7 @@ GeneratePrefilterMap(const grapho::gl3::CubeRenderer& cubeRenderer,
 #include "shaders/cubemap_vs.h"
 #include "shaders/prefilter_fs.h"
   auto prefilterShader =
-    *grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
+    grapho::gl3::ShaderProgram::Create(CUBEMAP_VS, PREFILTER_FS);
   prefilterShader->Use();
   prefilterShader->SetUniform("environmentMap", 0);
   assert(!TryGetError());
@@ -211,12 +211,11 @@ struct PbrEnv
 
 #include "shaders/background_fs.h"
 #include "shaders/background_vs.h"
-    auto backgroundShader =
+    BackgroundShader =
       grapho::gl3::ShaderProgram::Create(BACKGROUND_VS, BACKGROUND_FS);
-    if (!backgroundShader) {
-      throw std::runtime_error(backgroundShader.error());
+    if (!BackgroundShader) {
+      throw std::runtime_error(GetErrorString());
     }
-    BackgroundShader = *backgroundShader;
     BackgroundShader->Use();
     BackgroundShader->SetUniform("environmentMap", 0);
     assert(!TryGetError());
@@ -265,7 +264,7 @@ struct PbrEnv
   }
 };
 
-inline std::expected<std::shared_ptr<ShaderProgram>, std::string>
+inline std::shared_ptr<ShaderProgram>
 CreatePbrShader(std::span<std::u8string_view> _vs = {},
                 std::span<std::u8string_view> _fs = {})
 {

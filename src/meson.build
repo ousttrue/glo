@@ -17,6 +17,7 @@ grapho_lib = static_library(
         'grapho/camera/ray.cpp',
         'grapho/gl3/vao.cpp',
         'grapho/gl3/texture.cpp',
+        'grapho/gl3/shader.cpp',
         'grapho/gl3/cuberenderer.cpp',
         'grapho/gl3/fbo.cpp',
         'grapho/gl3/error_check.cpp',

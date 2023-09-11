@@ -1,8 +1,24 @@
 #include <gl/glew.h>
+#include <string>
 
 #include "error_check.h"
 
 namespace grapho {
+
+static std::string g_msg;
+
+void
+SetErrorMessage(std::string_view msg)
+{
+  g_msg = msg;
+}
+
+std::string_view
+GetErrorMessage()
+{
+  return g_msg;
+}
+
 namespace gl3 {
 
 std::optional<const char*>
