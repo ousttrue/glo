@@ -103,21 +103,21 @@ main(void)
   auto program = grapho::gl3::ShaderProgram::Create(vertex_shader_text,
                                                     fragment_shader_text);
   if (!program) {
-    std::cerr << program.error() << std::endl;
+    // std::cerr << program.error() << std::endl;
     return 4;
   }
 
-  auto vpos_location = (*program)->Attribute("vPos");
+  auto vpos_location = program->Attribute("vPos");
   if (!vpos_location) {
     return 6;
   }
-  auto vuv_location = (*program)->Attribute("vUv");
+  auto vuv_location = program->Attribute("vUv");
   if (!vuv_location) {
     return 7;
   }
 
   auto ubo = grapho::gl3::Ubo::Create(sizeof(MatrixData), nullptr);
-  auto block_index = (*program)->UboBlockIndex("Scene");
+  auto block_index = program->UboBlockIndex("Scene");
   if (!block_index) {
     return 8;
   }
@@ -187,7 +187,7 @@ main(void)
     viewport.Width = (float)frame->Width;
     viewport.Height = (float)frame->Height;
     ubo->Upload(data);
-    (*program)->UboBind(*block_index, ubo_binding_point);
+    program->UboBind(*block_index, ubo_binding_point);
     ubo->SetBindingPoint(ubo_binding_point);
 
     {
@@ -198,7 +198,7 @@ main(void)
         .Color = { 0, 0.2f, 0, 1.0f },
       };
       grapho::gl3::ClearViewport(fboViewport);
-      (*program)->Use();
+      program->Use();
 
       texture->Activate(0);
       vao->Draw(GL_TRIANGLES, 6, 0);
@@ -207,7 +207,7 @@ main(void)
 
     // draw backbuffer
     {
-      (*program)->Use();
+      program->Use();
       fboTexture->Activate(0);
       grapho::gl3::ClearViewport(viewport);
       vao->Draw(GL_TRIANGLES, 6, 0);

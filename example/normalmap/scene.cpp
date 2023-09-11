@@ -93,12 +93,11 @@ void main()
 
   // build and compile shaders
   // -------------------------
-  auto result = grapho::gl3::ShaderProgram::Create(vs, fs);
-  if (!result) {
-    std::cout << result.error() << std::endl;
+  Shader = grapho::gl3::ShaderProgram::Create(vs, fs);
+  if (!Shader) {
+    // std::cout << result.error() << std::endl;
     return false;
   }
-  Shader = *result;
 
   // load textures
   // -------------

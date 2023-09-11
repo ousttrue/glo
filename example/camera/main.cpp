@@ -115,13 +115,13 @@ public:
 
   bool InitializeScene()
   {
-    m_docks.push_back({ "view", [=]() { ShowGui(); } });
-    m_docks.push_back({ "camera", [=]() { ShowCamera(); } });
+    m_docks.push_back({ "view", [=, this]() { ShowGui(); } });
+    m_docks.push_back({ "camera", [=, this]() { ShowCamera(); } });
 
     if (auto shader = grapho::gl3::ShaderProgram::Create(VS, FS)) {
-      m_shader = *shader;
+      m_shader = shader;
     } else {
-      std::cerr << shader.error() << std::endl;
+      // std::cerr << shader.error() << std::endl;
       return false;
     }
 

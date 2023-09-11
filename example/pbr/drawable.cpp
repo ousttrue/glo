@@ -1,6 +1,6 @@
+#include <DirectXMath.h>
 #include <GL/glew.h>
 
-#include <DirectXMath.h>
 #include "drawable.h"
 #include "imageloader.h"
 #include <grapho/gl3/pbr.h>
@@ -56,12 +56,11 @@ std::shared_ptr<Drawable>
 Drawable::Load(const std::filesystem::path& baseDir,
                const DirectX::XMFLOAT3& position)
 {
-  auto shader = grapho::gl3::CreatePbrShader();
-  if (!shader) {
+  auto drawable = std::make_shared<Drawable>();
+  drawable->Shader = grapho::gl3::CreatePbrShader();
+  if (!drawable->Shader) {
     return {};
   }
-  auto drawable = std::make_shared<Drawable>();
-  drawable->Shader = *shader;
   drawable->Position = position;
   drawable->Textures = {
     loadTexture(baseDir / "albedo.png", grapho::ColorSpace::Linear),
