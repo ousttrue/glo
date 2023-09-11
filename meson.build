@@ -1,7 +1,7 @@
 project(
     'grapho',
     'cpp',
-    version: '1.10.0',
+    version: '1.10.1',
     license: 'MIT',
 )
 

@@ -1,5 +1,5 @@
 // #include <Windows.h>
-#include <gl/glew.h>
+#include <GL/glew.h>
 
 #include "texture.h"
 #include <assert.h>
@@ -7,7 +7,7 @@
 namespace grapho {
 namespace gl3 {
 
-inline std::optional<uint32_t>
+std::optional<uint32_t>
 GLImageFormat(PixelFormat format, ColorSpace colorspace)
 {
   if (colorspace == ColorSpace::Linear) {
@@ -40,7 +40,7 @@ GLImageFormat(PixelFormat format, ColorSpace colorspace)
   return std::nullopt;
 }
 
-inline uint32_t
+uint32_t
 GLInternalFormat(PixelFormat format)
 {
   switch (format) {

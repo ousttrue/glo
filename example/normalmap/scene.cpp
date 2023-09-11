@@ -7,9 +7,6 @@
 #include <grapho/gl3/shadergenerator.h>
 #include <grapho/shadersnippet.h>
 #include <iostream>
-#include <optional>
-
-const std::optional<bool> NOP = std::nullopt;
 
 bool
 Scene::Initialize(const std::filesystem::path& dir)
