@@ -2,6 +2,7 @@
 #include "../vertexlayout.h"
 #include <assert.h>
 #include <memory>
+#include <optional>
 #include <span>
 #include <stdexcept>
 #include <stdint.h>
@@ -10,13 +11,13 @@
 namespace grapho {
 namespace gl3 {
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLType(ValueType type);
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLIndexTypeFromStride(uint32_t stride);
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLMode(grapho::DrawMode mode);
 
 template<typename T>

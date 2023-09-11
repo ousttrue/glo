@@ -5,7 +5,7 @@
 namespace grapho {
 namespace gl3 {
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLType(ValueType type)
 {
   switch (type) {
@@ -32,7 +32,7 @@ GLType(ValueType type)
   return {};
 }
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLIndexTypeFromStride(uint32_t stride)
 {
   switch (stride) {
@@ -46,11 +46,12 @@ GLIndexTypeFromStride(uint32_t stride)
       return GL_UNSIGNED_INT;
 
     default:
-      return std::unexpected{ "invalid index stride" };
+      // return std::unexpected{ "invalid index stride" };
+      return {};
   }
 }
 
-std::expected<uint32_t, std::string>
+std::optional<uint32_t>
 GLMode(grapho::DrawMode mode)
 {
   switch (mode) {
@@ -59,7 +60,8 @@ GLMode(grapho::DrawMode mode)
     case DrawMode::TriangleStrip:
       return GL_TRIANGLE_STRIP;
     default:
-      return std::unexpected{ "unknown GLType" };
+      // return std::unexpected{ "unknown GLType" };
+      return {};
   }
 }
 

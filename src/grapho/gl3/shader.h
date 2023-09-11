@@ -1,8 +1,8 @@
 #pragma once
+#include <gl/glew.h>
+
 #include "../fileutil.h"
-#include <expected>
 #include <fstream>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <span>
@@ -13,72 +13,11 @@
 
 namespace grapho::gl3 {
 
-inline std::expected<GLuint, std::string>
-compile(GLenum shaderType, std::span<std::u8string_view> srcs)
-{
-  auto shader = glCreateShader(shaderType);
+std::optional<GLuint>
+compile(GLenum shaderType, std::span<std::u8string_view> srcs);
 
-  std::vector<const GLchar*> string;
-  std::vector<GLint> length;
-  for (auto src : srcs) {
-    string.push_back((const GLchar*)src.data());
-    length.push_back(src.size());
-  }
-  glShaderSource(shader, srcs.size(), string.data(), length.data());
-  glCompileShader(shader);
-  GLint isCompiled = 0;
-  glGetShaderiv(shader, GL_COMPILE_STATUS, &isCompiled);
-  if (isCompiled == GL_FALSE) {
-    GLint maxLength = 0;
-    glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
-
-    // The maxLength includes the NULL character
-    std::string errorLog;
-    errorLog.resize(maxLength);
-    glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
-
-    glDeleteShader(shader); // Don't leak the shader.
-
-    // Provide the infolog in whatever manor you deem best.
-    return std::unexpected{ errorLog };
-  }
-  return shader;
-}
-
-inline std::expected<GLuint, std::string>
-link(GLuint vs, GLuint fs, GLuint gs = 0)
-{
-  GLuint program = glCreateProgram();
-
-  // Attach shaders as necessary.
-  glAttachShader(program, vs);
-  glAttachShader(program, fs);
-  if (gs) {
-    glAttachShader(program, gs);
-  }
-
-  // Link the program.
-  glLinkProgram(program);
-
-  GLint isLinked = 0;
-  glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-  if (isLinked == GL_FALSE) {
-    GLint maxLength = 0;
-    glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
-
-    // The maxLength includes the NULL character
-    std::string infoLog;
-    infoLog.resize(maxLength);
-    glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
-
-    // The program is useless now. So delete it.
-    glDeleteProgram(program);
-
-    // Provide the infolog in whatever manner you deem best.
-    return std::unexpected{ infoLog };
-  }
-  return program;
-}
+std::optional<GLuint>
+link(GLuint vs, GLuint fs, GLuint gs = 0);
 
 template<typename T>
 concept Float3 = sizeof(T) == sizeof(float) * 3;
@@ -191,7 +130,7 @@ class ShaderProgram
 public:
   std::vector<UniformVariable> Uniforms;
   ~ShaderProgram() { glDeleteProgram(program_); }
-  static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
+  static std::shared_ptr<ShaderProgram> Create(
     std::span<std::u8string_view> vs_srcs,
     std::span<std::u8string_view> fs_srcs,
     std::span<std::u8string_view> gs_srcs = {})
@@ -199,12 +138,14 @@ public:
     auto vs = compile(GL_VERTEX_SHADER, vs_srcs);
     if (!vs) {
       DebugWrite("debug.vert", vs_srcs);
-      return std::unexpected{ std::string("vs: ") + vs.error() };
+      // return std::unexpected{ std::string("vs: ") + vs.error() };
+      return {};
     }
     auto fs = compile(GL_FRAGMENT_SHADER, fs_srcs);
     if (!fs) {
       DebugWrite("debug.frag", fs_srcs);
-      return std::unexpected{ std::string("fs: ") + fs.error() };
+      // return std::unexpected{ std::string("fs: ") + fs.error() };
+      return {};
     }
 
     GLuint gs = 0;
@@ -212,22 +153,24 @@ public:
       auto _gs = compile(GL_GEOMETRY_SHADER, gs_srcs);
       if (!_gs) {
         DebugWrite("debug.geom", gs_srcs);
-        return std::unexpected{ std::string("gs: ") + _gs.error() };
+        // return std::unexpected{ std::string("gs: ") + _gs.error() };
+        return {};
       }
       gs = *_gs;
     }
 
     auto program = link(*vs, *fs, gs);
     if (!program) {
-      return std::unexpected{ program.error() };
+      // return std::unexpected{ program.error() };
+      return {};
     }
 
     return std::shared_ptr<ShaderProgram>(new ShaderProgram(*program));
   }
-  static std::expected<std::shared_ptr<ShaderProgram>, std::string> Create(
-    std::u8string_view vs,
-    std::u8string_view fs,
-    std::u8string_view gs = {})
+
+  static std::shared_ptr<ShaderProgram> Create(std::u8string_view vs,
+                                               std::u8string_view fs,
+                                               std::u8string_view gs = {})
   {
     std::u8string_view vss[] = { vs };
     std::u8string_view fss[] = { fs };
@@ -238,8 +181,10 @@ public:
       return Create(vss, fss, gss);
     }
   }
-  static std::expected<std::shared_ptr<ShaderProgram>, std::string>
-  Create(std::string_view vs, std::string_view fs, std::string_view gs = {})
+
+  static std::shared_ptr<ShaderProgram> Create(std::string_view vs,
+                                               std::string_view fs,
+                                               std::string_view gs = {})
   {
     std::u8string_view vss[] = { { (const char8_t*)vs.data(),
                                    (const char8_t*)vs.data() + vs.size() } };
@@ -253,10 +198,11 @@ public:
       return Create(vss, fss, gss);
     }
   }
-  static std::expected<std::shared_ptr<ShaderProgram>, std::string>
-  CreateFromPath(const std::filesystem::path& vs_path,
-                 const std::filesystem::path& fs_path,
-                 const std::filesystem::path& gs_path = {})
+
+  static std::shared_ptr<ShaderProgram> CreateFromPath(
+    const std::filesystem::path& vs_path,
+    const std::filesystem::path& fs_path,
+    const std::filesystem::path& gs_path = {})
   {
     auto vs = grapho::StringFromPath(vs_path);
     auto fs = grapho::StringFromPath(fs_path);
@@ -267,6 +213,7 @@ public:
       return Create(vs, fs, gs);
     }
   }
+
   void Use() { glUseProgram(program_); }
   void UnUse() { glUseProgram(0); }
 
@@ -324,61 +271,5 @@ public:
     glUniformBlockBinding(program_, blockIndex, binding_point);
   }
 };
-
-//
-//   // name
-//   std::expected<void, std::string> _SetUniformMatrix(const char* name,
-//                                                      const float m[16])
-//   {
-//     auto location = glGetUniformLocation(program_, name);
-//     if (location < 0) {
-//       return std::unexpected{ "fail to glGetUniformLocation" };
-//     }
-//     glUniformMatrix4fv(location, 1, GL_FALSE, m);
-//     return {};
-//   }
-//
-//   template<Mat4 T>
-//   std::expected<void, std::string> SetUniformMatrix(const char* name,
-//                                                     const T& t)
-//   {
-//     return _SetUniformMatrix(name, (float*)&t);
-//   }
-//
-//   std::expected<void, std::string> SetUniformFloat(const char* name,
-//                                                    float value)
-//   {
-//     auto location = glGetUniformLocation(program_, name);
-//     if (location < 0) {
-//       return std::unexpected{ "fail to glGetUniformLocation" };
-//     }
-//     glUniform1f(location, value);
-//     return {};
-//   }
-//
-//   std::expected<void, std::string> SetUniformFloat3(const char* name,
-//                                                     const float value[3])
-//   {
-//     auto location = glGetUniformLocation(program_, name);
-//     if (location < 0) {
-//       return std::unexpected{ "fail to glGetUniformLocation" };
-//     }
-//     glUniform3f(location, value[0], value[1], value[2]);
-//     return {};
-//   }
-//
-//   std::expected<void, std::string> SetUniformFloat4(const char* name,
-//                                                     const float value[4])
-//   {
-//     auto location = glGetUniformLocation(program_, name);
-//     if (location < 0) {
-//       return std::unexpected{ "fail to glGetUniformLocation" };
-//     }
-//     glUniform4f(location, value[0], value[1], value[2], value[3]);
-//     return {};
-//   }
-//
-//
-// };
 
 }
