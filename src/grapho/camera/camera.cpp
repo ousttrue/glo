@@ -5,6 +5,88 @@
 namespace grapho {
 namespace camera {
 
+struct EuclideanTransform
+{
+  DirectX::XMFLOAT4 Rotation = { 0, 0, 0, 1 };
+  DirectX::XMFLOAT3 Translation = { 0, 0, 0 };
+
+  static EuclideanTransform Store(DirectX::XMVECTOR r, DirectX::XMVECTOR t)
+  {
+    EuclideanTransform transform;
+    DirectX::XMStoreFloat4(&transform.Rotation, r);
+    DirectX::XMStoreFloat3(&transform.Translation, t);
+    return transform;
+  }
+
+  bool HasRotation() const
+  {
+    if (Rotation.x == 0 && Rotation.y == 0 && Rotation.z == 0 &&
+        (Rotation.w == 1 || Rotation.w == -1)) {
+      return false;
+    }
+    return true;
+  }
+
+  DirectX::XMMATRIX ScalingTranslationMatrix(float scaling) const
+  {
+    auto r =
+      DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&Rotation));
+    auto t = DirectX::XMMatrixTranslation(Translation.x * scaling,
+                                          Translation.y * scaling,
+                                          Translation.z * scaling);
+    return r * t;
+  }
+
+  DirectX::XMMATRIX Matrix() const
+  {
+    auto r =
+      DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&Rotation));
+    auto t =
+      DirectX::XMMatrixTranslation(Translation.x, Translation.y, Translation.z);
+    return r * t;
+  }
+
+  EuclideanTransform& SetMatrix(DirectX::XMMATRIX m)
+  {
+    DirectX::XMVECTOR s;
+    DirectX::XMVECTOR r;
+    DirectX::XMVECTOR t;
+    if (!DirectX::XMMatrixDecompose(&s, &r, &t, m)) {
+      assert(false);
+    }
+    // DirectX::XMStoreFloat3((DirectX::XMFLOAT3*)&InitialScale, s);
+    DirectX::XMStoreFloat4(&Rotation, r);
+    DirectX::XMStoreFloat3(&Translation, t);
+    return *this;
+  }
+
+  DirectX::XMMATRIX InversedMatrix() const
+  {
+    auto r = DirectX::XMMatrixRotationQuaternion(
+      DirectX::XMQuaternionInverse(DirectX::XMLoadFloat4(&Rotation)));
+    auto t = DirectX::XMMatrixTranslation(
+      -Translation.x, -Translation.y, -Translation.z);
+    return t * r;
+  }
+
+  EuclideanTransform Invrsed() const
+  {
+    auto r = DirectX::XMQuaternionInverse(DirectX::XMLoadFloat4(&Rotation));
+    auto t = DirectX::XMVector3Rotate(
+      DirectX::XMVectorSet(-Translation.x, -Translation.y, -Translation.z, 1),
+      r);
+    return Store(r, t);
+  }
+
+  EuclideanTransform Rotate(DirectX::XMVECTOR r)
+  {
+    return EuclideanTransform::Store(
+      DirectX::XMQuaternionMultiply(DirectX::XMLoadFloat4(&Rotation), r),
+      DirectX::XMVector3Transform(DirectX::XMLoadFloat3(&Translation),
+                                  DirectX::XMMatrixRotationQuaternion(r)));
+  }
+};
+
 Projection::Projection()
 {
   FovY = DirectX::XMConvertToRadians(30.0f);
@@ -22,6 +104,7 @@ Projection::Update(DirectX::XMFLOAT4X4* projection)
 void
 Camera::YawPitch(int dx, int dy)
 {
+  const EuclideanTransform Transform{ Rotation, Translation };
   auto inv = Transform.Invrsed();
   auto _m = DirectX::XMMatrixRotationQuaternion(
     DirectX::XMLoadFloat4(&Transform.Rotation));
@@ -50,12 +133,16 @@ Camera::YawPitch(int dx, int dy)
     DirectX::XMQuaternionInverse(DirectX::XMQuaternionMultiply(qPitch, qYaw));
   auto et =
     EuclideanTransform::Store(q, DirectX::XMLoadFloat3(&inv.Translation));
-  Transform = et.Invrsed();
+
+  auto dst = et.Invrsed();
+  Rotation = dst.Rotation;
+  Translation = dst.Translation;
 }
 
 void
 Camera::Shift(int dx, int dy)
 {
+  const EuclideanTransform Transform{ Rotation, Translation };
   auto factor = std::tan(Projection.FovY * 0.5f) * 2.0f * GazeDistance /
                 Projection.Viewport.Height;
 
@@ -70,9 +157,9 @@ Camera::Shift(int dx, int dy)
   auto up_x = m._21;
   auto up_y = m._22;
   auto up_z = m._23;
-  Transform.Translation.x += (-left_x * dx + up_x * dy) * factor;
-  Transform.Translation.y += (-left_y * dx + up_y * dy) * factor;
-  Transform.Translation.z += (-left_z * dx + up_z * dy) * factor;
+  Translation.x += (-left_x * dx + up_x * dy) * factor;
+  Translation.y += (-left_y * dx + up_y * dy) * factor;
+  Translation.z += (-left_z * dx + up_z * dy) * factor;
 }
 
 void
@@ -82,6 +169,7 @@ Camera::Dolly(int d)
     return;
   }
 
+  const EuclideanTransform Transform{ Rotation, Translation };
   auto _m = DirectX::XMMatrixRotationQuaternion(
     DirectX::XMLoadFloat4(&Transform.Rotation));
   DirectX::XMFLOAT4X4 m;
@@ -99,14 +187,15 @@ Camera::Dolly(int d)
   } else {
     GazeDistance *= 1.1f;
   }
-  Transform.Translation.x = Gaze.x + x * GazeDistance;
-  Transform.Translation.y = Gaze.y + y * GazeDistance;
-  Transform.Translation.z = Gaze.z + z * GazeDistance;
+  Translation.x = Gaze.x + x * GazeDistance;
+  Translation.y = Gaze.y + y * GazeDistance;
+  Translation.z = Gaze.z + z * GazeDistance;
 }
 
 void
 Camera::Update()
 {
+  const EuclideanTransform Transform{ Rotation, Translation };
   Projection.Update(&ProjectionMatrix);
   DirectX::XMStoreFloat4x4(&ViewMatrix, Transform.InversedMatrix());
 }
@@ -126,17 +215,16 @@ Camera::Fit(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max)
 {
   // Yaw = {};
   // Pitch = {};
-  Transform.Rotation = { 0, 0, 0, 1 };
+  Rotation = { 0, 0, 0, 1 };
   auto height = max.y - min.y;
   if (fabs(height) < 1e-4) {
     return;
   }
   auto distance = height * 0.5f / std::atan(Projection.FovY * 0.5f);
-  Transform.Translation.x = (max.x + min.x) * 0.5f;
-  ;
-  Transform.Translation.y = (max.y + min.y) * 0.5f;
-  Transform.Translation.z = distance * 1.2f;
-  GazeDistance = Transform.Translation.z;
+  Translation.x = (max.x + min.x) * 0.5f;
+  Translation.y = (max.y + min.y) * 0.5f;
+  Translation.z = distance * 1.2f;
+  GazeDistance = Translation.z;
   auto r =
     DirectX::XMVectorGetX(DirectX::XMVector3Length(DirectX::XMVectorSubtract(
       DirectX::XMLoadFloat3(&min), DirectX::XMLoadFloat3(&max))));
@@ -153,7 +241,7 @@ std::optional<Ray>
 Camera::GetRay(float PixelFromLeft, float PixelFromTop) const
 {
   Ray ret{
-    Transform.Translation,
+    Translation,
   };
 
   auto t = tan(Projection.FovY / 2);
@@ -162,7 +250,7 @@ Camera::GetRay(float PixelFromLeft, float PixelFromTop) const
   auto w = Projection.Viewport.Width / 2;
   auto x = t * Projection.Viewport.AspectRatio() * (PixelFromLeft - w) / w;
 
-  auto q = DirectX::XMLoadFloat4(&Transform.Rotation);
+  auto q = DirectX::XMLoadFloat4(&Rotation);
   DirectX::XMStoreFloat3(&ret.Direction,
                          DirectX::XMVector3Normalize(DirectX::XMVector3Rotate(
                            DirectX::XMVectorSet(x, y, -1, 0), q)));

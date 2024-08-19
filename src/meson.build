@@ -11,7 +11,6 @@ grapho_inc = include_directories('.')
 grapho_lib = static_library(
     'grapho',
     [
-        'grapho/euclidean_transform.cpp',
         'grapho/vars.cpp',
         'grapho/camera/camera.cpp',
         'grapho/camera/ray.cpp',

@@ -12,5 +12,5 @@ executable(
         directxmath_dep,
         platform_dep,
     ],
-    cpp_args: ['-Wno-defaulted-function-deleted'],
+    # cpp_args: ['-Wno-defaulted-function-deleted'],
 )

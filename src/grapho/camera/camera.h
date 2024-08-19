@@ -1,5 +1,4 @@
 #pragma once
-#include "../euclidean_transform.h"
 #include "ray.h"
 #include "viewport.h"
 #include <algorithm>
@@ -47,7 +46,8 @@ struct MouseState
 struct Camera
 {
   Projection Projection;
-  EuclideanTransform Transform;
+  DirectX::XMFLOAT4 Rotation = { 0, 0, 0, 1 };
+  DirectX::XMFLOAT3 Translation = { 0, 0, 0 };
 
   DirectX::XMFLOAT4X4 ViewMatrix;
   DirectX::XMFLOAT4X4 ProjectionMatrix;
