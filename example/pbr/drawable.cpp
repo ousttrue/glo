@@ -5,6 +5,7 @@
 #include "imageloader.h"
 #include <grapho/gl3/pbr.h>
 #include <grapho/gl3/vao.h>
+#include <grapho/gl3/ubo.h>
 #include <grapho/mesh.h>
 
 Drawable::Drawable()
@@ -20,7 +21,7 @@ void
 Drawable::Draw(uint32_t world_ubo_binding)
 {
   DirectX::XMStoreFloat4x4(
-    &Vars.model,
+    (DirectX::XMFLOAT4X4*)&Vars.model,
     DirectX::XMMatrixTranslation(Position.x, Position.y, Position.z));
   Vars.CalcNormalMatrix();
   Ubo->Upload(Vars);
@@ -54,7 +55,7 @@ loadTexture(const std::filesystem::path& path, grapho::ColorSpace colorspace)
 
 std::shared_ptr<Drawable>
 Drawable::Load(const std::filesystem::path& baseDir,
-               const DirectX::XMFLOAT3& position)
+               const grapho::XMFLOAT3& position)
 {
   auto drawable = std::make_shared<Drawable>();
   drawable->Shader = grapho::gl3::CreatePbrShader();

@@ -152,7 +152,8 @@ main(void)
       .Stride = sizeof(Vertex),
     },
   };
-  auto vao = grapho::gl3::Vao::Create(layouts, slots, ibo);
+  auto vao = grapho::gl3::Vao::Create(
+    grapho::make_span(layouts), grapho::make_span(slots), ibo);
 
   auto texture = grapho::gl3::Texture::Create({
     2,

@@ -63,7 +63,7 @@ class Gui
 public:
   Gui(GLFWwindow* window)
   {
-    m_camera.Transform.Translation = { 0, 5, 20 };
+    m_camera.Translation = { 0, 5, 20 };
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -106,8 +106,8 @@ public:
 
   void ShowCamera()
   {
-    ImGui::InputFloat3("T", &m_camera.Transform.Translation.x);
-    ImGui::InputFloat4("R", &m_camera.Transform.Rotation.x);
+    ImGui::InputFloat3("T", &m_camera.Translation.x);
+    ImGui::InputFloat4("R", &m_camera.Rotation.x);
     ImGui::InputFloat("Gaze", &m_camera.GazeDistance);
     ImGui::InputFloat("Yaw", &m_camera.TmpYaw);
     ImGui::InputFloat("Pitch", &m_camera.TmpPitch);

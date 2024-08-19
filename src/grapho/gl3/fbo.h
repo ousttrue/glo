@@ -37,9 +37,9 @@ struct FboHolder
   grapho::gl3::Fbo Fbo;
 
   template<typename T>
-    requires(sizeof(T) == sizeof(float) * 4)
   uint32_t Bind(int width, int height, const T& color)
   {
+    static_assert(sizeof(T) == sizeof(float) * 4, "Bind");
     if (!FboTexture || FboTexture->Width() != width ||
         FboTexture->Height() != height) {
       FboTexture = grapho::gl3::Texture::Create({

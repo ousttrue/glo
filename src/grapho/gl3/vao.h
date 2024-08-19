@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <memory>
 #include <optional>
-#include <span>
-#include <stdexcept>
 #include <stdint.h>
 #include <vector>
 
@@ -20,9 +18,6 @@ GLIndexTypeFromStride(uint32_t stride);
 std::optional<uint32_t>
 GLMode(grapho::DrawMode mode);
 
-template<typename T>
-concept ArrayType = std::is_array<T>::value == true;
-
 class Vbo
 {
   uint32_t vbo_ = 0;
@@ -33,7 +28,7 @@ public:
   ~Vbo();
   static std::shared_ptr<Vbo> Create(uint32_t size, const void* data);
 
-  template<ArrayType T>
+  template<typename T>
   static std::shared_ptr<Vbo> Create(const T& array)
   {
     return Create(sizeof(array), array);
@@ -92,13 +87,13 @@ struct Vao
   std::shared_ptr<Ibo> ibo_;
 
   Vao(uint32_t vao,
-      std::span<VertexLayout> layouts,
-      std::span<std::shared_ptr<Vbo>> slots,
+      SpanModoki<VertexLayout> layouts,
+      SpanModoki<std::shared_ptr<Vbo>> slots,
       const std::shared_ptr<Ibo>& ibo);
 
   ~Vao();
-  static std::shared_ptr<Vao> Create(std::span<VertexLayout> layouts,
-                                     std::span<std::shared_ptr<Vbo>> slots,
+  static std::shared_ptr<Vao> Create(SpanModoki<VertexLayout> layouts,
+                                     SpanModoki<std::shared_ptr<Vbo>> slots,
                                      const std::shared_ptr<Ibo>& ibo = {});
   static std::shared_ptr<Vao> Create(const std::shared_ptr<Mesh>& mesh);
   void Bind();

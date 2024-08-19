@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include <glm/glm.hpp>
+#include <grapho/vertexlayout.h>
 #include <memory>
 
 namespace grapho {
@@ -24,7 +25,7 @@ public:
   bool Initialize(const std::filesystem::path& dir);
 
   void Render(float deltaTime,
-              const DirectX::XMFLOAT4X4& projection,
-              const DirectX::XMFLOAT4X4& view,
-              const DirectX::XMFLOAT3& cameraPosition);
+              const grapho::XMFLOAT4X4& projection,
+              const grapho::XMFLOAT4X4& view,
+              const grapho::XMFLOAT3& cameraPosition);
 };

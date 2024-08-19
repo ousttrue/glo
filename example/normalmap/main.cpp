@@ -81,7 +81,7 @@ public:
 
   grapho::gl3::FboHolder m_fbo;
   grapho::camera::Camera m_camera;
-  DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
+  grapho::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   Scene m_scene;
 
   bool InitializeScene(const std::filesystem::path& dir)
@@ -108,8 +108,7 @@ public:
 
     // update camera from mouse
     ImGuiIO& io = ImGui::GetIO();
-    m_camera.Projection.SetSize(static_cast<int>(size.x),
-                                static_cast<int>(size.y));
+    m_camera.Projection.SetSize(size.x, size.y);
     if (isActive) {
       if (io.MouseDown[ImGuiMouseButton_Right]) {
         m_camera.YawPitch(static_cast<int>(io.MouseDelta.x),
@@ -129,7 +128,7 @@ public:
     m_scene.Render(io.DeltaTime,
                    m_camera.ProjectionMatrix,
                    m_camera.ViewMatrix,
-                   m_camera.Transform.Translation);
+                   m_camera.Translation);
 
     m_fbo.Unbind();
   }

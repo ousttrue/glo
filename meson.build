@@ -4,7 +4,7 @@ project(
     version: '1.10.1',
     license: 'MIT',
     # for msvc
-    default_options: ['cpp_std=c++latest'],
+    default_options: ['cpp_std=c++20'],
 )
 
 subdir('src')

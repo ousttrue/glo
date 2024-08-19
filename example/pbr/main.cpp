@@ -14,6 +14,7 @@
 #include <grapho/gl3/error_check.h>
 #include <grapho/gl3/glsl_type_name.h>
 #include <grapho/gl3/pbr.h>
+#include <grapho/gl3/ubo.h>
 #include <grapho/imgui/dockspace.h>
 #include <grapho/imgui/widgets.h>
 #include <iostream>
@@ -77,7 +78,7 @@ public:
 
   grapho::gl3::FboHolder m_fbo;
   grapho::camera::Camera m_camera;
-  DirectX::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
+  grapho::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   std::vector<std::shared_ptr<Drawable>> m_drawables;
   std::shared_ptr<grapho::gl3::PbrEnv> m_pbrEnv;
   std::shared_ptr<grapho::gl3::Ubo> m_worldUbo;
@@ -85,7 +86,7 @@ public:
 
   bool InitializeScene(const std::filesystem::path& dir)
   {
-    m_camera.Transform.Translation.z = 10;
+    m_camera.Translation.z = 10;
 
     //
     // PbrEnv

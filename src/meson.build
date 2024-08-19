@@ -1,3 +1,12 @@
+args = []
+
+cxx = meson.get_compiler('cpp')
+if cxx.get_id() == 'msvc'
+    args += [
+        '-D_USE_MATH_DEFINES',
+    ]
+endif
+
 gl_dep = dependency('gl')
 
 glew_dep = dependency(
@@ -23,10 +32,12 @@ grapho_lib = static_library(
     ],
     include_directories: grapho_inc,
     dependencies: [gl_dep, glew_dep, directxmath_dep],
+    cpp_args: args,
 )
 
 grapho_dep = declare_dependency(
     include_directories: grapho_inc,
     link_with: grapho_lib,
     dependencies: [glew_dep, directxmath_dep],
+    compile_args: args,
 )

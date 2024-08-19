@@ -1,14 +1,17 @@
 #pragma once
 #include "vertexlayout.h"
+#include <memory>
+#include <vector>
+#include <cmath>
 
 namespace grapho {
 namespace mesh {
 
 struct Vertex
 {
-  DirectX::XMFLOAT3 Position;
-  DirectX::XMFLOAT3 Normal;
-  DirectX::XMFLOAT2 Uv;
+  XMFLOAT3 Position;
+  XMFLOAT3 Normal;
+  XMFLOAT2 Uv;
 
   static VertexLayout Layouts[3];
 };
@@ -49,9 +52,9 @@ inline VertexLayout Vertex::Layouts[3] = {
 inline std::shared_ptr<Mesh>
 Sphere()
 {
-  std::vector<DirectX::XMFLOAT3> positions;
-  std::vector<DirectX::XMFLOAT2> uv;
-  std::vector<DirectX::XMFLOAT3> normals;
+  std::vector<XMFLOAT3> positions;
+  std::vector<XMFLOAT2> uv;
+  std::vector<XMFLOAT3> normals;
   const unsigned int X_SEGMENTS = 64;
   const unsigned int Y_SEGMENTS = 64;
   const float PI = 3.14159265359f;
@@ -161,8 +164,8 @@ Cube(float s = 1.0f)
 
 struct QuadVertex
 {
-  DirectX::XMFLOAT3 Position;
-  DirectX::XMFLOAT2 Uv;
+  XMFLOAT3 Position;
+  XMFLOAT2 Uv;
 
   static VertexLayout Layouts[2];
 };

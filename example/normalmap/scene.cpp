@@ -114,9 +114,9 @@ void main()
 
 void
 Scene::Render(float deltaTime,
-              const DirectX::XMFLOAT4X4& projection,
-              const DirectX::XMFLOAT4X4& view,
-              const DirectX::XMFLOAT3& cameraPosition)
+              const grapho::XMFLOAT4X4& projection,
+              const grapho::XMFLOAT4X4& view,
+              const grapho::XMFLOAT3& cameraPosition)
 {
   glEnable(GL_DEPTH_TEST);
   Shader->Use();

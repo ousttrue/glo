@@ -1,7 +1,4 @@
 #pragma once
-#include "../mesh.h"
-#include "error_check.h"
-#include "fbo.h"
 #include "vao.h"
 #include <assert.h>
 #include <functional>
@@ -18,16 +15,16 @@ class CubeRenderer
   // pbr: set up projection and view matrices for capturing data onto the 6
   // cubemap face directions
   // ---------------------------------------------------------------------------
-  DirectX::XMFLOAT4X4 m_captureProjection;
-  DirectX::XMFLOAT4X4 m_captureViews[6];
+  XMFLOAT4X4 m_captureProjection;
+  XMFLOAT4X4 m_captureViews[6];
 
 public:
   CubeRenderer();
 
   ~CubeRenderer() {}
 
-  using CallbackFunc = std::function<void(const DirectX::XMFLOAT4X4& projection,
-                                          const DirectX::XMFLOAT4X4& view)>;
+  using CallbackFunc =
+    std::function<void(const XMFLOAT4X4& projection, const XMFLOAT4X4& view)>;
   void Render(int size,
               uint32_t dst,
               const CallbackFunc& callback,

@@ -1,17 +1,20 @@
 #pragma once
-#include "../vertexlayout.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <dxgi.h>
-#include <expected>
+#include <functional>
+#include <optional>
 #include <string_view>
 #include <winrt/base.h>
 
 namespace grapho {
 namespace dx11 {
 
-inline std::expected<winrt::com_ptr<ID3DBlob>, std::string>
-CompileShader(std::string_view src, const char* entry, const char* target)
+inline std::optional<winrt::com_ptr<ID3DBlob>>
+CompileShader(std::string_view src,
+              const char* entry,
+              const char* target,
+              const std::function<void(const char*)>& logger)
 {
   UINT flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #if defined(DEBUG) || defined(_DEBUG)
@@ -32,9 +35,16 @@ CompileShader(std::string_view src, const char* entry, const char* target)
                        error_blob.put());
   if (FAILED(hr)) {
     if (error_blob) {
-      return std::unexpected{ (const char*)error_blob->GetBufferPointer() };
+      if (logger) {
+        logger((const char*)error_blob->GetBufferPointer());
+      }
+      return {};
     }
-    return std::unexpected{ "D3DCompile" };
+
+    if (logger) {
+      logger("D3DCompile");
+    }
+    return {};
   }
   return vs_blob_ptr;
 }
@@ -56,11 +66,12 @@ struct Shader
   {
     auto ptr = std::make_shared<Shader>();
 
-    auto vs_compiled =
-      grapho::dx11::CompileShader(vs_src, vs_entry, vs_version);
+    std::string error;
+    auto vs_compiled = grapho::dx11::CompileShader(
+      vs_src, vs_entry, vs_version, [&error](const char* msg) { error = msg; });
     if (!vs_compiled) {
       // std::cout << vs_compiled.error() << std::endl;
-      return { {}, {}, vs_compiled.error() };
+      return { {}, {}, error };
     }
     auto hr = device->CreateVertexShader((*vs_compiled)->GetBufferPointer(),
                                          (*vs_compiled)->GetBufferSize(),
@@ -70,11 +81,11 @@ struct Shader
       return { {}, {}, "CreateVertexShader" };
     }
 
-    auto ps_compiled =
-      grapho::dx11::CompileShader(ps_src, ps_entry, ps_version);
+    auto ps_compiled = grapho::dx11::CompileShader(
+      ps_src, ps_entry, ps_version, [&error](const char* msg) { error = msg; });
     if (!ps_compiled) {
       // std::cout << ps_compiled.error() << std::endl;
-      return { {}, {}, ps_compiled.error() };
+      return { {}, {}, error };
     }
     hr = device->CreatePixelShader((*ps_compiled)->GetBufferPointer(),
                                    (*ps_compiled)->GetBufferSize(),

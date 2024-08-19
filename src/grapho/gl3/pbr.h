@@ -1,10 +1,10 @@
 #pragma once
+#include "../mesh.h"
 #include "cubemap.h"
 #include "cuberenderer.h"
 #include "error_check.h"
 #include "fbo.h"
 #include "shader.h"
-#include "ubo.h"
 #include "vao.h"
 #include <assert.h>
 
@@ -205,7 +205,7 @@ struct PbrEnv
     auto vbo =
       grapho::gl3::Vbo::Create(cube->Vertices.Size(), cube->Vertices.Data());
     std::shared_ptr<grapho::gl3::Vbo> slots[]{ vbo };
-    Cube = grapho::gl3::Vao::Create(cube->Layouts, slots);
+    Cube = grapho::gl3::Vao::Create(make_span(cube->Layouts), make_span(slots));
     CubeDrawCount = cube->Vertices.Count;
     assert(!TryGetError());
 
@@ -228,8 +228,7 @@ struct PbrEnv
     BrdfLUTTexture->Activate(2);
   }
 
-  void DrawSkybox(const DirectX::XMFLOAT4X4& projection,
-                  const DirectX::XMFLOAT4X4& view)
+  void DrawSkybox(const XMFLOAT4X4& projection, const XMFLOAT4X4& view)
   {
     glEnable(GL_DEPTH_TEST);
     // set depth function to less than AND equal for skybox depth trick.

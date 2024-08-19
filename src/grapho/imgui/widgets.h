@@ -6,10 +6,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <optional>
-#include <span>
 #include <string>
-#include <vector>
-#include <list>
 
 namespace grapho {
 namespace imgui {
@@ -234,7 +231,7 @@ template<typename T>
 static bool
 EnumCombo(const char* label,
           T* value,
-          std::span<const std::tuple<T, const char*>> span)
+          SpanModoki<const std::tuple<T, const char*>> span)
 {
   using TUPLE = std::tuple<T, const char*>;
   int i = 0;

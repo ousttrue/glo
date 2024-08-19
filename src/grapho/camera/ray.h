@@ -1,3 +1,4 @@
+#include "../vertexlayout.h"
 #include <cmath>
 
 namespace grapho {
@@ -5,8 +6,8 @@ namespace camera {
 
 struct Ray
 {
-  DirectX::XMFLOAT3 Origin;
-  DirectX::XMFLOAT3 Direction;
+  XMFLOAT3 Origin;
+  XMFLOAT3 Direction;
 
   bool IsValid() const
   {
@@ -22,7 +23,7 @@ struct Ray
     return true;
   }
 
-  Ray Transform(const DirectX::XMMATRIX& m) const;
+  // Ray Transform(const DirectX::XMMATRIX& m) const;
 };
 
 } // namespace

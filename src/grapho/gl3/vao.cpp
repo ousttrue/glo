@@ -1,4 +1,5 @@
 #include <GL/glew.h>
+#include <stdexcept>
 
 #include "vao.h"
 
@@ -145,8 +146,8 @@ Ibo::Unbind()
 }
 
 Vao::Vao(uint32_t vao,
-         std::span<VertexLayout> layouts,
-         std::span<std::shared_ptr<Vbo>> slots,
+         SpanModoki<VertexLayout> layouts,
+         SpanModoki<std::shared_ptr<Vbo>> slots,
          const std::shared_ptr<Ibo>& ibo)
   : vao_(vao)
   , layouts_(layouts.begin(), layouts.end())
@@ -186,8 +187,8 @@ Vao::~Vao()
 }
 
 std::shared_ptr<Vao>
-Vao::Create(std::span<VertexLayout> layouts,
-            std::span<std::shared_ptr<Vbo>> slots,
+Vao::Create(SpanModoki<VertexLayout> layouts,
+            SpanModoki<std::shared_ptr<Vbo>> slots,
             const std::shared_ptr<Ibo>& ibo)
 {
   GLuint vao;
@@ -207,7 +208,7 @@ Vao::Create(const std::shared_ptr<Mesh>& mesh)
                       mesh->Indices.Data(),
                       *GLIndexTypeFromStride(mesh->Indices.Stride()));
   }
-  return Create(mesh->Layouts, slots, ibo);
+  return Create(make_span(mesh->Layouts), make_span(slots), ibo);
 }
 void
 Vao::Bind()

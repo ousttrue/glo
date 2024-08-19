@@ -1,10 +1,6 @@
 #pragma once
 #include "ray.h"
 #include "viewport.h"
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <numbers>
 #include <optional>
 
 namespace grapho {
@@ -19,7 +15,7 @@ struct Projection
 
   Projection();
 
-  void Update(DirectX::XMFLOAT4X4* projection);
+  void Update(XMFLOAT4X4* projection);
 
   void SetViewport(const struct Viewport& viewport) { Viewport = viewport; }
 
@@ -46,11 +42,11 @@ struct MouseState
 struct Camera
 {
   Projection Projection;
-  DirectX::XMFLOAT4 Rotation = { 0, 0, 0, 1 };
-  DirectX::XMFLOAT3 Translation = { 0, 0, 0 };
+  XMFLOAT4 Rotation = { 0, 0, 0, 1 };
+  XMFLOAT3 Translation = { 0, 0, 0 };
 
-  DirectX::XMFLOAT4X4 ViewMatrix;
-  DirectX::XMFLOAT4X4 ProjectionMatrix;
+  XMFLOAT4X4 ViewMatrix;
+  XMFLOAT4X4 ProjectionMatrix;
 
   float GazeDistance = 5;
   float TmpYaw;
@@ -75,9 +71,9 @@ struct Camera
 
   void Update();
 
-  DirectX::XMFLOAT4X4 ViewProjection() const;
+  XMFLOAT4X4 ViewProjection() const;
 
-  void Fit(const DirectX::XMFLOAT3& min, const DirectX::XMFLOAT3& max);
+  void Fit(const XMFLOAT3& min, const XMFLOAT3& max);
 
   // 0-> X
   // |

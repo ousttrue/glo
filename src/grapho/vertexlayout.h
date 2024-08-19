@@ -1,10 +1,44 @@
 #pragma once
-#include <cmath>
-#include <memory>
 #include <string>
 #include <vector>
 
 namespace grapho {
+
+struct XMFLOAT2
+{
+  float x;
+  float y;
+};
+
+struct XMFLOAT3
+{
+  float x;
+  float y;
+  float z;
+};
+
+struct XMFLOAT4
+{
+  float x;
+  float y;
+  float z;
+  float w;
+};
+
+struct XMFLOAT4X4
+{
+  float m11, m12, m13, m14;
+  float m21, m22, m23, m24;
+  float m31, m32, m33, m34;
+  float m41, m42, m43, m44;
+};
+
+struct XMFLOAT3X3
+{
+  float m11, m12, m13, _m14;
+  float m21, m22, m23, _m24;
+  float m31, m32, m33, _m34;
+};
 
 enum class ValueType
 {
@@ -75,5 +109,49 @@ struct Mesh
     return Indices.Size() ? Indices.Count : Vertices.Count;
   }
 };
+
+template<typename T>
+struct SpanModoki
+{
+  T* ptr;
+  size_t count;
+  size_t size() const { return count; }
+  T& operator[](size_t i) { return ptr[i]; }
+  const T& operator[](size_t i) const { return ptr[i]; }
+  T* begin() { return ptr; }
+  T* end() { return ptr + count; }
+  const T* begin() const { return ptr; }
+  const T* end() const { return ptr + count; }
+};
+
+template<typename S, size_t N>
+inline SpanModoki<S>
+make_span(const S (&values)[N])
+{
+  return SpanModoki<S>{
+    (S*)values,
+    N,
+  };
+}
+
+template<typename S, size_t N>
+inline SpanModoki<S>
+make_span(const std::array<S, N>& values)
+{
+  return SpanModoki<S>{
+    values.data(),
+    values.size(),
+  };
+}
+
+template<typename S>
+inline SpanModoki<S>
+make_span(const std::vector<S>& values)
+{
+  return SpanModoki<S>{
+    (S*)values.data(),
+    values.size(),
+  };
+}
 
 }
