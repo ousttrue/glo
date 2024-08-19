@@ -7,6 +7,7 @@
 #include <imgui_internal.h>
 #include <optional>
 #include <string>
+#include <list>
 
 namespace grapho {
 namespace imgui {
