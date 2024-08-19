@@ -1,5 +1,4 @@
 #pragma once
-#include "dxmath_stub.h"
 
 namespace grapho {
 

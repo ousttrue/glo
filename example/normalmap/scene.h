@@ -1,5 +1,4 @@
 #pragma once
-#include <grapho/dxmath_stub.h>
 #include <filesystem>
 #include <glm/glm.hpp>
 #include <memory>

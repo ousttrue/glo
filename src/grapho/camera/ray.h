@@ -1,4 +1,3 @@
-#include "../dxmath_stub.h"
 #include <cmath>
 
 namespace grapho {
