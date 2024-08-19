@@ -4,8 +4,8 @@
 #include "drawable.h"
 #include "imageloader.h"
 #include <grapho/gl3/pbr.h>
-#include <grapho/gl3/vao.h>
 #include <grapho/gl3/ubo.h>
+#include <grapho/gl3/vao.h>
 #include <grapho/mesh.h>
 
 Drawable::Drawable()
@@ -39,7 +39,7 @@ Drawable::Draw(uint32_t world_ubo_binding)
 // utility function for loading a 2D texture from file
 // ---------------------------------------------------
 static std::shared_ptr<grapho::gl3::Texture>
-loadTexture(const std::filesystem::path& path, grapho::ColorSpace colorspace)
+loadTexture(const std::string& path, grapho::ColorSpace colorspace)
 {
   ImageLoader loader;
   if (!loader.Load(path)) {
@@ -54,8 +54,7 @@ loadTexture(const std::filesystem::path& path, grapho::ColorSpace colorspace)
 }
 
 std::shared_ptr<Drawable>
-Drawable::Load(const std::filesystem::path& baseDir,
-               const grapho::XMFLOAT3& position)
+Drawable::Load(const std::string& baseDir, const grapho::XMFLOAT3& position)
 {
   auto drawable = std::make_shared<Drawable>();
   drawable->Shader = grapho::gl3::CreatePbrShader();
@@ -64,11 +63,16 @@ Drawable::Load(const std::filesystem::path& baseDir,
   }
   drawable->Position = position;
   drawable->Textures = {
-    loadTexture(baseDir / "albedo.png", grapho::ColorSpace::Linear),
-    loadTexture(baseDir / "normal.png", grapho::ColorSpace::Linear),
-    loadTexture(baseDir / "metallic.png", grapho::ColorSpace::Linear),
-    loadTexture(baseDir / "roughness.png", grapho::ColorSpace::Linear),
-    loadTexture(baseDir / "ao.png", grapho::ColorSpace::Linear),
+    loadTexture(grapho::join_path(baseDir, "albedo.png"),
+                grapho::ColorSpace::Linear),
+    loadTexture(grapho::join_path(baseDir, "normal.png"),
+                grapho::ColorSpace::Linear),
+    loadTexture(grapho::join_path(baseDir, "metallic.png"),
+                grapho::ColorSpace::Linear),
+    loadTexture(grapho::join_path(baseDir, "roughness.png"),
+                grapho::ColorSpace::Linear),
+    loadTexture(grapho::join_path(baseDir, "ao.png"),
+                grapho::ColorSpace::Linear),
   };
   return drawable;
 }

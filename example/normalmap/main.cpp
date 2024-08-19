@@ -9,8 +9,6 @@
 #include "normal_mapping_vs.h"
 #include "scene.h"
 #include <GL/glew.h>
-#include <chrono>
-#include <filesystem>
 #include <functional>
 #include <grapho/camera/camera.h>
 #include <grapho/gl3/fbo.h>
@@ -20,7 +18,6 @@
 #include <grapho/imgui/widgets.h>
 #include <grapho/shadersnippet.h>
 #include <iostream>
-#include <memory>
 
 // settings
 auto SCR_WIDTH = 800;
@@ -84,7 +81,7 @@ public:
   grapho::XMFLOAT4 m_clearColor{ 0.1f, 0.1f, 0.1f, 1 };
   Scene m_scene;
 
-  bool InitializeScene(const std::filesystem::path& dir)
+  bool InitializeScene(const std::string& dir)
   {
     //
     // scene
@@ -162,7 +159,7 @@ main(int argc, char** argv)
               << std::endl;
     return 1;
   }
-  std::filesystem::path dir = argv[1];
+  std::string dir = argv[1];
 
   GlfwPlatform platform;
   auto window = platform.CreateWindow("LearnOpenGL", SCR_WIDTH, SCR_HEIGHT);

@@ -3,7 +3,6 @@
 #include <GL/glew.h>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <filesystem>
 #include <grapho/camera/camera.h>
 #include <grapho/gl3/error_check.h>
 #include <grapho/gl3/fbo.h>

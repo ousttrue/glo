@@ -9,7 +9,7 @@
 #include <iostream>
 
 bool
-Scene::Initialize(const std::filesystem::path& dir)
+Scene::Initialize(const std::string& dir)
 {
   grapho::VertexAndFragment snippet;
   snippet.Attribute(grapho::ShaderTypes::vec3, "aPos");
@@ -98,10 +98,10 @@ void main()
 
   // load textures
   // -------------
-  DiffuseMap =
-    loadTexture((dir / "resources/textures/brickwall.jpg").string().c_str());
+  DiffuseMap = loadTexture(
+    grapho::join_path(dir, "resources/textures/brickwall.jpg").c_str());
   NormalMap = loadTexture(
-    (dir / "resources/textures/brickwall_normal.jpg").string().c_str());
+    grapho::join_path(dir, "resources/textures/brickwall_normal.jpg").c_str());
 
   // shader configuration
   // --------------------

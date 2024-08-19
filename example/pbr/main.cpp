@@ -84,7 +84,7 @@ public:
   std::shared_ptr<grapho::gl3::Ubo> m_worldUbo;
   grapho::WorldVars m_world;
 
-  bool InitializeScene(const std::filesystem::path& dir)
+  bool InitializeScene(const std::string& dir)
   {
     m_camera.Translation.z = 10;
 
@@ -92,7 +92,8 @@ public:
     // PbrEnv
     //
     ImageLoader hdr;
-    if (!hdr.LoadHdr(dir / ("resources/textures/hdr/newport_loft.hdr"))) {
+    if (!hdr.LoadHdr(grapho::join_path(
+          dir, ("resources/textures/hdr/newport_loft.hdr")))) {
       std::cout << "Failed to load HDR image." << std::endl;
       return false;
     }
@@ -123,23 +124,28 @@ public:
     m_worldUbo = grapho::gl3::Ubo::Create(sizeof(m_world), nullptr);
 
     if (auto drawable = Drawable::Load(
-          dir / "resources/textures/pbr/rusted_iron", { -4.0, 0.0, 2.0 })) {
+          grapho::join_path(dir, "resources/textures/pbr/rusted_iron"),
+          { -4.0, 0.0, 2.0 })) {
       m_drawables.push_back(drawable);
     }
-    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/gold",
-                                       { -2.0, 0.0, 2.0 })) {
+    if (auto drawable =
+          Drawable::Load(grapho::join_path(dir, "resources/textures/pbr/gold"),
+                         { -2.0, 0.0, 2.0 })) {
       m_drawables.push_back(drawable);
     }
-    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/grass",
-                                       { -0.0, 0.0, 2.0 })) {
+    if (auto drawable =
+          Drawable::Load(grapho::join_path(dir, "resources/textures/pbr/grass"),
+                         { -0.0, 0.0, 2.0 })) {
       m_drawables.push_back(drawable);
     }
-    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/plastic",
-                                       { 2.0, 0.0, 2.0 })) {
+    if (auto drawable = Drawable::Load(
+          grapho::join_path(dir, "resources/textures/pbr/plastic"),
+          { 2.0, 0.0, 2.0 })) {
       m_drawables.push_back(drawable);
     }
-    if (auto drawable = Drawable::Load(dir / "resources/textures/pbr/wall",
-                                       { 4.0, 0.0, 2.0 })) {
+    if (auto drawable =
+          Drawable::Load(grapho::join_path(dir, "resources/textures/pbr/wall"),
+                         { 4.0, 0.0, 2.0 })) {
       m_drawables.push_back(drawable);
     }
 
@@ -297,7 +303,7 @@ main(int argc, char** argv)
               << std::endl;
     return 1;
   }
-  std::filesystem::path dir(argv[1]);
+  std::string dir(argv[1]);
 
   GlfwPlatform platform;
   auto window = platform.CreateWindow("LearnOpenGL", SCR_WIDTH, SCR_HEIGHT);

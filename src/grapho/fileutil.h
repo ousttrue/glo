@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <fstream>
 #include <stdint.h>
 #include <vector>
@@ -7,7 +6,7 @@
 namespace grapho {
 
 inline std::vector<uint8_t>
-ReadPath(const std::filesystem::path& path)
+ReadPath(const std::string& path)
 {
   std::ifstream ifs(path, std::ios::binary | std::ios::ate);
   if (!ifs) {
@@ -22,7 +21,7 @@ ReadPath(const std::filesystem::path& path)
 }
 
 inline std::u8string
-StringFromPath(const std::filesystem::path& path)
+StringFromPath(const std::string& path)
 {
   auto bytes = ReadPath(path);
   if (bytes.empty()) {
@@ -30,6 +29,17 @@ StringFromPath(const std::filesystem::path& path)
   }
   return { (const char8_t*)bytes.data(),
            (const char8_t*)bytes.data() + bytes.size() };
+}
+
+inline std::string
+join_path(const std::string& dir, const std::string& file)
+{
+  auto dst = dir;
+  if (dir.ends_with("/") || file.starts_with("/")) {
+    return dir + file;
+  } else {
+    return dir + "/" + file;
+  }
 }
 
 }

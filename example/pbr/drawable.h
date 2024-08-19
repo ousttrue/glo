@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <grapho/vars.h>
 #include <grapho/vertexlayout.h>
 #include <memory>
@@ -29,6 +28,6 @@ struct Drawable
   ~Drawable() {}
   void Draw(uint32_t world_ubo_binding);
 
-  static std::shared_ptr<Drawable> Load(const std::filesystem::path& baseDir,
+  static std::shared_ptr<Drawable> Load(const std::string& baseDir,
                                         const grapho::XMFLOAT3& position);
 };

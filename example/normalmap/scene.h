@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem>
 #include <glm/glm.hpp>
 #include <grapho/vertexlayout.h>
 #include <memory>
@@ -22,7 +21,7 @@ class Scene
   glm::vec3 LightPos{ 0.5f, 1.0f, 0.3f };
 
 public:
-  bool Initialize(const std::filesystem::path& dir);
+  bool Initialize(const std::string& dir);
 
   void Render(float deltaTime,
               const grapho::XMFLOAT4X4& projection,

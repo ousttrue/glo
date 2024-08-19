@@ -1,7 +1,7 @@
 #pragma once
-#include <filesystem>
 #include <grapho/image.h>
 #include <stdint.h>
+#include <string>
 
 struct ImageLoader
 {
@@ -12,6 +12,6 @@ struct ImageLoader
   ImageLoader() {}
   ~ImageLoader();
 
-  bool Load(const std::filesystem::path& path);
-  bool LoadHdr(const std::filesystem::path& path);
+  bool Load(const std::string& path);
+  bool LoadHdr(const std::string& path);
 };

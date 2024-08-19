@@ -11,10 +11,10 @@ ImageLoader::~ImageLoader()
 }
 
 bool
-ImageLoader::Load(const std::filesystem::path& path)
+ImageLoader::Load(const std::string& path)
 {
-  Image.Pixels = stbi_load(
-    path.string().c_str(), &Image.Width, &Image.Height, &nrComponents, 0);
+  Image.Pixels =
+    stbi_load(path.c_str(), &Image.Width, &Image.Height, &nrComponents, 0);
   if (!Image.Pixels) {
     std::cout << "Texture failed to load at path: " << path << std::endl;
     return false;
@@ -40,12 +40,12 @@ ImageLoader::Load(const std::filesystem::path& path)
 }
 
 bool
-ImageLoader::LoadHdr(const std::filesystem::path& path)
+ImageLoader::LoadHdr(const std::string& path)
 {
   stbi_set_flip_vertically_on_load(true);
   // int width, height, nrComponents;
   Image.Pixels = (uint8_t*)stbi_loadf(
-    path.string().c_str(), &Image.Width, &Image.Height, &nrComponents, 0);
+    path.c_str(), &Image.Width, &Image.Height, &nrComponents, 0);
   if (!Image.Pixels) {
     std::cout << "Texture failed to load at path: " << path << std::endl;
     return false;

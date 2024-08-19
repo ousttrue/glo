@@ -200,9 +200,9 @@ public:
   }
 
   static std::shared_ptr<ShaderProgram> CreateFromPath(
-    const std::filesystem::path& vs_path,
-    const std::filesystem::path& fs_path,
-    const std::filesystem::path& gs_path = {})
+    const std::string& vs_path,
+    const std::string& fs_path,
+    const std::string& gs_path = {})
   {
     auto vs = grapho::StringFromPath(vs_path);
     auto fs = grapho::StringFromPath(fs_path);
