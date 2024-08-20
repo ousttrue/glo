@@ -18,7 +18,7 @@ pub const Using = struct {
     gl: bool = true,
     // glfw: bool = false,
     // glew: bool = false,
-    dx: bool = true,
+    // dx: bool = true,
     stb: bool = false,
     glm: bool = false,
 };
@@ -142,13 +142,6 @@ pub fn inject(
         inject_glew(b, exe);
         inject_glfw(b, exe);
     }
-    if (using.dx) {
-        for (WINDOWS_KITS_INCLUDES) |include| {
-            exe.addIncludePath(.{
-                .cwd_relative = include,
-            });
-        }
-    }
 
     if (using.directxmath) {
         inject_directxmath(b, exe);
@@ -171,7 +164,7 @@ pub fn inject(
     b.getInstallStep().dependOn(&install.step);
     // run
     const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
+    run_cmd.step.dependOn(&install.step);
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }

@@ -21,7 +21,7 @@ const Example = struct {
 
 const EXAMPLES = [_]Example{
     .{
-        .name = "gl3example",
+        .name = "gl3",
         .files = &.{
             "example/gl3/main.cpp",
         },
@@ -64,16 +64,16 @@ const EXAMPLES = [_]Example{
             .glm = true,
         },
     },
-    .{
-        .name = "dx11",
-        .files = &.{
-            "example/dx11/main.cpp",
-        },
-        .using = .{
-            .directxmath = false,
-            .dx = true,
-        },
-    },
+    // .{
+    //     .name = "dx11",
+    //     .files = &.{
+    //         "example/dx11/main.cpp",
+    //     },
+    //     .using = .{
+    //         .directxmath = false,
+    //         .dx = true,
+    //     },
+    // },
 };
 
 pub fn build(b: *std.Build) void {
@@ -81,12 +81,6 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     for (EXAMPLES) |example| {
-        if (example.using.dx) {
-            // if (target.result.os.tag != .windows) {
-            continue;
-            // }
-        }
-
         const exe = b.addExecutable(.{
             .name = example.name,
             .target = target,
