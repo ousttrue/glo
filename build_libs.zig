@@ -1,20 +1,44 @@
 const std = @import("std");
 
+pub const OwnerType = enum {
+    dependency,
+    build,
+};
+pub const Owner = union(OwnerType) {
+    dependency: *std.Build.Dependency,
+    build: *std.Build,
+};
+
 pub const CLib = struct {
-    dep: *std.Build.Dependency,
+    owner: Owner,
     lib: ?*std.Build.Step.Compile = null,
     includes: []const []const u8 = &.{},
     flags: []const []const u8 = &.{},
 
+    pub fn make_headeronly(dep: *std.Build.Dependency, includes: []const []const u8) CLib {
+        return .{
+            .owner = .{ .dependency = dep },
+            .includes = includes,
+        };
+    }
+
     pub fn injectIncludes(self: @This(), compile: *std.Build.Step.Compile) void {
         for (self.includes) |include| {
-            compile.addIncludePath(self.dep.path(include));
+            switch (self.owner) {
+                .dependency => |dep| {
+                    compile.addIncludePath(dep.path(include));
+                },
+                .build => |b| {
+                    compile.addIncludePath(b.path(include));
+                },
+            }
         }
     }
 };
 
 pub fn make_glfw(
     b: *std.Build,
+    glfw_dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) CLib {
@@ -45,7 +69,6 @@ pub fn make_glfw(
         "wgl_context.c",
     };
 
-    const glfw_dep = b.dependency("glfw", .{});
     var lib = b.addStaticLibrary(.{
         .name = "glfw",
         .target = target,
@@ -59,7 +82,7 @@ pub fn make_glfw(
         .flags = &.{"-D_GLFW_WIN32"},
     });
     return .{
-        .dep = glfw_dep,
+        .owner = .{ .dependency = glfw_dep },
         .lib = lib,
         .includes = &.{
             "include",
@@ -69,10 +92,10 @@ pub fn make_glfw(
 
 pub fn make_glew(
     b: *std.Build,
+    glew_dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) CLib {
-    const glew_dep = b.dependency("glew", .{});
     const GLEW_FILES = [_][]const u8{
         "glew.c",
     };
@@ -89,14 +112,19 @@ pub fn make_glew(
         .flags = &.{"-DGLEW_STATIC"},
     });
     return .{
-        .dep = glew_dep,
+        .owner = .{ .dependency = glew_dep },
         .lib = lib,
         .includes = &.{"include"},
         .flags = &.{"-DGLEW_STATIC"},
     };
 }
 
-pub fn inject_imgui(b: *std.Build, exe: *std.Build.Step.Compile) void {
+pub fn make_imgui(
+    b: *std.Build,
+    imgui_dep: *std.Build.Dependency,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) CLib {
     const IMGUI_FILES = [_][]const u8{
         "imgui.cpp",
         "imgui_draw.cpp",
@@ -107,35 +135,74 @@ pub fn inject_imgui(b: *std.Build, exe: *std.Build.Step.Compile) void {
         "backends/imgui_impl_glfw.cpp",
         "backends/imgui_impl_opengl3.cpp",
     };
-    const imgui_dep = b.dependency("imgui", .{});
-    exe.addIncludePath(imgui_dep.path(""));
-    exe.addIncludePath(imgui_dep.path("backends"));
-    exe.addCSourceFiles(.{
+    // const imgui_dep = b.dependency("imgui", .{});
+    var lib = b.addStaticLibrary(.{
+        .name = "imgui",
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.linkLibCpp();
+    lib.addIncludePath(imgui_dep.path(""));
+    lib.addIncludePath(imgui_dep.path("backends"));
+    lib.addCSourceFiles(.{
         .root = imgui_dep.path(""),
         .files = &IMGUI_FILES,
     });
-}
-
-pub fn make_directxmath(b: *std.Build) CLib {
-    const directxmath_dep = b.dependency("directxmath", .{});
     return .{
-        .dep = directxmath_dep,
-        .includes = &.{"Inc"},
+        .owner = .{ .dependency = imgui_dep },
+        .lib = lib,
+        .includes = &.{
+            "", "backends",
+        },
     };
 }
 
-pub fn make_stb(b: *std.Build) CLib {
-    const stb_dep = b.dependency("stb", .{});
-    return .{
-        .dep = stb_dep,
-        .includes = &.{""},
+pub fn make_grapho(
+    b: *std.Build,
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+) CLib {
+    const CFLAGS = [_][]const u8{
+        "-std=c++20",
+        "-D_USE_MATH_DEFINES=1",
+        "-DUNICODE",
+        "-D_UNICODE",
+        //
+        "-DGLEW_STATIC",
     };
-}
 
-pub fn make_glm(b: *std.Build) CLib {
-    const glm_dep = b.dependency("glm", .{});
+    var lib = b.addStaticLibrary(.{
+        .name = "grapho",
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.linkLibCpp();
+    lib.addCSourceFiles(.{
+        .files = &.{
+            "src/grapho/vars.cpp",
+            "src/grapho/camera/camera.cpp",
+            "src/grapho/camera/ray.cpp",
+        },
+        .flags = &CFLAGS,
+    });
+    lib.addIncludePath(b.path("src"));
+    lib.addIncludePath(b.path("example/glfw_platform"));
+    lib.addCSourceFiles(.{
+        .files = &.{
+            "src/grapho/gl3/vao.cpp",
+            "src/grapho/gl3/texture.cpp",
+            "src/grapho/gl3/shader.cpp",
+            "src/grapho/gl3/cuberenderer.cpp",
+            "src/grapho/gl3/fbo.cpp",
+            "src/grapho/gl3/error_check.cpp",
+            "example/glfw_platform/glfw_platform.cpp",
+        },
+        .flags = &CFLAGS,
+    });
     return .{
-        .dep = glm_dep,
-        .includes = &.{""},
+        .owner = .{ .build = b },
+        .lib = lib,
+        .includes = &.{ "src", "example/glfw_platform" },
+        .flags = &CFLAGS,
     };
 }

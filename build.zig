@@ -1,23 +1,14 @@
 const std = @import("std");
 const build_libs = @import("build_libs.zig");
-
-const CFLAGS = [_][]const u8{
-    "-std=c++20",
-    "-D_USE_MATH_DEFINES=1",
-    "-DUNICODE",
-    "-D_UNICODE",
-    //
-    "-DGLEW_STATIC",
-};
+pub const CLib = build_libs.CLib;
+pub const make_glfw = build_libs.make_glfw;
+pub const make_glew = build_libs.make_glew;
+pub const make_imgui = build_libs.make_imgui;
+pub const make_grapho = build_libs.make_grapho;
 
 pub const Using = struct {
-    // grapho
     directxmath: bool = true,
     imgui: bool = true,
-    gl: bool = true,
-    // glfw: bool = false,
-    // glew: bool = false,
-    // dx: bool = true,
     stb: bool = false,
     glm: bool = false,
 };
@@ -39,18 +30,11 @@ const EXAMPLES = [_]Example{
         .files = &.{
             "example/gl3/main.cpp",
         },
-        .using = .{
-            .gl = true,
-        },
     },
     .{
         .name = "camera",
         .files = &.{
-            "example/glfw_platform/glfw_platform.cpp",
             "example/camera/main.cpp",
-        },
-        .using = .{
-            .gl = true,
         },
     },
     .{
@@ -61,7 +45,6 @@ const EXAMPLES = [_]Example{
             "example/pbr/main.cpp",
         },
         .using = .{
-            .gl = true,
             .stb = true,
         },
     },
@@ -73,7 +56,6 @@ const EXAMPLES = [_]Example{
             "example/normalmap/main.cpp",
         },
         .using = .{
-            .gl = true,
             .stb = true,
             .glm = true,
         },
@@ -94,13 +76,25 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const glew = build_libs.make_glew(b, target, optimize);
-    const glfw = build_libs.make_glfw(b, target, optimize);
+    const glew = make_glew(b, b.dependency("glew", .{}), target, optimize);
+    const glfw = make_glfw(b, b.dependency("glfw", .{}), target, optimize);
+    const imgui = make_imgui(b, b.dependency("imgui", .{}), target, optimize);
+    const grapho = make_grapho(b, target, optimize);
 
     // headeronly
-    const directxmath = build_libs.make_directxmath(b);
-    const stb = build_libs.make_stb(b);
-    const glm = build_libs.make_glm(b);
+    const directxmath = CLib.make_headeronly(b.dependency("directxmath", .{}), &.{"Inc"});
+    const stb = CLib.make_headeronly(b.dependency("stb", .{}), &.{""});
+    const glm = CLib.make_headeronly(b.dependency("glm", .{}), &.{""});
+
+    // inject libs
+    if (grapho.lib) |lib| {
+        directxmath.injectIncludes(lib);
+        glfw.injectIncludes(lib);
+        glew.injectIncludes(lib);
+    }
+    if (imgui.lib) |lib| {
+        glfw.injectIncludes(lib);
+    }
 
     for (EXAMPLES) |example| {
         const exe = b.addExecutable(.{
@@ -112,40 +106,19 @@ pub fn build(b: *std.Build) void {
         for (example.files) |file| {
             exe.addCSourceFile(.{
                 .file = b.path(file),
-                .flags = &CFLAGS,
+                .flags = grapho.flags,
             });
         }
 
-        // build_libs.inject(b, exe, example.using, &CFLAGS);
-        // grapho
-        exe.addCSourceFiles(.{
-            .files = &.{
-                "src/grapho/vars.cpp",
-                "src/grapho/camera/camera.cpp",
-                "src/grapho/camera/ray.cpp",
-            },
-            .flags = &CFLAGS,
-        });
-        exe.addIncludePath(b.path("src"));
-
-        exe.addIncludePath(b.path("example/glfw_platform"));
-        exe.addCSourceFiles(.{
-            .files = &.{
-                "src/grapho/gl3/vao.cpp",
-                "src/grapho/gl3/texture.cpp",
-                "src/grapho/gl3/shader.cpp",
-                "src/grapho/gl3/cuberenderer.cpp",
-                "src/grapho/gl3/fbo.cpp",
-                "src/grapho/gl3/error_check.cpp",
-                "example/glfw_platform/glfw_platform.cpp",
-            },
-            .flags = &CFLAGS,
-        });
+        // inject to exe
+        grapho.injectIncludes(exe);
+        if (grapho.lib) |lib| {
+            exe.linkLibrary(lib);
+        }
         glew.injectIncludes(exe);
         if (glew.lib) |lib| {
             exe.linkLibrary(lib);
         }
-        glfw.injectIncludes(exe);
         if (glfw.lib) |lib| {
             exe.linkLibrary(lib);
         }
@@ -154,7 +127,10 @@ pub fn build(b: *std.Build) void {
             directxmath.injectIncludes(exe);
         }
         if (example.using.imgui) {
-            build_libs.inject_imgui(b, exe);
+            imgui.injectIncludes(exe);
+            if (imgui.lib) |lib| {
+                exe.linkLibrary(lib);
+            }
         }
         if (example.using.stb) {
             stb.injectIncludes(exe);
