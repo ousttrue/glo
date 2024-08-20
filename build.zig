@@ -6,17 +6,31 @@ const CFLAGS = [_][]const u8{
     "-D_USE_MATH_DEFINES=1",
     "-DUNICODE",
     "-D_UNICODE",
-    "-DGLEW_STATIC",
     //
-    // "-fms-extensions",
-    // "-fms-compatibility",
-    "-Wno-nonportable-include-path",
+    "-DGLEW_STATIC",
+};
+
+pub const Using = struct {
+    // grapho
+    directxmath: bool = true,
+    imgui: bool = true,
+    gl: bool = true,
+    // glfw: bool = false,
+    // glew: bool = false,
+    // dx: bool = true,
+    stb: bool = false,
+    glm: bool = false,
 };
 
 const Example = struct {
     name: []const u8,
     files: []const []const u8,
-    using: build_libs.Using = .{},
+    using: Using = .{},
+};
+
+const LIBS = [_][]const u8{
+    "gdi32",
+    "OpenGL32",
 };
 
 const EXAMPLES = [_]Example{
@@ -80,6 +94,14 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const glew = build_libs.make_glew(b, target, optimize);
+    const glfw = build_libs.make_glfw(b, target, optimize);
+
+    // headeronly
+    const directxmath = build_libs.make_directxmath(b);
+    const stb = build_libs.make_stb(b);
+    const glm = build_libs.make_glm(b);
+
     for (EXAMPLES) |example| {
         const exe = b.addExecutable(.{
             .name = example.name,
@@ -94,6 +116,69 @@ pub fn build(b: *std.Build) void {
             });
         }
 
-        build_libs.inject(b, exe, example.using, &CFLAGS);
+        // build_libs.inject(b, exe, example.using, &CFLAGS);
+        // grapho
+        exe.addCSourceFiles(.{
+            .files = &.{
+                "src/grapho/vars.cpp",
+                "src/grapho/camera/camera.cpp",
+                "src/grapho/camera/ray.cpp",
+            },
+            .flags = &CFLAGS,
+        });
+        exe.addIncludePath(b.path("src"));
+
+        exe.addIncludePath(b.path("example/glfw_platform"));
+        exe.addCSourceFiles(.{
+            .files = &.{
+                "src/grapho/gl3/vao.cpp",
+                "src/grapho/gl3/texture.cpp",
+                "src/grapho/gl3/shader.cpp",
+                "src/grapho/gl3/cuberenderer.cpp",
+                "src/grapho/gl3/fbo.cpp",
+                "src/grapho/gl3/error_check.cpp",
+                "example/glfw_platform/glfw_platform.cpp",
+            },
+            .flags = &CFLAGS,
+        });
+        glew.injectIncludes(exe);
+        if (glew.lib) |lib| {
+            exe.linkLibrary(lib);
+        }
+        glfw.injectIncludes(exe);
+        if (glfw.lib) |lib| {
+            exe.linkLibrary(lib);
+        }
+
+        if (example.using.directxmath) {
+            directxmath.injectIncludes(exe);
+        }
+        if (example.using.imgui) {
+            build_libs.inject_imgui(b, exe);
+        }
+        if (example.using.stb) {
+            stb.injectIncludes(exe);
+        }
+        if (example.using.glm) {
+            glm.injectIncludes(exe);
+        }
+        for (LIBS) |lib| {
+            exe.linkSystemLibrary(lib);
+        }
+
+        // install
+        const install = b.addInstallArtifact(exe, .{});
+        b.getInstallStep().dependOn(&install.step);
+        // run
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.step.dependOn(&install.step);
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+        const run_step = b.step(
+            b.fmt("run-{s}", .{exe.name}),
+            b.fmt("Run {s}", .{exe.name}),
+        );
+        run_step.dependOn(&run_cmd.step);
     }
 }
