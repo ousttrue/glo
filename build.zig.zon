@@ -55,5 +55,6 @@
         "build.zig",
         "build.zig.zon",
         "build_libs.zig",
+        "src",
     },
 }
