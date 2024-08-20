@@ -1,37 +1,21 @@
 const std = @import("std");
 
-pub const OwnerType = enum {
-    dependency,
-    build,
-};
-pub const Owner = union(OwnerType) {
-    dependency: *std.Build.Dependency,
-    build: *std.Build,
-};
-
 pub const CLib = struct {
-    owner: Owner,
+    dep: *std.Build.Dependency,
     lib: ?*std.Build.Step.Compile = null,
     includes: []const []const u8 = &.{},
     flags: []const []const u8 = &.{},
 
     pub fn make_headeronly(dep: *std.Build.Dependency, includes: []const []const u8) CLib {
         return .{
-            .owner = .{ .dependency = dep },
+            .dep = dep,
             .includes = includes,
         };
     }
 
     pub fn injectIncludes(self: @This(), compile: *std.Build.Step.Compile) void {
         for (self.includes) |include| {
-            switch (self.owner) {
-                .dependency => |dep| {
-                    compile.addIncludePath(dep.path(include));
-                },
-                .build => |b| {
-                    compile.addIncludePath(b.path(include));
-                },
-            }
+            compile.addIncludePath(self.dep.path(include));
         }
     }
 };
@@ -82,7 +66,7 @@ pub fn make_glfw(
         .flags = &.{"-D_GLFW_WIN32"},
     });
     return .{
-        .owner = .{ .dependency = glfw_dep },
+        .dep = glfw_dep,
         .lib = lib,
         .includes = &.{
             "include",
@@ -112,7 +96,7 @@ pub fn make_glew(
         .flags = &.{"-DGLEW_STATIC"},
     });
     return .{
-        .owner = .{ .dependency = glew_dep },
+        .dep = glew_dep,
         .lib = lib,
         .includes = &.{"include"},
         .flags = &.{"-DGLEW_STATIC"},
@@ -149,7 +133,7 @@ pub fn make_imgui(
         .files = &IMGUI_FILES,
     });
     return .{
-        .owner = .{ .dependency = imgui_dep },
+        .dep = imgui_dep,
         .lib = lib,
         .includes = &.{
             "", "backends",
@@ -159,6 +143,7 @@ pub fn make_imgui(
 
 pub fn make_grapho(
     b: *std.Build,
+    dep: *std.Build.Dependency,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
 ) CLib {
@@ -178,31 +163,31 @@ pub fn make_grapho(
     });
     lib.linkLibCpp();
     lib.addCSourceFiles(.{
+        .root = dep.path(""),
         .files = &.{
-            "src/grapho/vars.cpp",
-            "src/grapho/camera/camera.cpp",
-            "src/grapho/camera/ray.cpp",
+            "grapho/vars.cpp",
+            "grapho/camera/camera.cpp",
+            "grapho/camera/ray.cpp",
         },
         .flags = &CFLAGS,
     });
-    lib.addIncludePath(b.path("src"));
-    lib.addIncludePath(b.path("example/glfw_platform"));
+    lib.addIncludePath(dep.path(""));
     lib.addCSourceFiles(.{
+        .root = dep.path(""),
         .files = &.{
-            "src/grapho/gl3/vao.cpp",
-            "src/grapho/gl3/texture.cpp",
-            "src/grapho/gl3/shader.cpp",
-            "src/grapho/gl3/cuberenderer.cpp",
-            "src/grapho/gl3/fbo.cpp",
-            "src/grapho/gl3/error_check.cpp",
-            "example/glfw_platform/glfw_platform.cpp",
+            "grapho/gl3/vao.cpp",
+            "grapho/gl3/texture.cpp",
+            "grapho/gl3/shader.cpp",
+            "grapho/gl3/cuberenderer.cpp",
+            "grapho/gl3/fbo.cpp",
+            "grapho/gl3/error_check.cpp",
         },
         .flags = &CFLAGS,
     });
     return .{
-        .owner = .{ .build = b },
+        .dep = dep,
         .lib = lib,
-        .includes = &.{ "src", "example/glfw_platform" },
+        .includes = &.{""},
         .flags = &CFLAGS,
     };
 }

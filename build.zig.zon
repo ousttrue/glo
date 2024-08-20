@@ -47,6 +47,9 @@
             .url = "https://github.com/g-truc/glm/archive/refs/tags/1.0.1.tar.gz",
             .hash = "122027714f90e6898b8344c2ce46546e229d6a01f6493d6ac6f015761c1f6128c180",
         },
+        .grapho = .{
+            .path = "src",
+        },
     },
     .paths = .{
         "build.zig",

@@ -79,7 +79,7 @@ pub fn build(b: *std.Build) void {
     const glew = make_glew(b, b.dependency("glew", .{}), target, optimize);
     const glfw = make_glfw(b, b.dependency("glfw", .{}), target, optimize);
     const imgui = make_imgui(b, b.dependency("imgui", .{}), target, optimize);
-    const grapho = make_grapho(b, target, optimize);
+    const grapho = make_grapho(b, b.dependency("grapho", .{}), target, optimize);
 
     // headeronly
     const directxmath = CLib.make_headeronly(b.dependency("directxmath", .{}), &.{"Inc"});
@@ -109,8 +109,14 @@ pub fn build(b: *std.Build) void {
                 .flags = grapho.flags,
             });
         }
+        exe.addCSourceFile(.{
+            .file = b.path("example/glfw_platform/glfw_platform.cpp"),
+            .flags = grapho.flags,
+        });
+        exe.addIncludePath(b.path("example/glfw_platform"));
+        glfw.injectIncludes(exe);
 
-        // inject to exe
+        // libs inject to exe
         grapho.injectIncludes(exe);
         if (grapho.lib) |lib| {
             exe.linkLibrary(lib);
